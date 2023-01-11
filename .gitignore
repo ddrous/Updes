@@ -6,3 +6,4 @@
 .mypy_cache
 *.npz
 .cache
+.DS_Store
