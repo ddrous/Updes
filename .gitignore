@@ -1,0 +1,8 @@
+*.pyc
+*.tmp
+\.idea
+\.pytest_cache
+.vscode
+.mypy_cache
+*.npz
+.cache
