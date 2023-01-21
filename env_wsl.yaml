@@ -1,3 +1,4 @@
+# Follow this tutorial GPU enabled computation: https://docs.nvidia.com/cuda/wsl-user-guide/index.html 
 name: jaxmpi
 channels:
   - conda-forge
