@@ -7,3 +7,4 @@
 *.npz
 .cache
 .DS_Store
+Updec.egg-info/*
