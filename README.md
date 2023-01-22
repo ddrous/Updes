@@ -1,6 +1,6 @@
 # 𝕌pdec
 
-𝕌pdec is a framework for scaling and comparing various control methods for PDEs. __𝕌pdec__ stands for Universal(__𝕌__) Partial Differential Equations (__PDE__) Controller(__C__).
+𝕌pdec is a scalable framework for meshless and data-driven PDE modelling and control. __𝕌pdec__ stands for Universal(__𝕌__) Partial Differential Equations (__PDE__) Controller(__C__).
 
 
 ## Features
