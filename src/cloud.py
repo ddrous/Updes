@@ -118,21 +118,21 @@ class Cloud(object):
             if self.boundaries[i] == 2:
                 new_numbering.append(i)
 
-        new_numb_rev = {v:k for k, v in enumerate(new_numbering)}       ## Reads as: node k is now node v (usefull)
+        new_numb = {v:k for k, v in enumerate(new_numbering)}       ## Reads as: node k is now node v (usefull)
 
-        self.global_indices_rev = {new_numb_rev[k]: v for k, v in self.global_indices_rev.items()}
+        self.global_indices_rev = {new_numb[k]: v for k, v in self.global_indices_rev.items()}
         for i, (k, l) in self.global_indices_rev.items():
             self.global_indices = self.global_indices.at[k, l].set(i)
 
-        self.boundaries = {new_numb_rev[k]:v for k,v in self.boundaries.items()}
-        self.nodes = {new_numb_rev[k]:v for k,v in self.nodes.items()}
+        self.boundaries = {new_numb[k]:v for k,v in self.boundaries.items()}
+        self.nodes = {new_numb[k]:v for k,v in self.nodes.items()}
 
-        self.local_supports = jax.tree_util.tree_map(lambda i:new_numb_rev[i], self.local_supports)
-        self.local_supports = {new_numb_rev[k]:v for k,v in self.local_supports.items()}
+        self.local_supports = jax.tree_util.tree_map(lambda i:new_numb[i], self.local_supports)
+        self.local_supports = {new_numb[k]:v for k,v in self.local_supports.items()}
 
-        self.outward_normals = {new_numb_rev[k]:v for k,v in self.outward_normals.items()}
+        self.outward_normals = {new_numb[k]:v for k,v in self.outward_normals.items()}
 
-        self.renumbering_map = new_numb_rev
+        self.renumbering_map = new_numb
 
 if __name__ == '__main__':
     def print_line_by_line(dictionary):

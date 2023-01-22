@@ -25,3 +25,18 @@ def monomial_xy(vector):
 
 def monomial_yy(vector):
     return vector[1]**2
+
+def polynomial(i):
+    """ Just a way to keep track of polynomials"""
+    if i == 0:
+        return monomial_1
+    elif i == 1:
+        return monomial_x
+    elif i == 2:
+        return monomial_y
+    elif i == 3:
+        return monomial_xx
+    elif i == 4:
+        return monomial_xy
+    elif i == 5:
+        return monomial_yy
