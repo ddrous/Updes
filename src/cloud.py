@@ -4,7 +4,7 @@ from utils import distance
 
 
 class Cloud(object):
-    def __init__(self, Nx=10, Ny=10):
+    def __init__(self, Nx=7, Ny=5):
         self.Nx = Nx
         self.Ny = Ny
         self.N = self.Nx*self.Ny
