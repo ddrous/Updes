@@ -38,10 +38,10 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
 def assemble_P(cloud:Cloud, nb_monomials:int):
     """ See (6) from Shanane """
     N = cloud.N
-    m = nb_monomials
-    P = jnp.zeros((N, m), dtype=jnp.float32)
+    M = nb_monomials
+    P = jnp.zeros((N, M), dtype=jnp.float32)
 
-    for j in range(m):
+    for j in range(M):
         monomial = partial(make_monomial, id=j)
         grad_monomial = jax.grad(monomial)
         for i in range(N):
@@ -64,9 +64,9 @@ def assemble_A(cloud, rbf, nb_monomials=2):
     Phi = assemble_Phi(cloud, rbf)
     P = assemble_P(cloud, nb_monomials)
 
-    N, m = Phi.shape[1], P.shape[1]
+    N, M = Phi.shape[1], P.shape[1]
     
-    A = jnp.zeros((N+m, N+m), dtype=jnp.float32)
+    A = jnp.zeros((N+M, N+M), dtype=jnp.float32)
     A = A.at[:N, :N].set(Phi)
     A = A.at[:N, N:].set(P)
     A = A.at[N:, :N].set(P.T)
@@ -80,12 +80,12 @@ def assemble_diff_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
     ## Only the internal nodes (M, N)
 
     N = cloud.N
-    M = cloud.M
-    m = nb_monomials
-    opPhi = jnp.zeros((M, N), dtype=jnp.float32)
-    opP = jnp.zeros((M, m), dtype=jnp.float32)
+    N_I = cloud.N_I
+    M = nb_monomials
+    opPhi = jnp.zeros((N_I, N), dtype=jnp.float32)
+    opP = jnp.zeros((N_I, M), dtype=jnp.float32)
 
-    for i in range(M):
+    for i in range(N_I):
         assert cloud.boundaries[i] == 0, "not an internal node"    ## Internal node
         node_i = cloud.nodes[i]
 
@@ -93,7 +93,7 @@ def assemble_diff_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
             node_j = cloud.nodes[j]
             opPhi.at[i, j].set(operator(node_i, node_j=node_j))
 
-        for j in range(m):
+        for j in range(M):
             opP.at[i, j].set(operator(node_i, monomial_j=j))
 
     return opPhi, opP
@@ -102,24 +102,24 @@ def assemble_diff_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
 def assemble_B(operator:callable, cloud:Cloud, rbf:str, max_degree:int):
     """ Assemble B using opPhi, P, and A """
 
-    N, M = cloud.N, cloud.M
-    m = math.comb(max_degree+2, max_degree)
+    N, N_I = cloud.N, cloud.N_I
+    M = math.comb(max_degree+2, max_degree)
 
-    Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, m)
-    opPhi, opP = assemble_diff_Phi_P(operator, cloud, m)
+    Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, M)
+    opPhi, opP = assemble_diff_Phi_P(operator, cloud, M)
 
     full_opPhi = jnp.zeros((N, N), dtype=jnp.float32)
-    full_opP = jnp.zeros((N, m), dtype=jnp.float32)
+    full_opP = jnp.zeros((N, M), dtype=jnp.float32)
 
-    full_opPhi = full_opPhi.at[:M, :].set(opPhi[:, :])
-    full_opP = full_opP.at[:M, :].set(opP[:, :])
+    full_opPhi = full_opPhi.at[:N_I, :].set(opPhi[:, :])
+    full_opP = full_opP.at[:N_I, :].set(opP[:, :])
 
-    full_opPhi = full_opPhi.at[M:, :].set(Phi[M:, :])
-    full_opP = full_opP.at[M:, :].set(P[M:, :])
+    full_opPhi = full_opPhi.at[N_I:, :].set(Phi[M:, :])
+    full_opP = full_opP.at[N_I:, :].set(P[N_I:, :])
 
     diffMat = jnp.concatenate((full_opPhi, full_opP), axis=-1)
 
-    A = assemble_A(cloud, rbf, m)
+    A = assemble_A(cloud, rbf, M)
     inv_A = jnp.linalg.inv(A)
     B = diffMat @ inv_A
 
@@ -132,14 +132,14 @@ def assemble_q(operator:callable, cloud:Cloud, boundary_functions:dict):
     ### Boundary conditions should match all the types of boundaries
     
     N = cloud.N
-    M = cloud.M
+    N_I = cloud.N_I
     rhs = jnp.zeros((N,))
 
-    for i in range(M):
+    for i in range(N_I):
         assert cloud.boundaries[i]==0, "not an internal node"
         rhs.at[i].set(operator(cloud.node[i]))
 
-    for i in range(M, N):
+    for i in range(N_I, N):
         assert cloud.boundaries[i]==1, "not a dirichlet nor neumann node"
         bd_op = boundary_functions[cloud.surfaces[i]]
         rhs.at[i].set(bd_op(cloud.node[i]))

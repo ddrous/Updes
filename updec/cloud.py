@@ -54,38 +54,34 @@ class Cloud(object):
     def make_boundaries(self):
         self.surfaces = {}              ## For each node id, say wihch surface it belongs to: 1 to 4
 
-        self.boundaries = {}
-        self.M = 0
-        self.MD = 0
-        self.MN = 0
-        ## internal: 0
-        ## dirichlet: 1
-        ## neumann: 2
-        ## external: -1     (not supported yet)
+        self.boundaries = {}            ## Coding structure: internal=0, dirichlet=1, neumann=2, external=-1 (not supported yet)
+        self.N_I = 0
+        self.N_D = 0
+        self.N_N = 0
         for i in range(self.N):
             [k, l] = list(self.global_indices_rev[i])
             if k == 0:
                 self.boundaries[i] = 1
                 self.surfaces[i] = 2
-                self.MD +=1
+                self.N_D +=1
             elif l == 0:
                 self.boundaries[i] = 1
                 self.surfaces[i] = 1
-                self.MD +=1
+                self.N_D +=1
             elif l == self.Ny-1:
                 self.boundaries[i] = 1
                 self.surfaces[i] = 3
-                self.MD +=1
+                self.N_D +=1
             elif k == self.Nx-1:
                 self.boundaries[i] = 2
                 self.surfaces[i] = 4
-                self.MN +=1
+                self.N_N +=1
             else:
                 self.boundaries[i] = 0
                 self.surfaces[i] = 0        ## Number 0 is not a surface
-                self.M +=1
+                self.N_I +=1
 
-        self.surface_types = {1:"dirichlet", 2:"dirichlet", 3:"dirichlet", 4:"neumann"}         ## For each surface id, say whether Dirichlet or Neumann - For the user
+        self.surface_types = {1:"dirichlet", 2:"dirichlet", 3:"dirichlet", 4:"neumann"}         ## For each surface id, say whether Dirichlet or Neumann - Easier for the user (could have used 0,1,2 again...)
 
 
     def make_local_supports(self, n=7):
@@ -164,7 +160,7 @@ class Cloud(object):
         print("Cloud bounding box: Nx =", self.Nx, " -  Ny =", self.Ny)
         print()
         print("Boundary types (0=internal, 1=dirichlet, 2=neumann):\n", self.boundaries)
-        print("Number of: \n\t-Internal points: M =", self.M, "\n\t-Dirichlet points: MD =", self.MD, "\n\t-Neumann points: MN =", self.MN)
+        print("Number of: \n\t-Internal points: M =", self.N_I, "\n\t-Dirichlet points: MD =", self.N_D, "\n\t-Neumann points: MN =", self.N_N)
         print("Surfaces:\n", self.surfaces)
         print()
         print("Global indices:\n", self.global_indices)

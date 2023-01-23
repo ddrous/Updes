@@ -45,11 +45,11 @@ def nodal_laplacian(x, node=None, monomial=None, rbf=None):
 def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_degree:int):
     """ Find nodal and polynomial coefficients for scaar field s """
     N = cloud.N
-    m = math.comb(max_degree+2, max_degree)     ## Carefull with the problem dimension: 2
+    M = math.comb(max_degree+2, max_degree)     ## Carefull with the problem dimension: 2
 
     ##TODO solve the linear system quicker (store and cache LU decomp) 
-    A = assemble_A(cloud, rbf, m)
-    rhs = jnp.concatenate((field, jnp.zeros((m))))
+    A = assemble_A(cloud, rbf, M)
+    rhs = jnp.concatenate((field, jnp.zeros((M))))
     coefficients = jnp.linalg.solve(A, rhs)
 
     lambdas = coefficients[:N]
