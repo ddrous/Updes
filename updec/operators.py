@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
 
-import math
 from functools import partial
 
+from updec.utils import compute_nb_monomials
 from updec.cloud import Cloud
 from updec.utils import make_nodal_rbf, make_monomial
 from updec.assembly import assemble_A, assemble_B, assemble_q
@@ -18,10 +18,10 @@ def nodal_gradient(x, node=None, monomial=None, rbf=None):
         monomial: the id of the monomial (if for a monomial)
     """
     ## Only one of node_j or monomial_j can be given
-    if node:
+    if node != None:
         nodal_rbf = partial(make_nodal_rbf, rbf=rbf)
         return jax.grad(nodal_rbf)(x, node)
-    elif monomial:
+    elif monomial != None:
         monomial_func = partial(make_monomial, id=monomial)
         return jax.grad(monomial_func)(x)
 
@@ -29,23 +29,19 @@ def nodal_gradient(x, node=None, monomial=None, rbf=None):
 
 def nodal_laplacian(x, node=None, monomial=None, rbf=None):
     """ Computes the lapalcian of the RBF and polynomial functions """
-    if node:
+    if node != None:
         nodal_rbf = partial(make_nodal_rbf, rbf=rbf)
-        gradxx = jax.grad(jax.grad(nodal_rbf)(x, node)[0])[0]
-        gradyy = jax.grad(jax.grad(nodal_rbf)(x, node)[1])[1]
-    elif monomial:
+        return jnp.trace(jax.jacfwd(jax.grad(nodal_rbf))(x, node))      ## TODO: try reverse mode
+    elif monomial != None:
         monomial_func = partial(make_monomial, id=monomial)
-        gradxx = jax.grad(jax.grad(monomial_func)(x)[0])[0]
-        gradyy = jax.grad(jax.grad(monomial_func)(x)[1])[1]
-
-    return gradxx + gradyy
+        return jnp.trace(jax.jacfwd(jax.grad(monomial_func))(x))
 
 
 
 def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_degree:int):
     """ Find nodal and polynomial coefficients for scaar field s """
     N = cloud.N
-    M = math.comb(max_degree+2, max_degree)     ## Carefull with the problem dimension: 2
+    M = compute_nb_monomials(max_degree, 2)     ## Carefull with the problem dimension: 2
 
     ##TODO solve the linear system quicker (store and cache LU decomp) 
     A = assemble_A(cloud, rbf, M)
@@ -107,9 +103,11 @@ def pde_solver(nodal_operator:callable,
                 global_operator:callable, 
                 cloud:Cloud, 
                 boundary_conditions:dict, 
-                rbf:str, 
+                rbf:callable, 
                 max_degree:int):
     """ Solve a PDE """
     B1 = assemble_B(nodal_operator, cloud, rbf, max_degree)
     rhs = assemble_q(global_operator, cloud, boundary_conditions)
+    print(B1)
+    print(rhs)
     return jnp.linalg.solve(B1, rhs)

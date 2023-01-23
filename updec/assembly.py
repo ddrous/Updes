@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
 
-import math
 from functools import partial
 
+from updec.utils import compute_nb_monomials
 from updec.cloud import Cloud
 from updec.utils import make_nodal_rbf, make_monomial
 
@@ -20,17 +20,16 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     grad_rbf = jax.grad(nodal_rbf)
 
     for i in range(N):
-        node_i = cloud.nodes[i]
-        for j in range(N):
-            node_j = cloud.nodes[j]
+        for j in range(N):          ## TODO: Fix this with only local support
+            if i != j:               ## Non-differentiability. Won't have this problem with local support
 
-            if cloud.boundaries[i] == 0 or cloud.boundaries[i] == 1:    ## Internal or Dirichlet node
-                Phi.at[i, j].set(nodal_rbf(node_i, node_j))
+                if cloud.boundaries[i] == 0 or cloud.boundaries[i] == 1:    ## Internal or Dirichlet node
+                    Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
 
-            elif cloud.boundaries[i] == 2:    ## Neumann node
-                grad = grad_rbf(node_i, node_j)
-                normal = cloud.outward_normals[i]
-                Phi.at[i, j].set(jnp.dot(grad, normal))
+                elif cloud.boundaries[i] == 2:    ## Neumann node
+                    grad = grad_rbf(cloud.nodes[i], cloud.nodes[j])
+                    normal = cloud.outward_normals[i]
+                    Phi = Phi.at[i, j].set(jnp.dot(grad, normal))
 
     return Phi
 
@@ -47,12 +46,12 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
         for i in range(N):
 
             if cloud.boundaries[i] == 0 or cloud.boundaries[i] == 1:    ## Internal or Dirichlet node
-                P.at[i, j].set(monomial(cloud.nodes[i]))
+                P = P.at[i, j].set(monomial(cloud.nodes[i]))
 
             elif cloud.boundaries[i] == 2:    ## Neumann node
                 grad = grad_monomial(cloud.nodes[i])
                 normal = cloud.outward_normals[i]
-                P.at[i, j].set(jnp.dot(grad, normal))
+                P = P.at[i, j].set(jnp.dot(grad, normal))
 
     return P
 
@@ -75,47 +74,46 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 
 
 
-def assemble_diff_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
+def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
 
     N = cloud.N
-    N_I = cloud.N_I
+    Ni = cloud.Ni
     M = nb_monomials
-    opPhi = jnp.zeros((N_I, N), dtype=jnp.float32)
-    opP = jnp.zeros((N_I, M), dtype=jnp.float32)
+    opPhi = jnp.zeros((Ni, N), dtype=jnp.float32)
+    opP = jnp.zeros((Ni, M), dtype=jnp.float32)
 
-    for i in range(N_I):
+    for i in range(Ni):
         assert cloud.boundaries[i] == 0, "not an internal node"    ## Internal node
-        node_i = cloud.nodes[i]
 
-        for j in range(N):
-            node_j = cloud.nodes[j]
-            opPhi.at[i, j].set(operator(node_i, node_j=node_j))
+        for j in range(N):  ## TODO: Fix this with only Local support
+            if i != j:      ## Only go through the local support because of non-differentiability at distance r=0.
+                opPhi = opPhi.at[i, j].set(operator(cloud.nodes[i], node=cloud.nodes[j]))
 
         for j in range(M):
-            opP.at[i, j].set(operator(node_i, monomial_j=j))
+            opP = opP.at[i, j].set(operator(cloud.nodes[i], monomial=j))
 
     return opPhi, opP
 
 
-def assemble_B(operator:callable, cloud:Cloud, rbf:str, max_degree:int):
+def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int):
     """ Assemble B using opPhi, P, and A """
 
-    N, N_I = cloud.N, cloud.N_I
-    M = math.comb(max_degree+2, max_degree)
+    N, Ni = cloud.N, cloud.Ni
+    M = compute_nb_monomials(max_degree, 2)
 
     Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, M)
-    opPhi, opP = assemble_diff_Phi_P(operator, cloud, M)
+    opPhi, opP = assemble_op_Phi_P(operator, cloud, M)
 
     full_opPhi = jnp.zeros((N, N), dtype=jnp.float32)
     full_opP = jnp.zeros((N, M), dtype=jnp.float32)
 
-    full_opPhi = full_opPhi.at[:N_I, :].set(opPhi[:, :])
-    full_opP = full_opP.at[:N_I, :].set(opP[:, :])
+    full_opPhi = full_opPhi.at[:Ni, :].set(opPhi[:, :])
+    full_opP = full_opP.at[:Ni, :].set(opP[:, :])
 
-    full_opPhi = full_opPhi.at[N_I:, :].set(Phi[M:, :])
-    full_opP = full_opP.at[N_I:, :].set(P[N_I:, :])
+    full_opPhi = full_opPhi.at[Ni:, :].set(Phi[Ni:, :])
+    full_opP = full_opP.at[Ni:, :].set(P[Ni:, :])
 
     diffMat = jnp.concatenate((full_opPhi, full_opP), axis=-1)
 
@@ -132,14 +130,16 @@ def assemble_q(operator:callable, cloud:Cloud, boundary_functions:dict):
     ### Boundary conditions should match all the types of boundaries
     
     N = cloud.N
-    N_I = cloud.N_I
-    rhs = jnp.zeros((N,))
+    Ni = cloud.Ni
+    q = jnp.zeros((N,))
 
-    for i in range(N_I):
+    for i in range(Ni):
         assert cloud.boundaries[i]==0, "not an internal node"
-        rhs.at[i].set(operator(cloud.node[i]))
+        q = q.at[i].set(operator(cloud.nodes[i]))
 
-    for i in range(N_I, N):
-        assert cloud.boundaries[i]==1, "not a dirichlet nor neumann node"
+    for i in range(Ni, N):
+        assert cloud.boundaries[i]==1 or cloud.boundaries[i]==2, "not a dirichlet nor neumann node"
         bd_op = boundary_functions[cloud.surfaces[i]]
-        rhs.at[i].set(bd_op(cloud.node[i]))
+        q = q.at[i].set(bd_op(cloud.nodes[i]))
+
+    return q

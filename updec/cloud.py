@@ -55,31 +55,31 @@ class Cloud(object):
         self.surfaces = {}              ## For each node id, say wihch surface it belongs to: 1 to 4
 
         self.boundaries = {}            ## Coding structure: internal=0, dirichlet=1, neumann=2, external=-1 (not supported yet)
-        self.N_I = 0
-        self.N_D = 0
-        self.N_N = 0
+        self.Ni = 0
+        self.Nd = 0
+        self.Nn = 0
         for i in range(self.N):
             [k, l] = list(self.global_indices_rev[i])
             if k == 0:
                 self.boundaries[i] = 1
                 self.surfaces[i] = 2
-                self.N_D +=1
+                self.Nd +=1
             elif l == 0:
                 self.boundaries[i] = 1
                 self.surfaces[i] = 1
-                self.N_D +=1
+                self.Nd +=1
             elif l == self.Ny-1:
                 self.boundaries[i] = 1
                 self.surfaces[i] = 3
-                self.N_D +=1
+                self.Nd +=1
             elif k == self.Nx-1:
                 self.boundaries[i] = 2
                 self.surfaces[i] = 4
-                self.N_N +=1
+                self.Nn +=1
             else:
                 self.boundaries[i] = 0
                 self.surfaces[i] = 0        ## Number 0 is not a surface
-                self.N_I +=1
+                self.Ni +=1
 
         self.surface_types = {1:"dirichlet", 2:"dirichlet", 3:"dirichlet", 4:"neumann"}         ## For each surface id, say whether Dirichlet or Neumann - Easier for the user (could have used 0,1,2 again...)
 
@@ -160,7 +160,7 @@ class Cloud(object):
         print("Cloud bounding box: Nx =", self.Nx, " -  Ny =", self.Ny)
         print()
         print("Boundary types (0=internal, 1=dirichlet, 2=neumann):\n", self.boundaries)
-        print("Number of: \n\t-Internal points: M =", self.N_I, "\n\t-Dirichlet points: MD =", self.N_D, "\n\t-Neumann points: MN =", self.N_N)
+        print("Number of: \n\t-Internal points: Ni =", self.Ni, "\n\t-Dirichlet points: Md =", self.Nd, "\n\t-Neumann points: Mn =", self.Nn)
         print("Surfaces:\n", self.surfaces)
         print()
         print("Global indices:\n", self.global_indices)
@@ -175,3 +175,27 @@ class Cloud(object):
         print()
         print("Local supports (n closest neighbours):")
         print_line_by_line(self.local_supports)
+
+
+    def visualize_field(self, field, projection, ax=None, figsize=(6,5), **kwargs):
+        import matplotlib.pyplot as plt
+
+        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
+        coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+
+        if ax is None:
+            fig = plt.figure(figsize=figsize)
+
+        if projection == "2d":
+            ax = fig.add_subplot(1, 1, 1)
+            img = ax.scatter(x=coords[:, 0], y=coords[:, 1], c=field, **kwargs)
+            plt.colorbar(img)
+
+        elif projection == "3d":
+            ax = fig.add_subplot(1, 2, 1, projection='3d')
+            ax.plot_trisurf(coords[:, 0], coords[:, 1], field, **kwargs)
+
+        ax.set_xlabel(r'$x$')
+        ax.set_ylabel(r'$y$')
+
+        return ax
