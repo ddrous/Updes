@@ -23,10 +23,10 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
         for j in range(N):          ## TODO: Fix this with only local support
             if i != j:               ## Non-differentiability. Won't have this problem with local support
 
-                if cloud.boundaries[i] == 0 or cloud.boundaries[i] == 1:    ## Internal or Dirichlet node
+                if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
                     Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
 
-                elif cloud.boundaries[i] == 2:    ## Neumann node
+                elif cloud.node_boundary_types[i] == "n":    ## Neumann node
                     grad = grad_rbf(cloud.nodes[i], cloud.nodes[j])
                     normal = cloud.outward_normals[i]
                     Phi = Phi.at[i, j].set(jnp.dot(grad, normal))
@@ -45,10 +45,10 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
         grad_monomial = jax.grad(monomial)
         for i in range(N):
 
-            if cloud.boundaries[i] == 0 or cloud.boundaries[i] == 1:    ## Internal or Dirichlet node
+            if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
                 P = P.at[i, j].set(monomial(cloud.nodes[i]))
 
-            elif cloud.boundaries[i] == 2:    ## Neumann node
+            elif cloud.node_boundary_types[i] == "i":    ## Neumann node
                 grad = grad_monomial(cloud.nodes[i])
                 normal = cloud.outward_normals[i]
                 P = P.at[i, j].set(jnp.dot(grad, normal))
@@ -85,7 +85,7 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
     opP = jnp.zeros((Ni, M), dtype=jnp.float32)
 
     for i in range(Ni):
-        assert cloud.boundaries[i] == 0, "not an internal node"    ## Internal node
+        assert cloud.node_boundary_types[i] == "i", "not an internal node"    ## Internal node
 
         for j in range(N):  ## TODO: Fix this with only Local support
             if i != j:      ## Only go through the local support because of non-differentiability at distance r=0.
@@ -134,12 +134,19 @@ def assemble_q(operator:callable, cloud:Cloud, boundary_functions:dict):
     q = jnp.zeros((N,))
 
     for i in range(Ni):
-        assert cloud.boundaries[i]==0, "not an internal node"
+        assert cloud.node_boundary_types[i]=="i", "not an internal node"
         q = q.at[i].set(operator(cloud.nodes[i]))
 
-    for i in range(Ni, N):
-        assert cloud.boundaries[i]==1 or cloud.boundaries[i]==2, "not a dirichlet nor neumann node"
-        bd_op = boundary_functions[cloud.surfaces[i]]
-        q = q.at[i].set(bd_op(cloud.nodes[i]))
+    # for i in range(Ni, N):
+    #     assert cloud.node_boundary_types[i] in ["d", "n"], "not a dirichlet nor neumann node"
+    #     bd_op = boundary_functions[cloud.surfaces[i]]
+    #     q = q.at[i].set(bd_op(cloud.nodes[i]))
+
+    for f_id in cloud.facet_types.keys():
+        assert f_id in boundary_functions.keys(), "facets and boundary functions don't match ids"
+
+        bd_op = boundary_functions[f_id]  
+        for i in cloud.facet_nodes[f_id]:
+            q = q.at[i].set(bd_op(cloud.nodes[i]))
 
     return q
