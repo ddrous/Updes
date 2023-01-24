@@ -5,7 +5,7 @@ from updec.utils import distance
 
 
 class Cloud(object):
-    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}):
+    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, seed=46):
         self.Nx = Nx
         self.Ny = Ny
         self.N = self.Nx*self.Ny
@@ -13,7 +13,7 @@ class Cloud(object):
 
         self.define_global_indices()
 
-        self.define_node_coordinates()
+        self.define_node_coordinates(seed=seed)
 
         self.define_node_boundary_types()
 
@@ -40,19 +40,22 @@ class Cloud(object):
                 count += 1
 
 
-    def define_node_coordinates(self, seed=42):
+    def define_node_coordinates(self, seed):
+        """ Can be used to redefine coordinates for performance study """
         x = jnp.linspace(0, 1., self.Nx)
         y = jnp.linspace(0, 1., self.Ny)
         xx, yy = jnp.meshgrid(x, y)
 
-        key = jax.random.PRNGKey(seed=seed)
+        key = jax.random.split(jax.random.PRNGKey(seed=seed), self.N)
         self.nodes = {}
 
         for i in range(self.Nx):
             for j in range(self.Ny):
-                noise = jax.random.uniform(key, (2,), minval=-.05, maxval=+.05)         ## Just some noisy noise
-
                 global_id = int(self.global_indices[i,j])
+
+                delta_noise = min((x[1]-x[0], y[1]-y[0])) / 2.   ## To make sure nodes don't go into each other
+                noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)         ## Just some noisy noise !!
+
                 self.nodes[global_id] = jnp.array([xx[j,i], yy[j,i]]) + noise
 
 
@@ -162,9 +165,19 @@ class Cloud(object):
         if ax is None:
             fig = plt.figure(figsize=figsize)
 
-        coords = jnp.stack(list(dict(self.nodes).values()), axis=-1).T
+        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
+        coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+        colours = []
+        for i in range(self.N):
+            if self.node_boundary_types[i] == "i":
+                colours.append("k")
+            elif self.node_boundary_types[i] == "d":
+                colours.append("r")
+            elif self.node_boundary_types[i] == "n":
+                colours.append("g")
+
         ax = fig.add_subplot(1, 1, 1)
-        ax.scatter(x=coords[:, 0], y=coords[:, 1], **kwargs)
+        ax.scatter(x=coords[:, 0], y=coords[:, 1], c=colours, **kwargs)
 
         ax.set_xlabel(r'$x$')
         ax.set_ylabel(r'$y$')
