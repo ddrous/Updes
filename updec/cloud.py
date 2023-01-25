@@ -5,7 +5,7 @@ from updec.utils import distance
 
 
 class Cloud(object):
-    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, seed=46):
+    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, noise_seed=None):
         self.Nx = Nx
         self.Ny = Ny
         self.N = self.Nx*self.Ny
@@ -13,9 +13,9 @@ class Cloud(object):
 
         self.define_global_indices()
 
-        self.define_node_coordinates(seed=seed)
-
         self.define_node_boundary_types()
+
+        self.define_node_coordinates(noise_seed=noise_seed)
 
         self.define_local_supports()
 
@@ -40,21 +40,26 @@ class Cloud(object):
                 count += 1
 
 
-    def define_node_coordinates(self, seed):
+    def define_node_coordinates(self, noise_seed):
         """ Can be used to redefine coordinates for performance study """
         x = jnp.linspace(0, 1., self.Nx)
         y = jnp.linspace(0, 1., self.Ny)
         xx, yy = jnp.meshgrid(x, y)
 
-        key = jax.random.split(jax.random.PRNGKey(seed=seed), self.N)
+        if noise_seed is not None:
+            key = jax.random.split(jax.random.PRNGKey(seed=noise_seed), self.N)
+            delta_noise = min((x[1]-x[0], y[1]-y[0])) / 2.   ## To make sure nodes don't go into each other
+
         self.nodes = {}
 
         for i in range(self.Nx):
             for j in range(self.Ny):
                 global_id = int(self.global_indices[i,j])
 
-                delta_noise = min((x[1]-x[0], y[1]-y[0])) / 2.   ## To make sure nodes don't go into each other
-                noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)         ## Just some noisy noise !!
+                if self.node_boundary_types[global_id] not in ["d", "n"]:
+                    noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)         ## Just add some noisy noise !!
+                else:
+                    noise = jnp.zeros((2,))
 
                 self.nodes[global_id] = jnp.array([xx[j,i], yy[j,i]]) + noise
 

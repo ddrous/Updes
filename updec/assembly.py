@@ -8,7 +8,6 @@ from updec.cloud import Cloud
 from updec.utils import make_nodal_rbf, make_monomial
 
 
-
 def assemble_Phi(cloud:Cloud, rbf:callable=None):
     """ Assemble the matrix Phi (see equation 5) from Shahane """
     ## TODO: Make this matrix sparse. Only consider local supports
@@ -17,7 +16,7 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     N = cloud.N
     Phi = jnp.zeros((N, N), dtype=jnp.float32)
     nodal_rbf = partial(make_nodal_rbf, rbf=rbf)
-    grad_rbf = jax.grad(nodal_rbf)
+    grad_rbf = jax.jit(jax.grad(nodal_rbf))
 
     for i in range(N):
         for j in range(N):          ## TODO: Fix this with only local support
@@ -42,7 +41,7 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
 
     for j in range(M):
         monomial = partial(make_monomial, id=j)
-        grad_monomial = jax.grad(monomial)
+        grad_monomial = jax.jit(jax.grad(monomial))
         for i in range(N):
 
             if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
@@ -100,6 +99,8 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
 def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int):
     """ Assemble B using opPhi, P, and A """
 
+    # operator = jax.jit(operator)
+
     N, Ni = cloud.N, cloud.Ni
     M = compute_nb_monomials(max_degree, 2)
 
@@ -128,7 +129,9 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int):
 def assemble_q(operator:callable, cloud:Cloud, boundary_functions:dict):
     """ Assemble the right hand side q using the operator """
     ### Boundary conditions should match all the types of boundaries
-    
+
+    # operator = jax.jit(operator)
+
     N = cloud.N
     Ni = cloud.Ni
     q = jnp.zeros((N,))

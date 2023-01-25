@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as jnp
 import math
 
@@ -51,6 +52,15 @@ def make_monomial(x, id):
         return x[1]**2
     else:
         pass        ## Higher order monomials not yet supported
+
+    # monomials = [lambda x:1.0,
+    #             lambda x:x[0],
+    #             lambda x:x[1],
+    #             lambda x:x[0]**2,
+    #             lambda x:x[0]*x[1],
+    #             lambda x:x[1]**2]
+    # return jax.lax.switch(id, jnp.array(monomials))(x)
+
 
 def compute_nb_monomials(max_degree, problem_dimension):
     return math.comb(max_degree+problem_dimension, max_degree)

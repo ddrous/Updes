@@ -108,6 +108,4 @@ def pde_solver(nodal_operator:callable,
     """ Solve a PDE """
     B1 = assemble_B(nodal_operator, cloud, rbf, max_degree)
     rhs = assemble_q(global_operator, cloud, boundary_conditions)
-    print(B1)
-    print(rhs)
     return jnp.linalg.solve(B1, rhs)
