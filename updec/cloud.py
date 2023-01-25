@@ -17,7 +17,7 @@ class Cloud(object):
 
         self.define_node_coordinates(noise_seed=noise_seed)
 
-        self.define_local_supports()
+        # self.define_local_supports()
 
         self.define_outward_normals()
 
@@ -153,8 +153,9 @@ class Cloud(object):
         self.node_boundary_types = {new_numb[k]:v for k,v in self.node_boundary_types.items()}
         self.nodes = {new_numb[k]:v for k,v in self.nodes.items()}
 
-        self.local_supports = jax.tree_util.tree_map(lambda i:new_numb[i], self.local_supports)
-        self.local_supports = {new_numb[k]:v for k,v in self.local_supports.items()}
+        if hasattr(self, 'local_supports'):
+            self.local_supports = jax.tree_util.tree_map(lambda i:new_numb[i], self.local_supports)
+            self.local_supports = {new_numb[k]:v for k,v in self.local_supports.items()}
 
         self.facet_nodes = jax.tree_util.tree_map(lambda i:new_numb[i], self.facet_nodes)
 

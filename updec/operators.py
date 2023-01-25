@@ -88,11 +88,11 @@ def laplacian(x, field, cloud, rbf=None, max_degree=2):
     ## Now, compute the laplacian of the field
     final_lap = jnp.array([0.])
     for j in range(lambdas.shape[0]):
-        rbf_lap = nodal_gradient(x, node=cloud.nodes[j], rbf=rbf)
+        rbf_lap = nodal_laplacian(x, node=cloud.nodes[j], rbf=rbf)
         final_lap = final_lap.at[:].add(lambdas[j] * rbf_lap)
 
     for j in range(gammas.shape[0]):
-        poly_lap = nodal_gradient(x, monomial=j)
+        poly_lap = nodal_laplacian(x, monomial=j)
         final_lap = final_lap.at[:].add(gammas[j] * poly_lap)
 
     return final_lap
@@ -106,6 +106,10 @@ def pde_solver(nodal_operator:callable,
                 rbf:callable, 
                 max_degree:int):
     """ Solve a PDE """
+
+    nodal_operator = jax.jit(nodal_operator, static_argnums=2)
+    global_operator = jax.jit(global_operator)
+
     B1 = assemble_B(nodal_operator, cloud, rbf, max_degree)
     rhs = assemble_q(global_operator, cloud, boundary_conditions)
     return jnp.linalg.solve(B1, rhs)

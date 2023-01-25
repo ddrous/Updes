@@ -15,6 +15,7 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
 
     N = cloud.N
     Phi = jnp.zeros((N, N), dtype=jnp.float32)
+    # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))
     nodal_rbf = partial(make_nodal_rbf, rbf=rbf)
     grad_rbf = jax.jit(jax.grad(nodal_rbf))
 
@@ -40,6 +41,7 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     P = jnp.zeros((N, M), dtype=jnp.float32)
 
     for j in range(M):
+        # monomial = jax.jit(partial(make_monomial, id=j))
         monomial = partial(make_monomial, id=j)
         grad_monomial = jax.jit(jax.grad(monomial))
         for i in range(N):
@@ -76,6 +78,8 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
+
+    # operator = jax.jit(operator, static_argnums=2)
 
     N = cloud.N
     Ni = cloud.Ni

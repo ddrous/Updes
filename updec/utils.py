@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 import math
 
+from functools import partial
 # import matplotlib.pyplot as plt
 # import seaborn as sns
 
@@ -25,7 +26,8 @@ def polyharmonic(r):
     a = 1
     return r**(2*a+1)
 
-
+# @jax.jit
+@partial(jax.jit, static_argnums=2)
 def make_nodal_rbf(x, node, rbf):
     """ Gives the tuned rbf function """
     if rbf==None:
@@ -35,6 +37,7 @@ def make_nodal_rbf(x, node, rbf):
     return func(distance(x, node))
 
 
+@partial(jax.jit, static_argnums=1)
 def make_monomial(x, id):
     """ Easy way to keep track of all monomials """
     ## x is a 2D vector
