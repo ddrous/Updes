@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+from sklearn.neighbors import BallTree
 
 from updec.utils import distance
 
@@ -17,7 +18,7 @@ class Cloud(object):
 
         self.define_node_coordinates(noise_seed=noise_seed)
 
-        # self.define_local_supports()
+        self.define_local_supports()
 
         self.define_outward_normals()
 
@@ -102,13 +103,26 @@ class Cloud(object):
         ## finds the n nearest neighbords of each node
         self.local_supports = {}
 
+        #### BALL TREE METHOD
+        renumb_map = {i:k for i,k in enumerate(self.nodes.keys())}
+        coords = jnp.stack(list(self.nodes.values()), axis=-1).T
+        # ball_tree = KDTree(coords, leaf_size=40, metric='euclidean')
+        ball_tree = BallTree(coords, leaf_size=40, metric='euclidean')
         for i in range(self.N):
-            distances = jnp.zeros((self.N), dtype=jnp.float32)
-            for j in range(self.N):
-                    distances = distances.at[j].set(distance(self.nodes[i], self.nodes[j]))
+            _, neighboorhs = ball_tree.query(coords[i:i+1], k=8)
+            neighboorhs = neighboorhs[0][1:]                    ## Result is a 2d list, with the first el itself
+            self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighboorhs]
 
-            closest_neighbours = jnp.argsort(distances)
-            self.local_supports[i] = closest_neighbours[1:n+1].tolist()      ## node i is closest to itself
+        #### BRUTE FORCE METHOD
+        # for i in range(self.N):
+        #     distances = jnp.zeros((self.N), dtype=jnp.float32)
+        #     for j in range(self.N):
+        #             distances = distances.at[j].set(distance(self.nodes[i], self.nodes[j]))
+
+        #     closest_neighbours = jnp.argsort(distances)
+        #     self.local_supports[i] = closest_neighbours[1:n+1].tolist()      ## node i is closest to itself
+
+
 
 
     def define_outward_normals(self):
