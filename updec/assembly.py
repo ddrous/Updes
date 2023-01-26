@@ -20,16 +20,16 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     grad_rbf = jax.jit(jax.grad(nodal_rbf))
 
     for i in range(N):
-        for j in range(N):          ## TODO: Fix this with only local support
-            if i != j:               ## Non-differentiability. Won't have this problem with local support
+        # for j in range(N):          ## TODO: Fix this with only local support
+        #     if i != j:               ## Non-differentiability. Won't have this problem with local support
+        for j in cloud.local_supports[i]:
+            if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
+                Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
 
-                if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
-                    Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
-
-                elif cloud.node_boundary_types[i] == "n":    ## Neumann node
-                    grad = grad_rbf(cloud.nodes[i], cloud.nodes[j])
-                    normal = cloud.outward_normals[i]
-                    Phi = Phi.at[i, j].set(jnp.dot(grad, normal))
+            elif cloud.node_boundary_types[i] == "n":    ## Neumann node
+                grad = grad_rbf(cloud.nodes[i], cloud.nodes[j])
+                normal = cloud.outward_normals[i]
+                Phi = Phi.at[i, j].set(jnp.dot(grad, normal))
 
     return Phi
 
@@ -90,9 +90,10 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
     for i in range(Ni):
         assert cloud.node_boundary_types[i] == "i", "not an internal node"    ## Internal node
 
-        for j in range(N):  ## TODO: Fix this with only Local support
-            if i != j:      ## Only go through the local support because of non-differentiability at distance r=0.
-                opPhi = opPhi.at[i, j].set(operator(cloud.nodes[i], node=cloud.nodes[j]))
+        # for j in range(N):  ## TODO: Fix this with only Local support
+        #     if i != j:      ## Only go through the local support because of non-differentiability at distance r=0.
+        for j in cloud.local_supports[i]:
+            opPhi = opPhi.at[i, j].set(operator(cloud.nodes[i], node=cloud.nodes[j]))
 
         for j in range(M):
             opP = opP.at[i, j].set(operator(cloud.nodes[i], monomial=j))

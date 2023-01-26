@@ -6,7 +6,7 @@ from updec.utils import distance
 
 
 class Cloud(object):
-    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, noise_seed=None):
+    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, support_size=35, noise_seed=None):
         self.Nx = Nx
         self.Ny = Ny
         self.N = self.Nx*self.Ny
@@ -16,9 +16,9 @@ class Cloud(object):
 
         self.define_node_boundary_types()
 
-        self.define_node_coordinates(noise_seed=noise_seed)
+        self.define_node_coordinates(noise_seed)
 
-        self.define_local_supports()
+        self.define_local_supports(support_size)
 
         self.define_outward_normals()
 
@@ -99,9 +99,10 @@ class Cloud(object):
         self.Ni = self.N - self.Nd - self.Nn
 
 
-    def define_local_supports(self, n=7):
-        ## finds the n nearest neighbords of each node
+    def define_local_supports(self, support_size):
+        ## finds the 'support_size' nearest neighbords of each node
         self.local_supports = {}
+        assert support_size <= self.N-1, "Support size must be strictly less than the number of nodes"
 
         #### BALL TREE METHOD
         renumb_map = {i:k for i,k in enumerate(self.nodes.keys())}
@@ -109,7 +110,7 @@ class Cloud(object):
         # ball_tree = KDTree(coords, leaf_size=40, metric='euclidean')
         ball_tree = BallTree(coords, leaf_size=40, metric='euclidean')
         for i in range(self.N):
-            _, neighboorhs = ball_tree.query(coords[i:i+1], k=8)
+            _, neighboorhs = ball_tree.query(coords[i:i+1], k=support_size+1)
             neighboorhs = neighboorhs[0][1:]                    ## Result is a 2d list, with the first el itself
             self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighboorhs]
 
@@ -187,20 +188,30 @@ class Cloud(object):
 
         sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
-        colours = []
-        for i in range(self.N):
-            if self.node_boundary_types[i] == "i":
-                colours.append("k")
-            elif self.node_boundary_types[i] == "d":
-                colours.append("r")
-            elif self.node_boundary_types[i] == "n":
-                colours.append("g")
 
         ax = fig.add_subplot(1, 1, 1)
-        ax.scatter(x=coords[:, 0], y=coords[:, 1], c=colours, **kwargs)
+
+        # colours = []
+        # for i in range(self.N):
+        #     if self.node_boundary_types[i] == "i":
+        #         colours.append("k")
+        #     elif self.node_boundary_types[i] == "d":
+        #         colours.append("r")
+        #     elif self.node_boundary_types[i] == "n":
+        #         colours.append("g")
+
+        # ax.scatter(x=coords[:, 0], y=coords[:, 1], c=colours, **kwargs)
+
+        # groups = [0, 1, 2]
+        # cdict = dict(zip(["i", "d", "n"], ["k", "r", "g"]))
+        Ni, Nd = self.Ni, self.Nd
+        ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", label="internal", **kwargs)
+        ax.scatter(x=coords[Ni:Ni+Nd, 0], y=coords[Ni:Ni+Nd, 1], c="r", label="dirichlet", **kwargs)
+        ax.scatter(x=coords[Ni+Nd:, 0], y=coords[Ni+Nd:, 1], c="g", label="neumann", **kwargs)
 
         ax.set_xlabel(r'$x$')
         ax.set_ylabel(r'$y$')
+        ax.legend(loc='upper right')
 
         return ax
 
@@ -217,11 +228,12 @@ class Cloud(object):
         if projection == "2d":
             ax = fig.add_subplot(1, 1, 1)
             img = ax.scatter(x=coords[:, 0], y=coords[:, 1], c=field, **kwargs)
-            plt.colorbar(img)
+            fig.colorbar(img)
 
         elif projection == "3d":
             ax = fig.add_subplot(1, 2, 1, projection='3d')
-            ax.plot_trisurf(coords[:, 0], coords[:, 1], field, **kwargs)
+            surf = ax.plot_trisurf(coords[:, 0], coords[:, 1], field, **kwargs)
+            # fig.colorbar(surf, shrink=0.25, aspect=20)
 
         ax.set_xlabel(r'$x$')
         ax.set_ylabel(r'$y$')

@@ -53,6 +53,24 @@ def make_monomial(x, id):
         return x[0]*x[1]
     elif id == 5:
         return x[1]**2
+    elif id == 6:
+        return x[0]**3
+    elif id == 7:
+        return (x[0]**2)*x[1]
+    elif id == 8:
+        return x[0]*(x[1]**2)
+    elif id == 9:
+        return x[1]**3
+    elif id == 10:
+        return x[0]**4
+    elif id == 11:
+        return (x[0]**3)*x[1]
+    elif id == 12:
+        return (x[0]**2)*(x[1]**2)
+    elif id == 13:
+        return x[0]*(x[1]**3)
+    elif id == 14:
+        return x[1]**4
     else:
         pass        ## Higher order monomials not yet supported
 
