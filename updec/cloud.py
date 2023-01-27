@@ -218,21 +218,32 @@ class Cloud(object):
 
     def visualize_field(self, field, projection, ax=None, figsize=(6,5), **kwargs):
         import matplotlib.pyplot as plt
+        import numpy as np
+        from scipy.ndimage.filters import gaussian_filter
 
         sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+        x, y = coords[:, 0], coords[:, 1]
 
         if ax is None:
             fig = plt.figure(figsize=figsize)
 
         if projection == "2d":
             ax = fig.add_subplot(1, 1, 1)
-            img = ax.scatter(x=coords[:, 0], y=coords[:, 1], c=field, **kwargs)
+            # img = ax.scatter(x=coords[:, 0], y=coords[:, 1], c=field, **kwargs)
+            # fig.colorbar(img)
+
+            # img = ax.hexbin(x=x, y=y, C=field, **kwargs)
+            # ax.set_xlim([x.min(), x.max()])
+            # ax.set_ylim([y.min(), y.max()])
+            # fig.colorbar(img)
+
+            img = ax.contourf(x, y, field)
             fig.colorbar(img)
 
         elif projection == "3d":
             ax = fig.add_subplot(1, 2, 1, projection='3d')
-            surf = ax.plot_trisurf(coords[:, 0], coords[:, 1], field, **kwargs)
+            surf = ax.plot_trisurf(x, y, field, **kwargs)
             # fig.colorbar(surf, shrink=0.25, aspect=20)
 
         ax.set_xlabel(r'$x$')
