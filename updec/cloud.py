@@ -216,7 +216,7 @@ class Cloud(object):
         return ax
 
 
-    def visualize_field(self, field, projection, ax=None, figsize=(6,5), **kwargs):
+    def visualize_field(self, field, projection, levels=50, ax=None, figsize=(6,5), **kwargs):
         import matplotlib.pyplot as plt
         import numpy as np
         from scipy.ndimage.filters import gaussian_filter
@@ -238,15 +238,15 @@ class Cloud(object):
             # ax.set_ylim([y.min(), y.max()])
             # fig.colorbar(img)
 
-            img = ax.contourf(x, y, field)
+            img = ax.tricontourf(x, y, field, levels=levels, **kwargs)
             fig.colorbar(img)
 
         elif projection == "3d":
             ax = fig.add_subplot(1, 2, 1, projection='3d')
-            surf = ax.plot_trisurf(x, y, field, **kwargs)
-            # fig.colorbar(surf, shrink=0.25, aspect=20)
+            img = ax.plot_trisurf(x, y, field, **kwargs)
+            # fig.colorbar(img, shrink=0.25, aspect=20)
 
         ax.set_xlabel(r'$x$')
         ax.set_ylabel(r'$y$')
 
-        return ax
+        return ax, img
