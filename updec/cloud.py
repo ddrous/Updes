@@ -73,16 +73,16 @@ class Cloud(object):
 
         for i in range(self.N):
             [k, l] = list(self.global_indices_rev[i])
-            if l == 0:            ## Surface number 1
+            if l == 0:            ## Surface number 0
                 self.facet_nodes[0].append(i)
                 self.node_boundary_types[i] = self.facet_types[0]
-            elif k == 0:              ## Surface number 2
+            elif k == 0:              ## Surface number 1
                 self.facet_nodes[1].append(i)
                 self.node_boundary_types[i] = self.facet_types[1]
-            elif l == self.Ny-1:    ## Surface number 3
+            elif l == self.Ny-1:    ## Surface number 2
                 self.facet_nodes[2].append(i)
                 self.node_boundary_types[i] = self.facet_types[2]
-            elif k == self.Nx-1:    ## Surface number 4
+            elif k == self.Nx-1:    ## Surface number 3
                 self.facet_nodes[3].append(i)
                 self.node_boundary_types[i] = self.facet_types[3]
             else:
@@ -250,3 +250,84 @@ class Cloud(object):
         ax.set_ylabel(r'$y$')
 
         return ax, img
+
+
+
+
+class CloudFromGmsh:
+
+    def __init__(self, filename, facet_types):
+
+        f = open(filename, "r")
+
+        #--- Facet names mesh nodes ---#
+        line = f.readline()
+        while line.find("$PhysicalNames") < 0: line = f.readline()
+        splitline = f.readline().split()
+
+        facet_ids = {}
+        nb_facets = int(splitline[0]) - 1
+        for facet in range(nb_facets):
+            splitline = f.readline().split()
+            facet_ids[splitline[2]] = splitline[1]
+
+        #--- Reading mesh nodes ---#
+        line = f.readline()
+        while line.find("$Nodes") < 0: line = f.readline()
+        splitline = f.readline().split()
+
+        import numpy as np
+        self.N = int(splitline[1])
+        self.nodes = {}
+        self.facet_nodes = {}
+        self.node_boundary_types = {}
+
+        line = f.readline()
+        while line.find("$EndNodes") < 0:
+            splitline = line.split()
+            nb = int(splitline[-1])
+            f_id = int(splitline[0])
+            dim = int(splitline[1])
+
+            for i in range(nb):
+                splitline = f.readline().split()
+                tag = int(splitline[0]) - 1
+                x = float(splitline[1])
+                y = float(splitline[2])
+                z = float(splitline[3])
+
+                self.Nodes[tag, 0], self.Nodes[tag, 1] = x, y
+                self.label[tag] = dim
+
+            line = f.readline()
+
+        # --- Lecture des éléments du maillage ---#
+        while line.find("$Elements") < 0: line = f.readline()
+        f.readline()
+
+        line = f.readline()
+        while line.find("$EndElements") < 0:
+            splitline = line.split()
+            nb = int(splitline[-1])
+            dim = int(splitline[1])
+
+            # Lecture des éléments 2D (triangle) uniquement
+            if dim == 2:
+                self.Nel = nb
+                self.connect = np.empty((nb, 3), dtype=int)
+                self.area = np.zeros(nb, dtype=float)
+                self.diam = np.zeros(nb, dtype=float)
+
+                for i in range(nb):
+                    pass
+                    # à compléter
+
+
+            else:
+                for i in range(nb): f.readline()
+
+            line = f.readline()
+
+
+if __name__ == '__main__':
+    mesh2d("./meshes/disk.msh")
