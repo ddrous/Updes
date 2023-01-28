@@ -84,7 +84,7 @@ class Cloud(object):
         # groups = [0, 1, 2]
         # cdict = dict(zip(["i", "d", "n"], ["k", "r", "g"]))
         Ni, Nd, Nn = self.Ni, self.Nd, self.Nn
-        ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", label="internal", **kwargs)
+        ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", s=15, label="internal", **kwargs)
         ax.scatter(x=coords[Ni:Ni+Nd, 0], y=coords[Ni:Ni+Nd, 1], c="r", label="dirichlet", **kwargs)
         ax.scatter(x=coords[Ni+Nd:Ni+Nd+Nn, 0], y=coords[Ni+Nd:Ni+Nd+Nn, 1], c="g", label="neumann", **kwargs)
         ax.scatter(x=coords[Ni+Nd+Nn:, 0], y=coords[Ni+Nd+Nn:, 1], c="b", label="robin", **kwargs)
@@ -288,6 +288,7 @@ class SquareCloud(Cloud):
 
 
 class GmshCloud(Cloud):
+    """ Parses gmsh format 4.0.8, not the newer version """
 
     def __init__(self, filename, facet_types):
 
@@ -307,16 +308,28 @@ class GmshCloud(Cloud):
 
         f = open(self.filename, "r")
 
-        #--- Facet names mesh nodes ---#
+        #--- Facet names ---#
         line = f.readline()
         while line.find("$PhysicalNames") < 0: line = f.readline()
         splitline = f.readline().split()
 
-        self.facet_names = {}
+        facet_physical_names = {}
         nb_facets = int(splitline[0]) - 1
         for facet in range(nb_facets):
             splitline = f.readline().split()
-            self.facet_names[int(splitline[1])-1] = (splitline[2])[1:-1]    ## Removes quotes
+            facet_physical_names[int(splitline[1])] = (splitline[2])[1:-1]    ## Removes quotes
+
+        #--- Physical names to entities ---#
+        self.facet_names = {}
+        line = f.readline()
+        while line.find("$Entities") < 0: line = f.readline()
+        splitline = f.readline().split()
+        n_vertices, n_facets = int(splitline[0]), int(splitline[1])
+        for _ in range(n_vertices):
+            line = f.readline()     ## Skip the vertices
+        for _ in range(n_facets):
+            splitline = f.readline().split()     ## Skip the vertices
+            self.facet_names[int(splitline[0])] = facet_physical_names[int(splitline[-4])]
 
         #--- Reading mesh nodes ---#
         line = f.readline()
@@ -333,7 +346,7 @@ class GmshCloud(Cloud):
         line = f.readline()
         while line.find("$EndNodes") < 0:
             splitline = line.split()
-            entity_id = int(splitline[0]) - 1
+            entity_id = int(splitline[0])
             dim = int(splitline[1])
             nb = int(splitline[-1])
             facet_nodes = []
@@ -369,7 +382,7 @@ class GmshCloud(Cloud):
         line = f.readline()
         while line.find("$EndElements") < 0:
             splitline = line.split()
-            entity_id = int(splitline[0]) - 1
+            entity_id = int(splitline[0])
             dim = int(splitline[1])
             nb = int(splitline[-1])
 
@@ -420,13 +433,3 @@ class GmshCloud(Cloud):
             else:                                   ## The normal is pointing outward
                 for j in f_nodes:
                     self.outward_normals[j] = normal / jnp.linalg.norm(normal)
-
-
-
-
-
-
-if __name__ == '__main__':
-    cloud = GmshCloud("../examples/direct-adjoint-looping/meshes/triangle.msh", facet_types={"Dirichlet":"d", "Robin":"r", "Neumann":"n"})
-
-    print(cloud.facet_nodes)
