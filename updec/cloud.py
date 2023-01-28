@@ -2,11 +2,148 @@ import jax
 import jax.numpy as jnp
 from sklearn.neighbors import BallTree
 
-from updec.utils import distance
-
 
 class Cloud(object):
+    def __init__(self):
+        self.N = 0 
+        self.Ni = 0
+        self.Nd = 0
+        self.Nr = 0
+        self.Nn = 0
+        self.nodes = {}
+        self.outward_normals = {}
+        self.node_boundary_types = {}
+        self.facet_types = {}
+        self.facet_nodes = {}
+        # self.facet_names = {}
+
+    def renumber_nodes(self):
+        """ Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards """
+
+        i_nodes = []
+        d_nodes = []
+        n_nodes = []
+        r_nodes = []
+        for i in range(self.N):         
+            if self.node_boundary_types[i] == "i":
+                i_nodes.append(i)
+            elif self.node_boundary_types[i] == "d":
+                d_nodes.append(i)
+            elif self.node_boundary_types[i] == "n":
+                n_nodes.append(i)
+            elif self.node_boundary_types[i] == "r":
+                r_nodes.append(i)
+
+        new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes+r_nodes)}       ## Reads as: node k is now node v
+
+        if hasattr(self, "global_indices_rev"):
+            self.global_indices_rev = {new_numb[k]: v for k, v in self.global_indices_rev.items()}
+        if hasattr(self, "global_indices"):
+            for i, (k, l) in self.global_indices_rev.items():
+                self.global_indices = self.global_indices.at[k, l].set(i)
+
+        self.node_boundary_types = {new_numb[k]:v for k,v in self.node_boundary_types.items()}
+        self.nodes = {new_numb[k]:v for k,v in self.nodes.items()}
+
+        if hasattr(self, 'local_supports'):
+            self.local_supports = jax.tree_util.tree_map(lambda i:new_numb[i], self.local_supports)
+            self.local_supports = {new_numb[k]:v for k,v in self.local_supports.items()}
+
+        self.facet_nodes = jax.tree_util.tree_map(lambda i:new_numb[i], self.facet_nodes)
+
+        if hasattr(self, 'outward_normals'):
+            self.outward_normals = {new_numb[k]:v for k,v in self.outward_normals.items()}
+
+        self.renumbering_map = new_numb
+
+
+
+    def visualize_cloud(self, ax=None, figsize=(6,5), **kwargs):
+        import matplotlib.pyplot as plt
+        ## TODO Color and print important stuff appropriately
+
+        if ax is None:
+            fig = plt.figure(figsize=figsize)
+
+        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
+        coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+
+        ax = fig.add_subplot(1, 1, 1)
+
+        # colours = []
+        # for i in range(self.N):
+        #     if self.node_boundary_types[i] == "i":
+        #         colours.append("k")
+        #     elif self.node_boundary_types[i] == "d":
+        #         colours.append("r")
+        #     elif self.node_boundary_types[i] == "n":
+        #         colours.append("g")
+
+        # ax.scatter(x=coords[:, 0], y=coords[:, 1], c=colours, **kwargs)
+
+        # groups = [0, 1, 2]
+        # cdict = dict(zip(["i", "d", "n"], ["k", "r", "g"]))
+        Ni, Nd, Nn = self.Ni, self.Nd, self.Nn
+        ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", label="internal", **kwargs)
+        ax.scatter(x=coords[Ni:Ni+Nd, 0], y=coords[Ni:Ni+Nd, 1], c="r", label="dirichlet", **kwargs)
+        ax.scatter(x=coords[Ni+Nd:Ni+Nd+Nn, 0], y=coords[Ni+Nd:Ni+Nd+Nn, 1], c="g", label="neumann", **kwargs)
+        ax.scatter(x=coords[Ni+Nd+Nn:, 0], y=coords[Ni+Nd+Nn:, 1], c="b", label="robin", **kwargs)
+
+        ax.set_xlabel(r'$x$')
+        ax.set_ylabel(r'$y$')
+        ax.legend(loc='upper right')
+
+        return ax
+
+
+    def visualize_field(self, field, projection, levels=50, ax=None, figsize=(6,5), **kwargs):
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from scipy.ndimage.filters import gaussian_filter
+
+        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
+        coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+        x, y = coords[:, 0], coords[:, 1]
+
+        if ax is None:
+            fig = plt.figure(figsize=figsize)
+
+        if projection == "2d":
+            ax = fig.add_subplot(1, 1, 1)
+            # img = ax.scatter(x=coords[:, 0], y=coords[:, 1], c=field, **kwargs)
+            # fig.colorbar(img)
+
+            # img = ax.hexbin(x=x, y=y, C=field, **kwargs)
+            # ax.set_xlim([x.min(), x.max()])
+            # ax.set_ylim([y.min(), y.max()])
+            # fig.colorbar(img)
+
+            img = ax.tricontourf(x, y, field, levels=levels, **kwargs)
+            fig.colorbar(img)
+
+        elif projection == "3d":
+            ax = fig.add_subplot(1, 2, 1, projection='3d')
+            img = ax.plot_trisurf(x, y, field, **kwargs)
+            # fig.colorbar(img, shrink=0.25, aspect=20)
+
+        ax.set_xlabel(r'$x$')
+        ax.set_ylabel(r'$y$')
+
+        return ax, img
+
+
+
+
+
+
+
+
+
+
+class SquareCloud(Cloud):
     def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, support_size=35, noise_seed=None):
+        super().__init__()
+
         self.Nx = Nx
         self.Ny = Ny
         self.N = self.Nx*self.Ny
@@ -125,7 +262,6 @@ class Cloud(object):
 
 
 
-
     def define_outward_normals(self):
         ## Makes the outward normal vectors to boundaries
         neumann_nodes = [k for k,v in self.node_boundary_types.items() if v=="n"]   ## Neumann nodes
@@ -145,131 +281,42 @@ class Cloud(object):
             self.outward_normals[int(self.global_indices[k,l])] = n
 
 
-    def renumber_nodes(self):
-        """ Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards """
-
-        i_nodes = []
-        d_nodes = []
-        n_nodes = []
-        for i in range(self.N):         
-            if self.node_boundary_types[i] == "i":
-                i_nodes.append(i)
-            elif self.node_boundary_types[i] == "d":
-                d_nodes.append(i)
-            elif self.node_boundary_types[i] == "n":
-                n_nodes.append(i)
-
-        new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes)}       ## Reads as: node k is now node v
-
-        self.global_indices_rev = {new_numb[k]: v for k, v in self.global_indices_rev.items()}
-        for i, (k, l) in self.global_indices_rev.items():
-            self.global_indices = self.global_indices.at[k, l].set(i)
-
-        self.node_boundary_types = {new_numb[k]:v for k,v in self.node_boundary_types.items()}
-        self.nodes = {new_numb[k]:v for k,v in self.nodes.items()}
-
-        if hasattr(self, 'local_supports'):
-            self.local_supports = jax.tree_util.tree_map(lambda i:new_numb[i], self.local_supports)
-            self.local_supports = {new_numb[k]:v for k,v in self.local_supports.items()}
-
-        self.facet_nodes = jax.tree_util.tree_map(lambda i:new_numb[i], self.facet_nodes)
-
-        self.outward_normals = {new_numb[k]:v for k,v in self.outward_normals.items()}
-
-        self.renumbering_map = new_numb
-
-
-    def visualize_cloud(self, ax=None, figsize=(6,5), **kwargs):
-        import matplotlib.pyplot as plt
-        ## TODO Color and print important stuff appropriately
-
-        if ax is None:
-            fig = plt.figure(figsize=figsize)
-
-        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
-        coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
-
-        ax = fig.add_subplot(1, 1, 1)
-
-        # colours = []
-        # for i in range(self.N):
-        #     if self.node_boundary_types[i] == "i":
-        #         colours.append("k")
-        #     elif self.node_boundary_types[i] == "d":
-        #         colours.append("r")
-        #     elif self.node_boundary_types[i] == "n":
-        #         colours.append("g")
-
-        # ax.scatter(x=coords[:, 0], y=coords[:, 1], c=colours, **kwargs)
-
-        # groups = [0, 1, 2]
-        # cdict = dict(zip(["i", "d", "n"], ["k", "r", "g"]))
-        Ni, Nd = self.Ni, self.Nd
-        ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", label="internal", **kwargs)
-        ax.scatter(x=coords[Ni:Ni+Nd, 0], y=coords[Ni:Ni+Nd, 1], c="r", label="dirichlet", **kwargs)
-        ax.scatter(x=coords[Ni+Nd:, 0], y=coords[Ni+Nd:, 1], c="g", label="neumann", **kwargs)
-
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$y$')
-        ax.legend(loc='upper right')
-
-        return ax
-
-
-    def visualize_field(self, field, projection, levels=50, ax=None, figsize=(6,5), **kwargs):
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from scipy.ndimage.filters import gaussian_filter
-
-        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
-        coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
-        x, y = coords[:, 0], coords[:, 1]
-
-        if ax is None:
-            fig = plt.figure(figsize=figsize)
-
-        if projection == "2d":
-            ax = fig.add_subplot(1, 1, 1)
-            # img = ax.scatter(x=coords[:, 0], y=coords[:, 1], c=field, **kwargs)
-            # fig.colorbar(img)
-
-            # img = ax.hexbin(x=x, y=y, C=field, **kwargs)
-            # ax.set_xlim([x.min(), x.max()])
-            # ax.set_ylim([y.min(), y.max()])
-            # fig.colorbar(img)
-
-            img = ax.tricontourf(x, y, field, levels=levels, **kwargs)
-            fig.colorbar(img)
-
-        elif projection == "3d":
-            ax = fig.add_subplot(1, 2, 1, projection='3d')
-            img = ax.plot_trisurf(x, y, field, **kwargs)
-            # fig.colorbar(img, shrink=0.25, aspect=20)
-
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$y$')
-
-        return ax, img
 
 
 
 
-class CloudFromGmsh:
+
+
+class GmshCloud(Cloud):
 
     def __init__(self, filename, facet_types):
 
-        f = open(filename, "r")
+        super().__init__()
+
+        self.filename = filename
+        self.facet_types = facet_types
+
+        self.extract_nodes_and_boundary_type()
+        self.define_outward_normals()
+        self.renumber_nodes()
+
+
+
+    def extract_nodes_and_boundary_type(self):
+        """ Extract nodes and all boundary types """
+
+        f = open(self.filename, "r")
 
         #--- Facet names mesh nodes ---#
         line = f.readline()
         while line.find("$PhysicalNames") < 0: line = f.readline()
         splitline = f.readline().split()
 
-        facet_ids = {}
+        self.facet_names = {}
         nb_facets = int(splitline[0]) - 1
         for facet in range(nb_facets):
             splitline = f.readline().split()
-            facet_ids[splitline[2]] = splitline[1]
+            self.facet_names[int(splitline[1])-1] = (splitline[2])[1:-1]    ## Removes quotes
 
         #--- Reading mesh nodes ---#
         line = f.readline()
@@ -281,23 +328,37 @@ class CloudFromGmsh:
         self.nodes = {}
         self.facet_nodes = {}
         self.node_boundary_types = {}
+        corner_nodes = []
 
         line = f.readline()
         while line.find("$EndNodes") < 0:
             splitline = line.split()
-            nb = int(splitline[-1])
-            f_id = int(splitline[0])
+            entity_id = int(splitline[0]) - 1
             dim = int(splitline[1])
+            nb = int(splitline[-1])
+            facet_nodes = []
 
             for i in range(nb):
                 splitline = f.readline().split()
-                tag = int(splitline[0]) - 1
+                node_id = int(splitline[0]) - 1
                 x = float(splitline[1])
                 y = float(splitline[2])
                 z = float(splitline[3])
 
-                self.Nodes[tag, 0], self.Nodes[tag, 1] = x, y
-                self.label[tag] = dim
+                self.nodes[node_id] = jnp.array([x, y])
+
+                if dim==0: ## A corner point
+                    corner_nodes.append(node_id)
+
+                elif dim==1:  ## A curve
+                    self.node_boundary_types[node_id] = self.facet_types[self.facet_names[entity_id]]
+                    facet_nodes.append(node_id)
+
+                elif dim==2:  ## A surface
+                    self.node_boundary_types[node_id] = "i"
+
+            if dim==1:
+                self.facet_nodes[self.facet_names[entity_id]] = facet_nodes
 
             line = f.readline()
 
@@ -308,26 +369,64 @@ class CloudFromGmsh:
         line = f.readline()
         while line.find("$EndElements") < 0:
             splitline = line.split()
-            nb = int(splitline[-1])
+            entity_id = int(splitline[0]) - 1
             dim = int(splitline[1])
+            nb = int(splitline[-1])
 
-            # Lecture des éléments 2D (triangle) uniquement
-            if dim == 2:
-                self.Nel = nb
-                self.connect = np.empty((nb, 3), dtype=int)
-                self.area = np.zeros(nb, dtype=float)
-                self.diam = np.zeros(nb, dtype=float)
-
+            if dim == 1:
                 for i in range(nb):
-                    pass
-                    # à compléter
+                    splitline = [int(n_id)-1 for n_id in f.readline().split()]
 
+                    for c_node_id in corner_nodes:
+
+                        if c_node_id in splitline:
+                            for neighboor in splitline:
+                                if neighboor != c_node_id:
+                                    self.node_boundary_types[c_node_id] = self.facet_types[self.facet_names[entity_id]]
+                                    self.facet_nodes[self.facet_names[entity_id]].append(c_node_id)
+                                    break
+
+                            corner_nodes.remove(c_node_id)
 
             else:
                 for i in range(nb): f.readline()
 
             line = f.readline()
 
+        f.close()
+        self.Ni = len({k:v for k,v in self.node_boundary_types.items() if v=="i"})
+        self.Nd = len({k:v for k,v in self.node_boundary_types.items() if v=="d"})
+        self.Nr = len({k:v for k,v in self.node_boundary_types.items() if v=="r"})
+        self.Nn = len({k:v for k,v in self.node_boundary_types.items() if v=="n"})
+
+
+
+    def define_outward_normals(self):
+        ## Use the Gmesh API        https://stackoverflow.com/a/59279502/8140182
+
+        for i in range(self.N):
+            if self.node_boundary_types[i] == "i":
+                i_point = self.nodes[i]     ## An interior poitn for testing
+                break
+
+        for f_name, f_nodes in self.facet_nodes.items():
+            in_vector = i_point - self.nodes[f_nodes[0]]        ## An inward pointing vector
+            tangent = self.nodes[f_nodes[1]] - self.nodes[f_nodes[0]]       ## A tangent vector
+
+            normal = jnp.array([-tangent[1], tangent[0]])
+            if jnp.dot(normal, in_vector) > 0:      ## The normal is pointing inward
+                for j in f_nodes:
+                    self.outward_normals[j] = -normal / jnp.linalg.norm(normal)
+            else:                                   ## The normal is pointing outward
+                for j in f_nodes:
+                    self.outward_normals[j] = normal / jnp.linalg.norm(normal)
+
+
+
+
+
 
 if __name__ == '__main__':
-    mesh2d("./meshes/disk.msh")
+    cloud = GmshCloud("../examples/direct-adjoint-looping/meshes/triangle.msh", facet_types={"Dirichlet":"d", "Robin":"r", "Neumann":"n"})
+
+    print(cloud.facet_nodes)
