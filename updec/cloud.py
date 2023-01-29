@@ -17,7 +17,7 @@ class Cloud(object):
         self.facet_nodes = {}
         # self.facet_names = {}
 
-    def sort_jnp_nodes(self):       ## LRU cache this, or turn it into @Property
+    def sort_nodes_jnp(self):       ## LRU cache this, or turn it into @Property
         """ Return numpy arrays """
         sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         return jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T

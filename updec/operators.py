@@ -68,35 +68,42 @@ def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_d
     lambdas = coefficients[:N]
     gammas = coefficients[N:]
 
-    return lambdas, gammas
+    return lambdas[:, jnp.newaxis], gammas[:, jnp.newaxis]
 
 
 def gradient(x, field, cloud:Cloud, rbf=None, max_degree=2):
     """ Computes the gradient of field quantity s at position x """
     ## Find coefficients for s on the cloud
     lambdas, gammas = compute_coefficients(field, cloud, rbf, max_degree)
-    sorted_nodes = cloud.sort_jnp_nodes
-    monomial_ids = jnp.arange(0, gammas.shape[0])
 
     ## Now, compute the gradient of the field
-    # final_grad = jnp.array([0.,0.])
+    final_grad = jnp.array([0.,0.])
 
-    # for j in range(lambdas.shape[0]):               ### TODO: Use VMAP here and SUM afterwards
-    #     node_j = cloud.nodes[j]
-    #     # if jnp.all(x==node_j):      ## Non-differentiable case
-    #     #     continue
-    #     rbf_grad = nodal_gradient(x, node=node_j, rbf=rbf)
-    #     final_grad = final_grad.at[:].add(lambdas[j] * rbf_grad)
+    ################################        ATTEMPT TO VECTORIZE ... TODO Only rbf works, nor monom. and still, with nans
+    # sorted_nodes = cloud.sort_nodes_jnp()
+    # monomial_ids = jnp.arange(gammas.shape[0])
 
-    # for j in range(gammas.shape[0]):
-    #     polynomial_grad = nodal_gradient(x, monomial=j)
-    #     final_grad = final_grad.at[:].add(gammas[j] * polynomial_grad)
+    # nodal_grad_vec_rbf = jax.vmap(nodal_gradient, in_axes=(None, 0, None, None), out_axes=0)
+    # nodal_grad_vec_mon = jax.vmap(nodal_gradient, in_axes=(None, None, 0, None), out_axes=0)
 
-    nodal_grad_vec_rbf = jax.vmap(nodal_gradient, in_axes=(None, 0, None, None), out_axes=0)
-    nodal_grad_vec_mon = jax.vmap(nodal_gradient, in_axes=(None, None, 0, None), out_axes=0)
+    # nodal_grads = nodal_grad_vec_rbf(x, sorted_nodes, None, rbf)
+    # monom_grads = nodal_grad_vec_mon(x, None, monomial_ids, None)
 
-    final_grad = final_grad.at[:].add(jnp.sum(lambdas*nodal_grad_vec_rbf(x, sorted_nodes), axis=0))
-    final_grad = final_grad.at[:].add(jnp.sum(gammas*nodal_grad_vec_mon(x, monomial_ids), axis=0))
+    # final_grad = final_grad.at[:].add(jnp.sum(lambdas * nodal_grads, axis=0))
+    # final_grad = final_grad.at[:].add(jnp.sum(gammas * monom_grads, axis=0))
+    ################################
+
+    for j in range(lambdas.shape[0]):
+        node_j = cloud.nodes[j]
+        # if jnp.all(x==node_j):      ## Non-differentiable case
+        #     continue
+        # rbf_grad = nodal_gradient(x, node=node_j, rbf=rbf)
+        rbf_grad = jnp.where(jnp.all(x==node_j), 0., nodal_gradient(x, node=node_j, rbf=rbf))       ## To account for non-differentiable case
+        final_grad = final_grad.at[:].add(lambdas[j] * rbf_grad)
+
+    for j in range(gammas.shape[0]):                                                   ### TODO: Use VMAP to vectorise this too !!
+        polynomial_grad = nodal_gradient(x, monomial=j)
+        final_grad = final_grad.at[:].add(gammas[j] * polynomial_grad)
 
     return final_grad
 
@@ -118,9 +125,8 @@ def laplacian(x, field, cloud, rbf=None, max_degree=2):
     final_lap = jnp.array([0.])
     for j in range(lambdas.shape[0]):
         node_j = cloud.nodes[j]
-        if jnp.all(x==node_j):      ## Non-differentiable case !! TODO !! 
-            continue
-        rbf_lap = nodal_laplacian(x, node=node_j, rbf=rbf)
+        # rbf_lap = nodal_laplacian(x, node=node_j, rbf=rbf)
+        rbf_lap = jnp.where(jnp.all(x==node_j), 0., nodal_laplacian(x, node=node_j, rbf=rbf))
         final_lap = final_lap.at[:].add(lambdas[j] * rbf_lap)
 
     for j in range(gammas.shape[0]):
