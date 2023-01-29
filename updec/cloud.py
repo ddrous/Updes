@@ -17,6 +17,36 @@ class Cloud(object):
         self.facet_nodes = {}
         # self.facet_names = {}
 
+    def sort_jnp_nodes(self):       ## LRU cache this, or turn it into @Property
+        """ Return numpy arrays """
+        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
+        return jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+
+    def define_local_supports(self, support_size):
+        ## finds the 'support_size' nearest neighbords of each node
+        self.local_supports = {}
+        assert support_size <= self.N-1, "Support size must be strictly less than the number of nodes"
+
+        #### BALL TREE METHOD
+        renumb_map = {i:k for i,k in enumerate(self.nodes.keys())}
+        coords = jnp.stack(list(self.nodes.values()), axis=-1).T
+        # ball_tree = KDTree(coords, leaf_size=40, metric='euclidean')
+        ball_tree = BallTree(coords, leaf_size=40, metric='euclidean')
+        for i in range(self.N):
+            _, neighboorhs = ball_tree.query(coords[i:i+1], k=support_size+1)
+            neighboorhs = neighboorhs[0][1:]                    ## Result is a 2d list, with the first el itself
+            self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighboorhs]
+
+        #### BRUTE FORCE METHOD
+        # for i in range(self.N):
+        #     distances = jnp.zeros((self.N), dtype=jnp.float32)
+        #     for j in range(self.N):
+        #             distances = distances.at[j].set(distance(self.nodes[i], self.nodes[j]))
+
+        #     closest_neighbours = jnp.argsort(distances)
+        #     self.local_supports[i] = closest_neighbours[1:n+1].tolist()      ## node i is closest to itself
+
+
     def renumber_nodes(self):
         """ Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards """
 
@@ -98,8 +128,6 @@ class Cloud(object):
 
     def visualize_field(self, field, projection, levels=50, ax=None, figsize=(6,5), **kwargs):
         import matplotlib.pyplot as plt
-        import numpy as np
-        from scipy.ndimage.filters import gaussian_filter
 
         sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
@@ -194,7 +222,7 @@ class SquareCloud(Cloud):
             for j in range(self.Ny):
                 global_id = int(self.global_indices[i,j])
 
-                if self.node_boundary_types[global_id] not in ["d", "n"]:
+                if (self.node_boundary_types[global_id] not in ["d", "n"]) and (noise_seed is not None):
                     noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)         ## Just add some noisy noise !!
                 else:
                     noise = jnp.zeros((2,))
@@ -211,17 +239,17 @@ class SquareCloud(Cloud):
         for i in range(self.N):
             [k, l] = list(self.global_indices_rev[i])
             if l == 0:            ## Surface number 0
-                self.facet_nodes[0].append(i)
-                self.node_boundary_types[i] = self.facet_types[0]
+                self.facet_nodes["south"].append(i)
+                self.node_boundary_types[i] = self.facet_types["south"]
             elif k == 0:              ## Surface number 1
-                self.facet_nodes[1].append(i)
-                self.node_boundary_types[i] = self.facet_types[1]
+                self.facet_nodes["west"].append(i)
+                self.node_boundary_types[i] = self.facet_types["west"]
             elif l == self.Ny-1:    ## Surface number 2
-                self.facet_nodes[2].append(i)
-                self.node_boundary_types[i] = self.facet_types[2]
+                self.facet_nodes["north"].append(i)
+                self.node_boundary_types[i] = self.facet_types["north"]
             elif k == self.Nx-1:    ## Surface number 3
-                self.facet_nodes[3].append(i)
-                self.node_boundary_types[i] = self.facet_types[3]
+                self.facet_nodes["east"].append(i)
+                self.node_boundary_types[i] = self.facet_types["east"]
             else:
                 self.node_boundary_types[i] = "i"       ## Internal node (not a boundary). But very very important!
 
@@ -234,33 +262,6 @@ class SquareCloud(Cloud):
                 self.Nn += len(self.facet_nodes[f_id])
 
         self.Ni = self.N - self.Nd - self.Nn
-
-
-    def define_local_supports(self, support_size):
-        ## finds the 'support_size' nearest neighbords of each node
-        self.local_supports = {}
-        assert support_size <= self.N-1, "Support size must be strictly less than the number of nodes"
-
-        #### BALL TREE METHOD
-        renumb_map = {i:k for i,k in enumerate(self.nodes.keys())}
-        coords = jnp.stack(list(self.nodes.values()), axis=-1).T
-        # ball_tree = KDTree(coords, leaf_size=40, metric='euclidean')
-        ball_tree = BallTree(coords, leaf_size=40, metric='euclidean')
-        for i in range(self.N):
-            _, neighboorhs = ball_tree.query(coords[i:i+1], k=support_size+1)
-            neighboorhs = neighboorhs[0][1:]                    ## Result is a 2d list, with the first el itself
-            self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighboorhs]
-
-        #### BRUTE FORCE METHOD
-        # for i in range(self.N):
-        #     distances = jnp.zeros((self.N), dtype=jnp.float32)
-        #     for j in range(self.N):
-        #             distances = distances.at[j].set(distance(self.nodes[i], self.nodes[j]))
-
-        #     closest_neighbours = jnp.argsort(distances)
-        #     self.local_supports[i] = closest_neighbours[1:n+1].tolist()      ## node i is closest to itself
-
-
 
     def define_outward_normals(self):
         ## Makes the outward normal vectors to boundaries
@@ -290,7 +291,7 @@ class SquareCloud(Cloud):
 class GmshCloud(Cloud):
     """ Parses gmsh format 4.0.8, not the newer version """
 
-    def __init__(self, filename, facet_types):
+    def __init__(self, filename, facet_types, support_size=7):
 
         super().__init__()
 
@@ -299,6 +300,7 @@ class GmshCloud(Cloud):
 
         self.extract_nodes_and_boundary_type()
         self.define_outward_normals()
+        self.define_local_supports(support_size)
         self.renumber_nodes()
 
 
@@ -424,6 +426,7 @@ class GmshCloud(Cloud):
 
         for f_name, f_nodes in self.facet_nodes.items():
             in_vector = i_point - self.nodes[f_nodes[0]]        ## An inward pointing vector
+            assert len(f_nodes)>1, " Mesh not fine enough for normal computation "
             tangent = self.nodes[f_nodes[1]] - self.nodes[f_nodes[0]]       ## A tangent vector
 
             normal = jnp.array([-tangent[1], tangent[0]])

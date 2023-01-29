@@ -1,6 +1,6 @@
 // Gmsh project created on Sat Jan 28 2023
 
-h=0.1;
+h=0.25;
 Lx=1.5;
 Ly=1;
 

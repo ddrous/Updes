@@ -15,8 +15,8 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
 
     N = cloud.N
     Phi = jnp.zeros((N, N), dtype=jnp.float32)
-    # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))
-    nodal_rbf = partial(make_nodal_rbf, rbf=rbf)
+    # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))         
+    nodal_rbf = partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
     grad_rbf = jax.jit(jax.grad(nodal_rbf))
 
     for i in range(N):
@@ -75,7 +75,7 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 
 
 
-def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
+def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, *args):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
 
@@ -87,21 +87,26 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int):
     opPhi = jnp.zeros((Ni, N), dtype=jnp.float32)
     opP = jnp.zeros((Ni, M), dtype=jnp.float32)
 
+    if len(args) > 0:
+        fields = jnp.stack(args, axis=-1)
+    else:
+        fields = jnp.ones((N,1))     ## TODO Won't be used tho. FIx this !
+
     for i in range(Ni):
         assert cloud.node_boundary_types[i] == "i", "not an internal node"    ## Internal node
 
         # for j in range(N):  ## TODO: Fix this with only Local support
         #     if i != j:      ## Only go through the local support because of non-differentiability at distance r=0.
         for j in cloud.local_supports[i]:
-            opPhi = opPhi.at[i, j].set(operator(cloud.nodes[i], node=cloud.nodes[j]))
+            opPhi = opPhi.at[i, j].set(operator(cloud.nodes[i], cloud.nodes[j], None, *fields[i].tolist()))
 
         for j in range(M):
-            opP = opP.at[i, j].set(operator(cloud.nodes[i], monomial=j))
+            opP = opP.at[i, j].set(operator(cloud.nodes[i], None, j, *fields[i].tolist()))
 
     return opPhi, opP
 
 
-def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int):
+def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *args):
     """ Assemble B using opPhi, P, and A """
 
     # operator = jax.jit(operator)
@@ -110,7 +115,7 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int):
     M = compute_nb_monomials(max_degree, 2)
 
     Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, M)
-    opPhi, opP = assemble_op_Phi_P(operator, cloud, M)
+    opPhi, opP = assemble_op_Phi_P(operator, cloud, M, *args)
 
     full_opPhi = jnp.zeros((N, N), dtype=jnp.float32)
     full_opP = jnp.zeros((N, M), dtype=jnp.float32)
