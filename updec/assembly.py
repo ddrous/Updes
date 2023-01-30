@@ -128,7 +128,10 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
 
     diffMat = jnp.concatenate((full_opPhi, full_opP), axis=-1)
 
+    # with jax.debug_nans:
+    # epsdiag = jnp.diag(jnp.full((N+M,), 1e-10))         ## TODO: What is support size too small. To avoid 0 on diagonals: https://github.com/google/jax/issues/646#issuecomment-487691861
     A = assemble_A(cloud, rbf, M)
+
     inv_A = jnp.linalg.inv(A)
     B = diffMat @ inv_A
 
@@ -146,7 +149,7 @@ def assemble_q(operator:callable, cloud:Cloud, boundary_functions:dict):
     Ni = cloud.Ni
     q = jnp.zeros((N,))
 
-    for i in range(Ni):
+    for i in range(Ni):              ## TODO: Vectorise this with VMAP. it's sucking a lot of time
         assert cloud.node_boundary_types[i]=="i", "not an internal node"
         q = q.at[i].set(operator(cloud.nodes[i]))
 

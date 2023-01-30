@@ -136,7 +136,7 @@ def laplacian(x, field, cloud, rbf=None, max_degree=2):
     return final_lap[0]
 
 
-## Devise different LU LDL decomposition strategies make functions here
+## Devise different LU, LDL decomposition strategies make functions here
 def pde_solver(nodal_operator:callable, 
                 global_operator:callable, 
                 cloud:Cloud, 
