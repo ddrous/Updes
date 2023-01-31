@@ -12,7 +12,7 @@ setup(
    description='A package for meshless and data-driven PDE modelling and control',
    long_description=open('README.md', encoding="utf-8").read(),
    install_requires=[
-       "jax >= 0.4.1",
+       "jax >= 0.3.4",
        "pytest",
    ],
 )

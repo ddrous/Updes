@@ -169,7 +169,7 @@ class Cloud(object):
 
 
 class SquareCloud(Cloud):
-    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, support_size=35, noise_seed=None):
+    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, support_size=35, noise_key=None):
         super().__init__()
 
         self.Nx = Nx
@@ -181,7 +181,7 @@ class SquareCloud(Cloud):
 
         self.define_node_boundary_types()
 
-        self.define_node_coordinates(noise_seed)
+        self.define_node_coordinates(noise_key)
 
         self.define_local_supports(support_size)
 
@@ -206,14 +206,14 @@ class SquareCloud(Cloud):
                 count += 1
 
 
-    def define_node_coordinates(self, noise_seed):
+    def define_node_coordinates(self, noise_key):
         """ Can be used to redefine coordinates for performance study """
         x = jnp.linspace(0, 1., self.Nx)
         y = jnp.linspace(0, 1., self.Ny)
         xx, yy = jnp.meshgrid(x, y)
 
-        if noise_seed is not None:
-            key = jax.random.split(jax.random.PRNGKey(seed=noise_seed), self.N)
+        if noise_key is not None:
+            key = jax.random.split(noise_key, self.N)
             delta_noise = min((x[1]-x[0], y[1]-y[0])) / 2.   ## To make sure nodes don't go into each other
 
         self.nodes = {}
@@ -222,7 +222,7 @@ class SquareCloud(Cloud):
             for j in range(self.Ny):
                 global_id = int(self.global_indices[i,j])
 
-                if (self.node_boundary_types[global_id] not in ["d", "n"]) and (noise_seed is not None):
+                if (self.node_boundary_types[global_id] not in ["d", "n"]) and (noise_key is not None):
                     noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)         ## Just add some noisy noise !!
                 else:
                     noise = jnp.zeros((2,))

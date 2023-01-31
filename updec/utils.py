@@ -10,8 +10,10 @@ from functools import partial
 
 ## Euclidian distance
 def distance(node1, node2):
-    # return (node1 - node2)@(node1 - node2).T      ## Squared distance
-    return jnp.linalg.norm(node1 - node2)       ## Carefull: not differentiable at 0
+    diff = node1 - node2
+    return jnp.sum(diff*diff)      ## TODO Squared distance !!!!!!!!
+    # return jnp.linalg.norm(node1 - node2)       ## Carefull: not differentiable at 0
+
 
 def print_line_by_line(dictionary):
     for k, v in dictionary.items():
@@ -27,6 +29,10 @@ def polyharmonic(r):
     a = 1
     return r**(2*a+1)
 
+def gaussian(r):
+    eps = 0.1
+    return jnp.exp(-r**2 / eps**2)
+
 # @jax.jit
 @partial(jax.jit, static_argnums=2)
 def make_nodal_rbf(x, node, rbf):
@@ -35,6 +41,7 @@ def make_nodal_rbf(x, node, rbf):
         func = polyharmonic
     else:
         func = rbf
+    # return jnp.where(jnp.all(x==node), 0., func(distance(x, node)))     ## TODO Bad attempt to avoid differentiability
     return func(distance(x, node))
 
 
@@ -100,3 +107,16 @@ def plot(*args, ax=None, figsize=(6,3.5), x_label=None, y_label=None, title=None
     ax.legend()
     plt.tight_layout()
     return ax
+
+
+def dataloader(array, batch_size, key):
+    dataset_size = array.shape[0]
+    indices = jnp.arange(dataset_size)
+    perm = jax.random.permutation(key, indices)
+    start = 0
+    end = batch_size
+    while end < dataset_size:
+        batch_perm = perm[start:end]
+        yield array[batch_perm]
+        start = end
+        end = start + batch_size
