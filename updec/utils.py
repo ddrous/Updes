@@ -11,8 +11,8 @@ from functools import partial
 ## Euclidian distance
 def distance(node1, node2):
     diff = node1 - node2
-    return jnp.sum(diff*diff)      ## TODO Squared distance !!!!!!!!
-    # return jnp.linalg.norm(node1 - node2)       ## Carefull: not differentiable at 0
+    # return jnp.sum(diff*diff)      ## TODO Squared distance !!!!!!!!
+    return jnp.linalg.norm(node1 - node2)       ## Carefull: not differentiable at 0
 
 
 def print_line_by_line(dictionary):
@@ -88,8 +88,8 @@ def compute_nb_monomials(max_degree, problem_dimension):
 
 
 # plt.style.use('bmh')
-sns.set(context='notebook', style='ticks',
-        font='sans-serif', font_scale=1, color_codes=True, rc={"lines.linewidth": 2})
+# sns.set(context='notebook', style='ticks',
+#         font='sans-serif', font_scale=1, color_codes=True, rc={"lines.linewidth": 2})
 
 ## Wrapper function for matplotlib and seaborn
 def plot(*args, ax=None, figsize=(6,3.5), x_label=None, y_label=None, title=None, y_scale='linear', **kwargs):

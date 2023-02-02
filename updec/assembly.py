@@ -5,7 +5,7 @@ from functools import partial
 
 from updec.utils import compute_nb_monomials
 from updec.cloud import Cloud
-from updec.utils import make_nodal_rbf, make_monomial
+from updec.utils import make_nodal_rbf, make_monomial, polyharmonic
 
 
 def assemble_Phi(cloud:Cloud, rbf:callable=None):
@@ -17,19 +17,20 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     Phi = jnp.zeros((N, N), dtype=jnp.float32)
     # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))         
     nodal_rbf = partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
-    grad_rbf = jax.jit(jax.grad(nodal_rbf))
+    # grad_rbf = jax.jit(jax.grad(nodal_rbf))
 
     for i in range(N):
         # for j in range(N):          ## TODO: Fix this with only local support
         #     if i != j:               ## Non-differentiability. Won't have this problem with local support
         for j in cloud.local_supports[i]:
-            if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
-                Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
 
-            elif cloud.node_boundary_types[i] == "n":    ## Neumann node
-                grad = grad_rbf(cloud.nodes[i], cloud.nodes[j])
-                normal = cloud.outward_normals[i]
-                Phi = Phi.at[i, j].set(jnp.dot(grad, normal))
+            # if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
+            Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
+
+            # elif cloud.node_boundary_types[i] == "n":    ## Neumann node
+            #     grad = grad_rbf(cloud.nodes[i], cloud.nodes[j])
+            #     normal = cloud.outward_normals[i]
+            #     Phi = Phi.at[i, j].set(jnp.dot(grad, normal))
 
     return Phi
 
@@ -43,16 +44,16 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     for j in range(M):
         # monomial = jax.jit(partial(make_monomial, id=j))
         monomial = partial(make_monomial, id=j)
-        grad_monomial = jax.jit(jax.grad(monomial))
+        # grad_monomial = jax.jit(jax.grad(monomial))
         for i in range(N):
 
-            if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
-                P = P.at[i, j].set(monomial(cloud.nodes[i]))
+            # if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
+            P = P.at[i, j].set(monomial(cloud.nodes[i]))
 
-            elif cloud.node_boundary_types[i] == "i":    ## Neumann node
-                grad = grad_monomial(cloud.nodes[i])
-                normal = cloud.outward_normals[i]
-                P = P.at[i, j].set(jnp.dot(grad, normal))
+            # elif cloud.node_boundary_types[i] == "i":    ## Neumann node
+            #     grad = grad_monomial(cloud.nodes[i])
+            #     normal = cloud.outward_normals[i]
+            #     P = P.at[i, j].set(jnp.dot(grad, normal))
 
     return P
 
@@ -106,6 +107,49 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, *args):
     return opPhi, opP
 
 
+
+def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, *args):
+    """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
+    ## Only the internal nodes (M, N)
+
+    # operator = jax.jit(operator, static_argnums=2)
+
+    N, Ni = cloud.N, cloud.Ni
+    Nd, Nn, Nr = cloud.Nd, cloud.Nn, cloud.Nr
+    M = nb_monomials
+    bdPhi = jnp.zeros((Nd+Nn+Nr, N), dtype=jnp.float32)
+    bdP = jnp.zeros((Nd+Nn+Nr, M), dtype=jnp.float32)
+
+    nodal_rbf = partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
+    grad_rbf = jax.jit(jax.grad(nodal_rbf))
+
+    for i in range(Ni, N):
+        k = i-Ni        ## Actual index in the matrices
+        assert cloud.node_boundary_types[i] in ["d", "n"], "not a boundary node"    ## Internal node
+
+        for j in cloud.local_supports[i]:
+            if cloud.node_boundary_types[i] == "d":
+                bdPhi = bdPhi.at[k, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
+            elif cloud.node_boundary_types[i] == "n":    ## Neumann node
+                grad = grad_rbf(cloud.nodes[i], cloud.nodes[j])
+                normal = cloud.outward_normals[i]
+                bdPhi = bdPhi.at[k, j].set(jnp.dot(grad, normal))
+
+        for j in range(M):
+            monomial = partial(make_monomial, id=j)
+            grad_monomial = jax.jit(jax.grad(monomial))
+
+            if cloud.node_boundary_types[i] == "d":
+                bdP = bdP.at[k, j].set(monomial(cloud.nodes[i]))
+            elif cloud.node_boundary_types[i] == "i":    ## Neumann node
+                grad = grad_monomial(cloud.nodes[i])
+                normal = cloud.outward_normals[i]
+                bdP = bdP.at[k, j].set(jnp.dot(grad, normal))
+
+    return bdPhi, bdP
+
+
+
 def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *args):
     """ Assemble B using opPhi, P, and A """
 
@@ -114,8 +158,9 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
     N, Ni = cloud.N, cloud.Ni
     M = compute_nb_monomials(max_degree, 2)
 
-    Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, M)
+    # Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, M)
     opPhi, opP = assemble_op_Phi_P(operator, cloud, M, *args)
+    bdPhi, bdP = assemble_bd_Phi_P(cloud, rbf, M, *args)
 
     full_opPhi = jnp.zeros((N, N), dtype=jnp.float32)
     full_opP = jnp.zeros((N, M), dtype=jnp.float32)
@@ -123,8 +168,11 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
     full_opPhi = full_opPhi.at[:Ni, :].set(opPhi[:, :])
     full_opP = full_opP.at[:Ni, :].set(opP[:, :])
 
-    full_opPhi = full_opPhi.at[Ni:, :].set(Phi[Ni:, :])
-    full_opP = full_opP.at[Ni:, :].set(P[Ni:, :])
+    # full_opPhi = full_opPhi.at[Ni:, :].set(Phi[Ni:, :])
+    # full_opP = full_opP.at[Ni:, :].set(P[Ni:, :])
+
+    full_opPhi = full_opPhi.at[Ni:, :].set(bdPhi[:, :])
+    full_opP = full_opP.at[Ni:, :].set(bdP[:, :])
 
     diffMat = jnp.concatenate((full_opPhi, full_opP), axis=-1)
 
