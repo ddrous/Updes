@@ -66,7 +66,7 @@ def assemble_A(cloud, rbf, nb_monomials=2):
     P = assemble_P(cloud, nb_monomials)
 
     N, M = Phi.shape[1], P.shape[1]
-    
+
     A = jnp.zeros((N+M, N+M), dtype=jnp.float32)
     A = A.at[:N, :N].set(Phi)
     A = A.at[:N, N:].set(P)
