@@ -95,8 +95,9 @@ class Cloud(object):
         if ax is None:
             fig = plt.figure(figsize=figsize)
 
-        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
-        coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+        # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
+        # coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+        coords = self.sort_nodes_jnp()
 
         ax = fig.add_subplot(1, 1, 1)
 
@@ -129,8 +130,9 @@ class Cloud(object):
     def visualize_field(self, field, projection, levels=50, ax=None, figsize=(6,5), **kwargs):
         import matplotlib.pyplot as plt
 
-        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
-        coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+        # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
+        # coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+        coords = self.sort_nodes_jnp()
         x, y = coords[:, 0], coords[:, 1]
 
         if ax is None:
@@ -238,18 +240,18 @@ class SquareCloud(Cloud):
 
         for i in range(self.N):
             [k, l] = list(self.global_indices_rev[i])
-            if l == 0:            ## Surface number 0
-                self.facet_nodes["south"].append(i)
-                self.node_boundary_types[i] = self.facet_types["south"]
-            elif k == 0:              ## Surface number 1
+            if k == 0:
                 self.facet_nodes["west"].append(i)
                 self.node_boundary_types[i] = self.facet_types["west"]
-            elif l == self.Ny-1:    ## Surface number 2
+            elif l == self.Ny-1:
                 self.facet_nodes["north"].append(i)
                 self.node_boundary_types[i] = self.facet_types["north"]
-            elif k == self.Nx-1:    ## Surface number 3
+            elif k == self.Nx-1:
                 self.facet_nodes["east"].append(i)
                 self.node_boundary_types[i] = self.facet_types["east"]
+            elif l == 0:
+                self.facet_nodes["south"].append(i)
+                self.node_boundary_types[i] = self.facet_types["south"]
             else:
                 self.node_boundary_types[i] = "i"       ## Internal node (not a boundary). But very very important!
 
@@ -265,10 +267,10 @@ class SquareCloud(Cloud):
 
     def define_outward_normals(self):
         ## Makes the outward normal vectors to boundaries
-        neumann_nodes = [k for k,v in self.node_boundary_types.items() if v=="n"]   ## Neumann nodes
+        nr_nodes = [k for k,v in self.node_boundary_types.items() if v in ["n", "r"]]   ## Neumann or Robin nodes
         self.outward_normals = {}
 
-        for i in neumann_nodes:
+        for i in nr_nodes:
             k, l = self.global_indices_rev[i]
             if k==0:
                 n = jnp.array([-1., 0.])
