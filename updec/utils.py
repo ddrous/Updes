@@ -20,18 +20,24 @@ def print_line_by_line(dictionary):
         print("\t", k,":",v)
 
 
+@jax.jit
 def multiquadric(r):
     eps = 1
     return jnp.sqrt(1 + (eps*r)**2)
 
 
+@jax.jit
 def polyharmonic(r):
     a = 1
     return r**(2*a+1)
 
-def gaussian(r):
-    eps = 0.1
-    return jnp.exp(-r**2 / eps**2)
+# def gaussian(r):
+#     eps = 0.1
+#     return jnp.exp(-r**2 / eps**2)
+
+@jax.jit
+def gaussian(r, alpha, h):
+    return jnp.exp(-(alpha * r / h)**2)
 
 # @jax.jit
 @partial(jax.jit, static_argnums=2)

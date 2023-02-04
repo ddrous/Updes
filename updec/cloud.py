@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 from sklearn.neighbors import BallTree
-
+from updec.utils import distance
 
 class Cloud(object):
     def __init__(self):
@@ -16,6 +16,13 @@ class Cloud(object):
         self.facet_types = {}
         self.facet_nodes = {}
         # self.facet_names = {}
+
+    def average_spacing(self):
+        spacings = []
+        for i in range(self.N):
+            for j in range(i, self.N):
+                spacings.append(distance(self.nodes[i], self.nodes[j]))
+        return jnp.mean(jnp.array(spacings))
 
     def sort_nodes_jnp(self):       ## LRU cache this, or turn it into @Property
         """ Return numpy arrays """
