@@ -141,7 +141,7 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, *args):
 
             if cloud.node_boundary_types[i] == "d":
                 bdP = bdP.at[k, j].set(monomial(cloud.nodes[i]))
-            elif cloud.node_boundary_types[i] == "i":    ## Neumann node
+            elif cloud.node_boundary_types[i] == "n":    ## Neumann node
                 grad = grad_monomial(cloud.nodes[i])
                 normal = cloud.outward_normals[i]
                 bdP = bdP.at[k, j].set(jnp.dot(grad, normal))
