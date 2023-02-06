@@ -134,7 +134,7 @@ class Cloud(object):
         return ax
 
 
-    def visualize_field(self, field, projection, levels=50, ax=None, figsize=(6,5), **kwargs):
+    def visualize_field(self, field, projection, title="Field", levels=50, ax=None, figsize=(6,5), **kwargs):
         import matplotlib.pyplot as plt
 
         # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
@@ -147,21 +147,15 @@ class Cloud(object):
 
         if projection == "2d":
             ax = fig.add_subplot(1, 1, 1)
-            # img = ax.scatter(x=coords[:, 0], y=coords[:, 1], c=field, **kwargs)
-            # fig.colorbar(img)
-
-            # img = ax.hexbin(x=x, y=y, C=field, **kwargs)
-            # ax.set_xlim([x.min(), x.max()])
-            # ax.set_ylim([y.min(), y.max()])
-            # fig.colorbar(img)
-
             img = ax.tricontourf(x, y, field, levels=levels, **kwargs)
             fig.colorbar(img)
+            ax.set_title(title)
 
         elif projection == "3d":
-            ax = fig.add_subplot(1, 2, 1, projection='3d')
+            ax = fig.add_subplot(1, 1, 1, projection='3d')
             img = ax.plot_trisurf(x, y, field, **kwargs)
             # fig.colorbar(img, shrink=0.25, aspect=20)
+            ax.set_title(title)
 
         ax.set_xlabel(r'$x$')
         ax.set_ylabel(r'$y$')

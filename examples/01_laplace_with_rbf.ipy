@@ -4,79 +4,69 @@ import os
 import numpy as np
 import jax
 import jax.numpy as jnp
-from jax.tree_util import Partial
 jax.config.update('jax_platform_name', 'cpu')           ## CPU is faster here !
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(context='notebook', style='ticks',
         font='sans-serif', font_scale=1, color_codes=True, rc={"lines.linewidth": 2})
-import cmasher as cmr
 plt.style.use("dark_background")
 
 from updec import *
-# from updec.operators import *
-# from updec.utils import print_line_by_line, polyharmonic, multiquadric
 
 key = jax.random.PRNGKey(42)
 
 
 
 
-
+RBF = polyharmonic
+MAX_DEGREE = 4
+Nx = 6
+Ny = 6
 
 
 facet_types={"south":"n", "west":"d", "north":"d", "east":"d"}
-size = 15
-cloud = SquareCloud(Nx=size, Ny=size, facet_types=facet_types, noise_key=key, support_size=size*size-1)
-
-# h = cloud.average_spacing()
-# alpha = (cloud.N)**(-0.25)
-
-# RBF = Partial(gaussian, eps=2e-0)      ## Can define which rbf to use
-RBF = polyharmonic
-MAX_DEGREE = 4
-
-# facet_types = {"Dirichlet":"d"}
-# cloud = GmshCloud("./meshes/disk.msh", facet_types, support_size=20)
+cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=Nx*Ny-1)
 
 
 
-
-
-
-
-
-## Operates on radial basis functions and polynomials at position x: don't forget the None. It is important!
-# @jax.jit
-# @partial(jax.jit, static_argnums=2)
+## Diffeerential operator
 def my_diff_operator(x, node=None, monomial=None, *args):
     return  nodal_laplacian(x, node, monomial, rbf=RBF)
 
-# known_field = jnp.ones((cloud.N, ))
-
-## Operates on entire fields at position x (inside node)
-# @jax.jit
+# Right-hand side operator
 def my_rhs_operator(x):
-    # return divergence(x, known_field, cloud, rbf=RBF, max_degree=2)
     # return -100.0
     return 0.0
 
 d_north = lambda node: jnp.sin(jnp.pi * node[0])
-# d_north2 = lambda node: 0.0
 d_zero = lambda node: 0.0
-
 boundary_conditions = {"south":d_zero, "west":d_zero, "north":d_north, "east":d_zero}
-
-
-
-
-
-
 
 
 solution_field = pde_solver(my_diff_operator, my_rhs_operator, cloud, boundary_conditions, RBF, MAX_DEGREE)
 
 
+## Exact solution
+def laplace_exact_sol(coord):
+    return jnp.sin(jnp.pi*coord[0])*jnp.cosh(jnp.pi*coord[1]) / jnp.cosh(jnp.pi)
+coords = cloud.sort_nodes_jnp()
+laplace_exact_sol = jax.vmap(laplace_exact_sol, in_axes=(0,), out_axes=0)
+
+exact_sol = laplace_exact_sol(coords)
+error = jnp.sum((exact_sol-solution_field)**2)
+
+
+
 ## JNP SAVE solutions
-jnp.save(solution_field, "sol.npz")
+cloud_shape = str(Nx)+"x"+str(Ny)
+jnp.save("./examples/temp/sol_laplace_"+cloud_shape+".npy", solution_field)
+jnp.save("./examples/temp/mse_error_laplace_"+cloud_shape+".npy", error)
+
+
+
+### Visualisation
+cloud.visualize_field(solution_field, cmap="jet", projection="3d", ax=None, title="RBF solution", figsize=(10,10));
+cloud.visualize_field(exact_sol, cmap="jet", projection="3d", ax=None, title="Analytical solution", figsize=(10,10));
+
+plt.show()
