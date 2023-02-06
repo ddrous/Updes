@@ -9,3 +9,6 @@
 .DS_Store
 Updec.egg-info/*
 examples/temp/*
+!examples/temp/README.md
+scripts/reports/*
+!scripts/reports/README.md
