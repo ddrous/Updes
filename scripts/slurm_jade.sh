@@ -13,7 +13,7 @@
 #SBATCH --job-name=updec
 
 # set number of GPUs
-#SBATCH --gres=gpu:0
+#SBATCH --gres=gpu:1
 
 # mail alert at start, end and abortion of execution
 ##SBATCH --mail-type=ALL
