@@ -5,6 +5,7 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 # jax.config.update('jax_platform_name', 'cpu')           ## CPU is faster here !
+jax.config.update("jax_enable_x64", True)
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -21,8 +22,8 @@ key = jax.random.PRNGKey(42)
 
 RBF = polyharmonic
 MAX_DEGREE = 4
-Nx = 8
-Ny = 8
+Nx = 22
+Ny = 22
 
 
 facet_types={"south":"n", "west":"d", "north":"d", "east":"d"}
@@ -59,14 +60,17 @@ error = jnp.sum((exact_sol-solution_field)**2)
 
 
 ## JNP SAVE solutions
-cloud_shape = str(Nx)+"x"+str(Ny)
-jnp.save("./examples/temp/sol_laplace_"+cloud_shape+".npy", solution_field)
-jnp.save("./examples/temp/mse_error_laplace_"+cloud_shape+".npy", error)
+# cloud_shape = str(Nx)+"x"+str(Ny)
+# jnp.save("./examples/temp/sol_laplace_"+cloud_shape+".npy", solution_field)
+# jnp.save("./examples/temp/mse_error_laplace_"+cloud_shape+".npy", error)
 
 
 
 ### Visualisation
-cloud.visualize_field(solution_field, cmap="jet", projection="3d", ax=None, title="RBF solution", figsize=(10,10));
-cloud.visualize_field(exact_sol, cmap="jet", projection="3d", ax=None, title="Analytical solution", figsize=(10,10));
+fig = plt.figure(figsize=(6*2,5))
+ax1= fig.add_subplot(1, 2, 1, projection='3d')
+ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+cloud.visualize_field(solution_field, cmap="jet", projection="3d", title="RBF solution", figsize=(6,5), ax=ax1);
+cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", figsize=(6,5), ax=ax2);
 
 plt.show()

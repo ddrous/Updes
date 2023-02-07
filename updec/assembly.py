@@ -14,7 +14,7 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     ## rbf could be a string instead
 
     N = cloud.N
-    Phi = jnp.zeros((N, N), dtype=jnp.float32)
+    Phi = jnp.zeros((N, N))
     # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))         
     nodal_rbf = partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
     # grad_rbf = jax.jit(jax.grad(nodal_rbf))
@@ -39,7 +39,7 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     """ See (6) from Shanane """
     N = cloud.N
     M = nb_monomials
-    P = jnp.zeros((N, M), dtype=jnp.float32)
+    P = jnp.zeros((N, M))
 
     for j in range(M):
         # monomial = jax.jit(partial(make_monomial, id=j))
@@ -67,7 +67,7 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 
     N, M = Phi.shape[1], P.shape[1]
 
-    A = jnp.zeros((N+M, N+M), dtype=jnp.float32)
+    A = jnp.zeros((N+M, N+M))
     A = A.at[:N, :N].set(Phi)
     A = A.at[:N, N:].set(P)
     A = A.at[N:, :N].set(P.T)
@@ -85,8 +85,8 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, *args):
     N = cloud.N
     Ni = cloud.Ni
     M = nb_monomials
-    opPhi = jnp.zeros((Ni, N), dtype=jnp.float32)
-    opP = jnp.zeros((Ni, M), dtype=jnp.float32)
+    opPhi = jnp.zeros((Ni, N))
+    opP = jnp.zeros((Ni, M))
 
     if len(args) > 0:
         fields = jnp.stack(args, axis=-1)
@@ -117,8 +117,8 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, *args):
     N, Ni = cloud.N, cloud.Ni
     Nd, Nn, Nr = cloud.Nd, cloud.Nn, cloud.Nr
     M = nb_monomials
-    bdPhi = jnp.zeros((Nd+Nn+Nr, N), dtype=jnp.float32)
-    bdP = jnp.zeros((Nd+Nn+Nr, M), dtype=jnp.float32)
+    bdPhi = jnp.zeros((Nd+Nn+Nr, N))
+    bdP = jnp.zeros((Nd+Nn+Nr, M))
 
     nodal_rbf = partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
     grad_rbf = jax.jit(jax.grad(nodal_rbf))
@@ -162,8 +162,8 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
     opPhi, opP = assemble_op_Phi_P(operator, cloud, M, *args)
     bdPhi, bdP = assemble_bd_Phi_P(cloud, rbf, M, *args)
 
-    full_opPhi = jnp.zeros((N, N), dtype=jnp.float32)
-    full_opP = jnp.zeros((N, M), dtype=jnp.float32)
+    full_opPhi = jnp.zeros((N, N))
+    full_opP = jnp.zeros((N, M))
 
     full_opPhi = full_opPhi.at[:Ni, :].set(opPhi[:, :])
     full_opP = full_opP.at[:Ni, :].set(opP[:, :])

@@ -46,7 +46,7 @@ class Cloud(object):
 
         #### BRUTE FORCE METHOD
         # for i in range(self.N):
-        #     distances = jnp.zeros((self.N), dtype=jnp.float32)
+        #     distances = jnp.zeros((self.N))
         #     for j in range(self.N):
         #             distances = distances.at[j].set(distance(self.nodes[i], self.nodes[j]))
 
@@ -144,15 +144,17 @@ class Cloud(object):
 
         if ax is None:
             fig = plt.figure(figsize=figsize)
+            if projection == "2d":
+                ax = fig.add_subplot(1, 1, 1)
+            elif projection == "3d":
+                ax = fig.add_subplot(1, 1, 1, projection='3d')
 
         if projection == "2d":
-            ax = fig.add_subplot(1, 1, 1)
             img = ax.tricontourf(x, y, field, levels=levels, **kwargs)
             fig.colorbar(img)
             ax.set_title(title)
 
         elif projection == "3d":
-            ax = fig.add_subplot(1, 1, 1, projection='3d')
             img = ax.plot_trisurf(x, y, field, **kwargs)
             # fig.colorbar(img, shrink=0.25, aspect=20)
             ax.set_title(title)
