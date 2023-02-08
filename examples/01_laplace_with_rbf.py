@@ -4,7 +4,7 @@ import os
 import numpy as np
 import jax
 import jax.numpy as jnp
-# jax.config.update('jax_platform_name', 'cpu')           ## CPU is faster here !
+jax.config.update('jax_platform_name', 'cpu')           ## CPU is faster here !
 jax.config.update("jax_enable_x64", True)
 
 import matplotlib.pyplot as plt
@@ -22,8 +22,8 @@ key = jax.random.PRNGKey(42)
 
 RBF = polyharmonic
 MAX_DEGREE = 4
-Nx = 22
-Ny = 22
+Nx = 4
+Ny = 4
 
 
 facet_types={"south":"n", "west":"d", "north":"d", "east":"d"}

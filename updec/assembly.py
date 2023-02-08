@@ -1,7 +1,6 @@
 import jax
 import jax.numpy as jnp
-
-from functools import partial
+from jax.tree_util import Partial
 
 from updec.utils import compute_nb_monomials
 from updec.cloud import Cloud
@@ -16,21 +15,11 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     N = cloud.N
     Phi = jnp.zeros((N, N))
     # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))         
-    nodal_rbf = partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
-    # grad_rbf = jax.jit(jax.grad(nodal_rbf))
+    nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)                    ## TODO Use the prexisting nodal_rbf func
 
     for i in range(N):
-        # for j in range(N):          ## TODO: Fix this with only local support
-        #     if i != j:               ## Non-differentiability. Won't have this problem with local support
         for j in cloud.local_supports[i]:
-
-            # if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
             Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
-
-            # elif cloud.node_boundary_types[i] == "n":    ## Neumann node
-            #     grad = grad_rbf(cloud.nodes[i], cloud.nodes[j])
-            #     normal = cloud.outward_normals[i]
-            #     Phi = Phi.at[i, j].set(jnp.dot(grad, normal))
 
     return Phi
 
@@ -42,18 +31,10 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     P = jnp.zeros((N, M))
 
     for j in range(M):
-        # monomial = jax.jit(partial(make_monomial, id=j))
-        monomial = partial(make_monomial, id=j)
-        # grad_monomial = jax.jit(jax.grad(monomial))
+        # monomial = jax.jit(Partial(make_monomial, id=j))      ## IS
+        monomial = Partial(make_monomial, id=j)
         for i in range(N):
-
-            # if cloud.node_boundary_types[i] in ["i", "d"]:    ## Internal or Dirichlet node
             P = P.at[i, j].set(monomial(cloud.nodes[i]))
-
-            # elif cloud.node_boundary_types[i] == "i":    ## Neumann node
-            #     grad = grad_monomial(cloud.nodes[i])
-            #     normal = cloud.outward_normals[i]
-            #     P = P.at[i, j].set(jnp.dot(grad, normal))
 
     return P
 
@@ -120,7 +101,7 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, *args):
     bdPhi = jnp.zeros((Nd+Nn+Nr, N))
     bdP = jnp.zeros((Nd+Nn+Nr, M))
 
-    nodal_rbf = partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
+    nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
     grad_rbf = jax.jit(jax.grad(nodal_rbf))
 
     for i in range(Ni, N):
@@ -136,7 +117,7 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, *args):
                 bdPhi = bdPhi.at[k, j].set(jnp.dot(grad, normal))
 
         for j in range(M):
-            monomial = partial(make_monomial, id=j)
+            monomial = Partial(make_monomial, id=j)
             grad_monomial = jax.jit(jax.grad(monomial))
 
             if cloud.node_boundary_types[i] == "d":
@@ -152,8 +133,6 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, *args):
 
 def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *args):
     """ Assemble B using opPhi, P, and A """
-
-    # operator = jax.jit(operator)
 
     N, Ni = cloud.N, cloud.Ni
     M = compute_nb_monomials(max_degree, 2)
@@ -190,8 +169,6 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
 def assemble_q(operator:callable, cloud:Cloud, boundary_functions:dict):
     """ Assemble the right hand side q using the operator """
     ### Boundary conditions should match all the types of boundaries
-
-    # operator = jax.jit(operator)
 
     N = cloud.N
     Ni = cloud.Ni

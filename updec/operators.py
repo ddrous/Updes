@@ -1,7 +1,6 @@
 import jax
 import jax.numpy as jnp
-
-from functools import partial
+from jax.tree_util import Partial
 
 from updec.utils import compute_nb_monomials
 from updec.cloud import Cloud
@@ -18,10 +17,10 @@ def nodal_value(x, node=None, monomial=None, rbf=None):
     """
     ## Only one of node_j or monomial_j can be given
     if node != None:
-        nodal_rbf = partial(make_nodal_rbf, rbf=rbf)
+        nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         return nodal_rbf(x, node)
     elif monomial != None:
-        monomial_func = partial(make_monomial, id=monomial)
+        monomial_func = Partial(make_monomial, id=monomial)
         return monomial_func(x)
 
 
@@ -35,22 +34,22 @@ def nodal_gradient(x, node=None, monomial=None, rbf=None):
     """
     ## Only one of node_j or monomial_j can be given
     if node != None:
-        nodal_rbf = partial(make_nodal_rbf, rbf=rbf)
+        nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         # return jax.grad(nodal_rbf)(x, node)
         return jnp.where(jnp.all(x==node), jax.grad(nodal_rbf)(x, node), jnp.array([0., 0.]))
     elif monomial != None:
-        monomial_func = partial(make_monomial, id=monomial)
+        monomial_func = Partial(make_monomial, id=monomial)
         return jax.grad(monomial_func)(x)
 
 ### N.B: """ No divergence for RBF and Polynomial functions, because they are scalars """
 
-def nodal_laplacian(x, node=None, monomial=None, rbf=None):
+def nodal_laplacian(x, node=None, monomial=None, rbf=None):     ## TODO Jitt through this efficiently
     """ Computes the lapalcian of the RBF and polynomial functions """
     if node != None:
-        nodal_rbf = partial(make_nodal_rbf, rbf=rbf)
+        nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         return jnp.trace(jax.jacfwd(jax.grad(nodal_rbf))(x, node))      ## TODO: try reverse mode
     elif monomial != None:
-        monomial_func = partial(make_monomial, id=monomial)
+        monomial_func = Partial(make_monomial, id=monomial)
         return jnp.trace(jax.jacfwd(jax.grad(monomial_func))(x))
 
 

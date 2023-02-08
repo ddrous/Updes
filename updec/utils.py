@@ -1,16 +1,13 @@
 import jax
 import jax.numpy as jnp
+from jax.tree_util import Partial
+
 import matplotlib.pyplot as plt
-import seaborn as sns
-
 import math
-from functools import partial
-
-
 
 ## Euclidian distance
 def distance(node1, node2):
-    diff = node1 - node2
+    # diff = node1 - node2
     # return jnp.sum(diff*diff)      ## TODO Squared distance !!!!!!!!
     return jnp.linalg.norm(node1 - node2)       ## Carefull: not differentiable at 0
 
@@ -40,7 +37,7 @@ def gaussian(r, eps=1.):
 #     return jnp.exp(-(alpha * r / h)**2)
 
 # @jax.jit
-@partial(jax.jit, static_argnums=2)
+@Partial(jax.jit, static_argnums=2)
 def make_nodal_rbf(x, node, rbf):
     """ Gives the tuned rbf function """
     if rbf==None:
@@ -51,7 +48,7 @@ def make_nodal_rbf(x, node, rbf):
     return func(distance(x, node))
 
 
-@partial(jax.jit, static_argnums=1)
+@Partial(jax.jit, static_argnums=1)
 def make_monomial(x, id):
     """ Easy way to keep track of all monomials """
     ## x is a 2D vector
