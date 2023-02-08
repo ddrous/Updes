@@ -8,6 +8,7 @@ from updec.cloud import Cloud
 from updec.utils import make_nodal_rbf, make_monomial
 from updec.assembly import assemble_A, assemble_B, assemble_q
 
+dtype=jnp.float64   ## Default    Assembly takes care of the casting
 
 def nodal_value(x, node=None, monomial=None, rbf=None):
     """ Computes the rbf and polynomial functions """
@@ -77,7 +78,7 @@ def gradient(x, field, cloud:Cloud, rbf=None, max_degree=2):
     lambdas, gammas = compute_coefficients(field, cloud, rbf, max_degree)
 
     ## Now, compute the gradient of the field
-    final_grad = jnp.array([0.,0.])
+    final_grad = jnp.array([0.,0.], dtype=dtype)
 
     ################################        ATTEMPT TO VECTORIZE ... TODO Only rbf works, nor monom. and still, with nans
     # sorted_nodes = cloud.sort_nodes_jnp()
@@ -145,10 +146,10 @@ def pde_solver(nodal_operator:callable,
                 max_degree:int,
                 *args):
     """ Solve a PDE """
-
     nodal_operator = jax.jit(nodal_operator, static_argnums=2)
     global_operator = jax.jit(global_operator)
 
     B1 = assemble_B(nodal_operator, cloud, rbf, max_degree, *args)
     rhs = assemble_q(global_operator, cloud, boundary_conditions)
+
     return jnp.linalg.solve(B1, rhs)

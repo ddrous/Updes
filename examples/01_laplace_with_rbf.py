@@ -1,7 +1,7 @@
 import os
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
+import time
 
-import numpy as np
 import jax
 import jax.numpy as jnp
 # jax.config.update('jax_platform_name', 'cpu')           ## CPU is faster here !
@@ -19,7 +19,6 @@ key = jax.random.PRNGKey(42)
 
 
 
-
 RBF = polyharmonic
 MAX_DEGREE = 4
 Nx = 22
@@ -31,7 +30,7 @@ cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, suppor
 
 
 
-## Diffeerential operator
+## Differential operator
 def my_diff_operator(x, node=None, monomial=None, *args):
     return  nodal_laplacian(x, node, monomial, rbf=RBF)
 
@@ -44,8 +43,14 @@ d_north = lambda node: jnp.sin(jnp.pi * node[0])
 d_zero = lambda node: 0.0
 boundary_conditions = {"south":d_zero, "west":d_zero, "north":d_north, "east":d_zero}
 
-
+start = time.time()
 solution_field = pde_solver(my_diff_operator, my_rhs_operator, cloud, boundary_conditions, RBF, MAX_DEGREE)
+walltime = time.time() - start
+
+minutes = walltime // 60 % 60
+seconds = walltime % 60
+print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
+
 
 
 ## Exact solution
@@ -60,9 +65,9 @@ error = jnp.sum((exact_sol-solution_field)**2)
 
 
 ## JNP SAVE solutions
-# cloud_shape = str(Nx)+"x"+str(Ny)
-# jnp.save("./examples/temp/sol_laplace_"+cloud_shape+".npy", solution_field)
-# jnp.save("./examples/temp/mse_error_laplace_"+cloud_shape+".npy", error)
+cloud_shape = str(Nx)+"x"+str(Ny)
+jnp.save("./examples/temp/sol_laplace_"+cloud_shape+".npy", solution_field)
+jnp.save("./examples/temp/mse_error_laplace_"+cloud_shape+".npy", error)
 
 
 

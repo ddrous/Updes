@@ -7,6 +7,7 @@ from updec.utils import compute_nb_monomials
 from updec.cloud import Cloud
 from updec.utils import make_nodal_rbf, make_monomial, polyharmonic
 
+dtype=jnp.float64   ## The type for everything except the linear system
 
 def assemble_Phi(cloud:Cloud, rbf:callable=None):
     """ Assemble the matrix Phi (see equation 5) from Shahane """
@@ -14,7 +15,7 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     ## rbf could be a string instead
 
     N = cloud.N
-    Phi = jnp.zeros((N, N))
+    Phi = jnp.zeros((N, N), dtype=dtype)
     # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))         
     nodal_rbf = partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
     # grad_rbf = jax.jit(jax.grad(nodal_rbf))
@@ -39,7 +40,7 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     """ See (6) from Shanane """
     N = cloud.N
     M = nb_monomials
-    P = jnp.zeros((N, M))
+    P = jnp.zeros((N, M), dtype=dtype)
 
     for j in range(M):
         # monomial = jax.jit(partial(make_monomial, id=j))
@@ -67,7 +68,7 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 
     N, M = Phi.shape[1], P.shape[1]
 
-    A = jnp.zeros((N+M, N+M))
+    A = jnp.zeros((N+M, N+M), dtype=dtype)
     A = A.at[:N, :N].set(Phi)
     A = A.at[:N, N:].set(P)
     A = A.at[N:, :N].set(P.T)
@@ -85,8 +86,8 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, *args):
     N = cloud.N
     Ni = cloud.Ni
     M = nb_monomials
-    opPhi = jnp.zeros((Ni, N))
-    opP = jnp.zeros((Ni, M))
+    opPhi = jnp.zeros((Ni, N), dtype=dtype)
+    opP = jnp.zeros((Ni, M), dtype=dtype)
 
     if len(args) > 0:
         fields = jnp.stack(args, axis=-1)
@@ -117,8 +118,8 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, *args):
     N, Ni = cloud.N, cloud.Ni
     Nd, Nn, Nr = cloud.Nd, cloud.Nn, cloud.Nr
     M = nb_monomials
-    bdPhi = jnp.zeros((Nd+Nn+Nr, N))
-    bdP = jnp.zeros((Nd+Nn+Nr, M))
+    bdPhi = jnp.zeros((Nd+Nn+Nr, N), dtype=dtype)
+    bdP = jnp.zeros((Nd+Nn+Nr, M), dtype=dtype)
 
     nodal_rbf = partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
     grad_rbf = jax.jit(jax.grad(nodal_rbf))
@@ -162,8 +163,8 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
     opPhi, opP = assemble_op_Phi_P(operator, cloud, M, *args)
     bdPhi, bdP = assemble_bd_Phi_P(cloud, rbf, M, *args)
 
-    full_opPhi = jnp.zeros((N, N))
-    full_opP = jnp.zeros((N, M))
+    full_opPhi = jnp.zeros((N, N), dtype=dtype)
+    full_opP = jnp.zeros((N, M), dtype=dtype)
 
     full_opPhi = full_opPhi.at[:Ni, :].set(opPhi[:, :])
     full_opP = full_opP.at[:Ni, :].set(opP[:, :])
@@ -195,7 +196,7 @@ def assemble_q(operator:callable, cloud:Cloud, boundary_functions:dict):
 
     N = cloud.N
     Ni = cloud.Ni
-    q = jnp.zeros((N,))
+    q = jnp.zeros((N,), dtype=jnp.float64)
 
     for i in range(Ni):              ## TODO: Vectorise this with VMAP. it's sucking a lot of time
         assert cloud.node_boundary_types[i]=="i", "not an internal node"

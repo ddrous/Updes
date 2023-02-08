@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 from sklearn.neighbors import BallTree
 from updec.utils import distance
+dtype=jnp.float64   ## The type for everything except the linear system
 
 class Cloud(object):
     def __init__(self):
@@ -174,7 +175,7 @@ class Cloud(object):
 
 
 class SquareCloud(Cloud):
-    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, support_size=35, noise_key=None):
+    def __init__(self, Nx=7, Ny=5, facet_types={"south":"n", "west":"d", "north":"d", "east":"d"}, support_size=35, noise_key=None):
         super().__init__()
 
         self.Nx = Nx
@@ -213,8 +214,8 @@ class SquareCloud(Cloud):
 
     def define_node_coordinates(self, noise_key):
         """ Can be used to redefine coordinates for performance study """
-        x = jnp.linspace(0, 1., self.Nx)
-        y = jnp.linspace(0, 1., self.Ny)
+        x = jnp.linspace(0, 1., self.N, dtype=dtype)
+        y = jnp.linspace(0, 1., self.Ny, dtype=dtype)
         xx, yy = jnp.meshgrid(x, y)
 
         if noise_key is not None:
@@ -228,11 +229,11 @@ class SquareCloud(Cloud):
                 global_id = int(self.global_indices[i,j])
 
                 if (self.node_boundary_types[global_id] not in ["d", "n"]) and (noise_key is not None):
-                    noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)         ## Just add some noisy noise !!
+                    noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise, dtype=dtype)         ## Just add some noisy noise !!
                 else:
-                    noise = jnp.zeros((2,))
+                    noise = jnp.zeros((2,), dtype=dtype)
 
-                self.nodes[global_id] = jnp.array([xx[j,i], yy[j,i]]) + noise
+                self.nodes[global_id] = jnp.array([xx[j,i], yy[j,i]], dtype=dtype) + noise
 
 
     def define_node_boundary_types(self):
@@ -276,13 +277,13 @@ class SquareCloud(Cloud):
         for i in nr_nodes:
             k, l = self.global_indices_rev[i]
             if k==0:
-                n = jnp.array([-1., 0.])
+                n = jnp.array([-1., 0.], dtype=dtype)
             elif k==self.Nx-1:
-                n = jnp.array([1., 0.])
+                n = jnp.array([1., 0.], dtype=dtype)
             elif l==0:
-                n = jnp.array([0., -1.])
+                n = jnp.array([0., -1.], dtype=dtype)
             elif l==self.Ny-1:
-                n = jnp.array([0., 1.])
+                n = jnp.array([0., 1.], dtype=dtype)
 
             self.outward_normals[int(self.global_indices[k,l])] = n
 
