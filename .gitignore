@@ -14,3 +14,5 @@ scripts/reports/*
 !scripts/reports/README.md
 runs/*
 !runs/README.md
+demos/temp/*
+!demos/temp/README.md
