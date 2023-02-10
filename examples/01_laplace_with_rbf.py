@@ -1,5 +1,6 @@
 import os
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
+import time
 
 import numpy as np
 import jax
@@ -14,20 +15,22 @@ sns.set(context='notebook', style='ticks',
 plt.style.use("dark_background")
 
 from updec import *
-
 key = jax.random.PRNGKey(42)
 
-
+from torch.utils.tensorboard import SummaryWriter
+import datetime
 
 
 RBF = polyharmonic
 MAX_DEGREE = 4
 Nx = 4
-Ny = 4
+Ny = Nx
+SUPPORT_SIZE = Nx*Ny-1
 
+# print(run_name)
 
 facet_types={"south":"n", "west":"d", "north":"d", "east":"d"}
-cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=Nx*Ny-1)
+cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
 
 
 
@@ -37,15 +40,19 @@ def my_diff_operator(x, node=None, monomial=None, *args):
 
 # Right-hand side operator
 def my_rhs_operator(x):
-    # return -100.0
     return 0.0
 
 d_north = lambda node: jnp.sin(jnp.pi * node[0])
 d_zero = lambda node: 0.0
 boundary_conditions = {"south":d_zero, "west":d_zero, "north":d_north, "east":d_zero}
 
-
+start = time.time()
 solution_field = pde_solver(my_diff_operator, my_rhs_operator, cloud, boundary_conditions, RBF, MAX_DEGREE)
+walltime = time.time() - start
+
+minutes = walltime // 60 % 60
+seconds = walltime % 60
+print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 
 
 ## Exact solution
@@ -55,7 +62,7 @@ coords = cloud.sort_nodes_jnp()
 laplace_exact_sol = jax.vmap(laplace_exact_sol, in_axes=(0,), out_axes=0)
 
 exact_sol = laplace_exact_sol(coords)
-error = jnp.sum((exact_sol-solution_field)**2)
+error = jnp.mean((exact_sol-solution_field)**2)
 
 
 
@@ -67,10 +74,22 @@ error = jnp.sum((exact_sol-solution_field)**2)
 
 
 ### Visualisation
-fig = plt.figure(figsize=(6*2,5))
-ax1= fig.add_subplot(1, 2, 1, projection='3d')
-ax2 = fig.add_subplot(1, 2, 2, projection='3d')
-cloud.visualize_field(solution_field, cmap="jet", projection="3d", title="RBF solution", figsize=(6,5), ax=ax1);
-cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", figsize=(6,5), ax=ax2);
+fig = plt.figure(figsize=(6*3,5))
+ax1= fig.add_subplot(1, 3, 1, projection='3d')
+ax2 = fig.add_subplot(1, 3, 2, projection='3d')
+ax3 = fig.add_subplot(1, 3, 3, projection='3d')
+cloud.visualize_field(solution_field, cmap="jet", projection="3d", title="RBF solution", ax=ax1);
+cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", ax=ax2);
+cloud.visualize_field(jnp.abs(solution_field-exact_sol), cmap="magma", projection="3d", title="L2 error", ax=ax3);
+# plt.show()
 
-plt.show()
+
+## Write stuff to tensorboard
+run_name = str(datetime.datetime.now())[:19]        ##For tensorboard
+writer = SummaryWriter("runs/"+run_name, comment='-Laplace')
+hparams_dict = {"rbf":RBF.__name__, "max_degree":MAX_DEGREE, "nb_nodes":Nx*Ny, "support_size":SUPPORT_SIZE}      ## TODO Add local support
+metrics_dict = {"metrics/mse_error":float(error), "metrics/wall_time":walltime}                                        ## TODO Add time
+writer.add_hparams(hparams_dict, metrics_dict, run_name="hp_params")
+writer.add_figure("plots", fig)
+writer.flush()
+writer.close()

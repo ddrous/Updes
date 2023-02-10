@@ -12,3 +12,5 @@ examples/temp/*
 !examples/temp/README.md
 scripts/reports/*
 !scripts/reports/README.md
+runs/*
+!runs/README.md
