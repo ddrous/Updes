@@ -61,7 +61,7 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 
 
 
-def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, *args):
+def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, rbf:callable, *args):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
 
@@ -81,15 +81,20 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, *args):
 
     # operator_rbf = Partial(operator, monomial=None)
     def operator_rbf(x, node=None, args=None): 
-        return operator(x, node, None, args)
+        return operator(x, node, None, rbf, args)
     operator_rbf_vec = jax.vmap(operator_rbf, in_axes=(None, 0, None), out_axes=0)
 
     # operator_mon = Partial(operator, node=None)
-    def operator_mon(x, monomial=None, args=None): 
+    def operator_mon(x, args=None, monomial=None): 
         # print(monomial)
         # return operator(x, None, monomial.tolist(), args)
-        return operator(x, None, monomial, args)
-    operator_mon_vec = jax.vmap(operator_mon, in_axes=(None, 0, None), out_axes=0)
+        return operator(x, None, monomial, rbf, args)
+    # operator_mon_vec = jax.vmap(operator_mon, in_axes=(None, 0, None), out_axes=0)
+    # operator_mon_vec = jax.vmap(operator_mon, in_axes=(0, 0, None), out_axes=0)
+    monomial_ids = jnp.arange(M)
+
+    coords = cloud.sort_nodes_jnp()
+    internal_ids = jnp.arange(Ni)
 
     for i in range(Ni):
         assert cloud.node_boundary_types[i] == "i", "not an internal node"    ## Internal node
@@ -111,8 +116,13 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, *args):
         # for j in range(M):
         #     opP = opP.at[i, j].set(operator(cloud.nodes[i], None, j, *fields[i].tolist()))
 
-        monomial_ids = jnp.arange(M)
-        opP = opP.at[i, monomial_ids].set(operator_mon_vec(cloud.nodes[i], monomial_ids, fields[i]))
+        # opP = opP.at[i, monomial_ids].set(operator_mon_vec(cloud.nodes[i], monomial_ids, fields[i]))        ##TODO do a second vmap along node i
+
+    for j in range(M):
+        monomial_func = Partial(make_monomial, id=j)
+        operator_mon_j = Partial(operator_mon, monomial=monomial_func)
+        operator_mon_vec = jax.vmap(operator_mon_j, in_axes=(0, 0), out_axes=0)
+        opP = opP.at[internal_ids, j].set(operator_mon_vec(coords[internal_ids], fields[internal_ids]))
 
     return opPhi, opP
 
@@ -167,7 +177,8 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
     M = compute_nb_monomials(max_degree, 2)
 
     # Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, M)
-    opPhi, opP = assemble_op_Phi_P(operator, cloud, M, *args)
+    nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
+    opPhi, opP = assemble_op_Phi_P(operator, cloud, M, nodal_rbf, *args)
     bdPhi, bdP = assemble_bd_Phi_P(cloud, rbf, M, *args)
 
     full_opPhi = jnp.zeros((N, N))

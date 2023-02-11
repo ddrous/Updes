@@ -2,6 +2,8 @@ import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
 
+from functools import cache, lru_cache
+
 from updec.utils import compute_nb_monomials
 from updec.cloud import Cloud
 from updec.utils import make_nodal_rbf, make_monomial
@@ -43,16 +45,29 @@ def nodal_gradient(x, node=None, monomial=None, rbf=None):
 
 ### N.B: """ No divergence for RBF and Polynomial functions, because they are scalars """
 
+## LRU cache this
+# @lru_cache(maxsize=32)
+@cache
+def core_laplacian_rbf(nodal_rbf):
+    return jax.jacfwd(jax.grad(nodal_rbf))
+
+## LRU cache this
+# @lru_cache(maxsize=32)
+@cache
+def core_laplacian_mon(monomial_func):
+    # monomial_func = Partial(make_monomial, id=monomial)
+    return jax.jacfwd(jax.grad(monomial_func))
+
 def nodal_laplacian(x, node=None, monomial=None, rbf=None):     ## TODO Jitt through this efficiently
     """ Computes the lapalcian of the RBF and polynomial functions """
     if node != None:
         # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         nodal_rbf = rbf
-        return jnp.trace(jax.jacfwd(jax.grad(nodal_rbf))(x, node))      ## TODO: try reverse mode
+        return jnp.trace(core_laplacian_rbf(nodal_rbf)(x, node))      ## TODO: try reverse mode
     elif monomial != None:
         # monomial_func = Partial(make_monomial, id=monomial)
         monomial_func = monomial
-        return jnp.trace(jax.jacfwd(jax.grad(monomial_func))(x))
+        return jnp.trace(core_laplacian_mon(monomial_func)(x))
 
 
 
@@ -148,8 +163,8 @@ def pde_solver(nodal_operator:callable,
     """ Solve a PDE """
 
     # nodal_operator = jax.jit(nodal_operator, static_argnums=2)
-    nodal_operator = jax.jit(nodal_operator)
-    global_operator = jax.jit(global_operator)
+    # nodal_operator = jax.jit(nodal_operator)
+    # global_operator = jax.jit(global_operator)
 
     B1 = assemble_B(nodal_operator, cloud, rbf, max_degree, *args)
     rhs = assemble_q(global_operator, cloud, boundary_conditions)
