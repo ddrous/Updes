@@ -17,13 +17,13 @@ plt.style.use("dark_background")
 from updec import *
 key = jax.random.PRNGKey(42)
 
-from torch.utils.tensorboard import SummaryWriter
-import datetime
+# from torch.utils.tensorboard import SummaryWriter
+# import datetime
 
 
 RBF = polyharmonic
 MAX_DEGREE = 4
-Nx = 4
+Nx = 8
 Ny = Nx
 SUPPORT_SIZE = Nx*Ny-1
 
@@ -35,7 +35,8 @@ cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, suppor
 
 
 ## Diffeerential operator
-def my_diff_operator(x, node=None, monomial=None, *args):
+def my_diff_operator(x, node=None, monomial=None, args=None):
+    # a, b = args[0], args[1]   ## agrs is a array
     return  nodal_laplacian(x, node, monomial, rbf=RBF)
 
 # Right-hand side operator
@@ -80,16 +81,16 @@ ax2 = fig.add_subplot(1, 3, 2, projection='3d')
 ax3 = fig.add_subplot(1, 3, 3, projection='3d')
 cloud.visualize_field(solution_field, cmap="jet", projection="3d", title="RBF solution", ax=ax1);
 cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", ax=ax2);
-cloud.visualize_field(jnp.abs(solution_field-exact_sol), cmap="magma", projection="3d", title="L2 error", ax=ax3);
-# plt.show()
+cloud.visualize_field(jnp.abs(solution_field-exact_sol), cmap="magma", projection="3d", title="MSE error", ax=ax3);
+plt.show()
 
 
 ## Write stuff to tensorboard
-run_name = str(datetime.datetime.now())[:19]        ##For tensorboard
-writer = SummaryWriter("runs/"+run_name, comment='-Laplace')
-hparams_dict = {"rbf":RBF.__name__, "max_degree":MAX_DEGREE, "nb_nodes":Nx*Ny, "support_size":SUPPORT_SIZE}      ## TODO Add local support
-metrics_dict = {"metrics/mse_error":float(error), "metrics/wall_time":walltime}                                        ## TODO Add time
-writer.add_hparams(hparams_dict, metrics_dict, run_name="hp_params")
-writer.add_figure("plots", fig)
-writer.flush()
-writer.close()
+# run_name = str(datetime.datetime.now())[:19]        ##For tensorboard
+# writer = SummaryWriter("runs/"+run_name, comment='-Laplace')
+# hparams_dict = {"rbf":RBF.__name__, "max_degree":MAX_DEGREE, "nb_nodes":Nx*Ny, "support_size":SUPPORT_SIZE}      ## TODO Add local support
+# metrics_dict = {"metrics/mse_error":float(error), "metrics/wall_time":walltime}                                        ## TODO Add time
+# writer.add_hparams(hparams_dict, metrics_dict, run_name="hp_params")
+# writer.add_figure("plots", fig)
+# writer.flush()
+# writer.close()

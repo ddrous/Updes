@@ -46,10 +46,12 @@ def nodal_gradient(x, node=None, monomial=None, rbf=None):
 def nodal_laplacian(x, node=None, monomial=None, rbf=None):     ## TODO Jitt through this efficiently
     """ Computes the lapalcian of the RBF and polynomial functions """
     if node != None:
-        nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
+        # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
+        nodal_rbf = rbf
         return jnp.trace(jax.jacfwd(jax.grad(nodal_rbf))(x, node))      ## TODO: try reverse mode
     elif monomial != None:
-        monomial_func = Partial(make_monomial, id=monomial)
+        # monomial_func = Partial(make_monomial, id=monomial)
+        monomial_func = monomial
         return jnp.trace(jax.jacfwd(jax.grad(monomial_func))(x))
 
 
@@ -145,7 +147,8 @@ def pde_solver(nodal_operator:callable,
                 *args):
     """ Solve a PDE """
 
-    nodal_operator = jax.jit(nodal_operator, static_argnums=2)
+    # nodal_operator = jax.jit(nodal_operator, static_argnums=2)
+    nodal_operator = jax.jit(nodal_operator)
     global_operator = jax.jit(global_operator)
 
     B1 = assemble_B(nodal_operator, cloud, rbf, max_degree, *args)

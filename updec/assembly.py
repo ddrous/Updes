@@ -29,12 +29,16 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     N = cloud.N
     M = nb_monomials
     P = jnp.zeros((N, M))
+    nodes = cloud.sort_nodes_jnp()
 
     for j in range(M):
         # monomial = jax.jit(Partial(make_monomial, id=j))      ## IS
         monomial = Partial(make_monomial, id=j)
-        for i in range(N):
-            P = P.at[i, j].set(monomial(cloud.nodes[i]))
+        monomial_vec = jax.vmap(monomial, in_axes=(0,), out_axes=0)
+        P = P.at[:, j].set(monomial_vec(nodes))
+
+        # for i in range(N):
+        #     P = P.at[i, j].set(monomial(cloud.nodes[i]))
 
     return P
 
@@ -69,21 +73,46 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, *args):
     opPhi = jnp.zeros((Ni, N))
     opP = jnp.zeros((Ni, M))
 
+    nodes = cloud.sort_nodes_jnp()
     if len(args) > 0:
         fields = jnp.stack(args, axis=-1)
     else:
         fields = jnp.ones((N,1))     ## TODO Won't be used tho. FIx this !
+
+    # operator_rbf = Partial(operator, monomial=None)
+    def operator_rbf(x, node=None, args=None): 
+        return operator(x, node, None, args)
+    operator_rbf_vec = jax.vmap(operator_rbf, in_axes=(None, 0, None), out_axes=0)
+
+    # operator_mon = Partial(operator, node=None)
+    def operator_mon(x, monomial=None, args=None): 
+        # print(monomial)
+        # return operator(x, None, monomial.tolist(), args)
+        return operator(x, None, monomial, args)
+    operator_mon_vec = jax.vmap(operator_mon, in_axes=(None, 0, None), out_axes=0)
 
     for i in range(Ni):
         assert cloud.node_boundary_types[i] == "i", "not an internal node"    ## Internal node
 
         # for j in range(N):  ## TODO: Fix this with only Local support
         #     if i != j:      ## Only go through the local support because of non-differentiability at distance r=0.
-        for j in cloud.local_supports[i]:
-            opPhi = opPhi.at[i, j].set(operator(cloud.nodes[i], cloud.nodes[j], None, *fields[i].tolist()))
 
-        for j in range(M):
-            opP = opP.at[i, j].set(operator(cloud.nodes[i], None, j, *fields[i].tolist()))
+
+        # for j in cloud.local_supports[i]:
+        #     opPhi = opPhi.at[i, j].set(operator(cloud.nodes[i], cloud.nodes[j], None, *fields[i].tolist()))
+
+
+        support_ids = jnp.array(cloud.local_supports[i])
+        support_nodes = nodes[support_ids]  
+        # fields_args = fields[support_ids]
+        opPhi = opPhi.at[i, support_ids].set(operator_rbf_vec(cloud.nodes[i], support_nodes, fields[i]))
+
+
+        # for j in range(M):
+        #     opP = opP.at[i, j].set(operator(cloud.nodes[i], None, j, *fields[i].tolist()))
+
+        monomial_ids = jnp.arange(M)
+        opP = opP.at[i, monomial_ids].set(operator_mon_vec(cloud.nodes[i], monomial_ids, fields[i]))
 
     return opPhi, opP
 
