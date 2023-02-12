@@ -15,11 +15,16 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     N = cloud.N
     Phi = jnp.zeros((N, N))
     # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))         
-    nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)                    ## TODO Use the prexisting nodal_rbf func
+    # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)                    ## TODO Use the prexisting nodal_rbf func
+    nodal_rbf_vec = jax.vmap(rbf, in_axes=(None, 0), out_axes=0)
+    nodes = cloud.sort_nodes_jnp()
 
     for i in range(N):
-        for j in cloud.local_supports[i]:
-            Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
+        # for j in cloud.local_supports[i]:
+        #     Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
+
+        support_ids = jnp.array(cloud.local_supports[i])
+        Phi = Phi.at[i, support_ids].set(nodal_rbf_vec(cloud.nodes[i], nodes[support_ids]))
 
     return Phi
 
@@ -85,13 +90,8 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, rbf:call
     operator_rbf_vec = jax.vmap(operator_rbf, in_axes=(None, 0, None), out_axes=0)
 
     # operator_mon = Partial(operator, node=None)
-    def operator_mon(x, args=None, monomial=None): 
-        # print(monomial)
-        # return operator(x, None, monomial.tolist(), args)
+    def operator_mon(x, args=None, monomial=None):
         return operator(x, None, monomial, rbf, args)
-    # operator_mon_vec = jax.vmap(operator_mon, in_axes=(None, 0, None), out_axes=0)
-    # operator_mon_vec = jax.vmap(operator_mon, in_axes=(0, 0, None), out_axes=0)
-    monomial_ids = jnp.arange(M)
 
     coords = cloud.sort_nodes_jnp()
     internal_ids = jnp.arange(Ni)
@@ -99,36 +99,20 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, rbf:call
     for i in range(Ni):
         assert cloud.node_boundary_types[i] == "i", "not an internal node"    ## Internal node
 
-        # for j in range(N):  ## TODO: Fix this with only Local support
-        #     if i != j:      ## Only go through the local support because of non-differentiability at distance r=0.
-
-
-        # for j in cloud.local_supports[i]:
-        #     opPhi = opPhi.at[i, j].set(operator(cloud.nodes[i], cloud.nodes[j], None, *fields[i].tolist()))
-
-
         support_ids = jnp.array(cloud.local_supports[i])
-        support_nodes = nodes[support_ids]  
-        # fields_args = fields[support_ids]
-        opPhi = opPhi.at[i, support_ids].set(operator_rbf_vec(cloud.nodes[i], support_nodes, fields[i]))
-
-
-        # for j in range(M):
-        #     opP = opP.at[i, j].set(operator(cloud.nodes[i], None, j, *fields[i].tolist()))
-
-        # opP = opP.at[i, monomial_ids].set(operator_mon_vec(cloud.nodes[i], monomial_ids, fields[i]))        ##TODO do a second vmap along node i
+        opPhi = opPhi.at[i, support_ids].set(operator_rbf_vec(cloud.nodes[i], nodes[support_ids], fields[i]))
 
     for j in range(M):
         monomial_func = Partial(make_monomial, id=j)
-        operator_mon_j = Partial(operator_mon, monomial=monomial_func)
-        operator_mon_vec = jax.vmap(operator_mon_j, in_axes=(0, 0), out_axes=0)
+        operator_mon_func = Partial(operator_mon, monomial=monomial_func)
+        operator_mon_vec = jax.vmap(operator_mon_func, in_axes=(0, 0), out_axes=0)
         opP = opP.at[internal_ids, j].set(operator_mon_vec(coords[internal_ids], fields[internal_ids]))
 
     return opPhi, opP
 
 
 
-def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, *args):
+def assemble_bd_Phi_P(cloud:Cloud, nb_monomials:int, rbf:callable, *args):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
 
@@ -140,31 +124,51 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, *args):
     bdPhi = jnp.zeros((Nd+Nn+Nr, N))
     bdP = jnp.zeros((Nd+Nn+Nr, M))
 
-    nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
-    grad_rbf = jax.jit(jax.grad(nodal_rbf))
+    # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
+    grad_rbf = jax.grad(rbf)
+    # grad_rbf = jax.jit(jax.grad(nodal_rbf))
+
+    nodal_rbf_vec = jax.vmap(rbf, in_axes=(None, 0), out_axes=0)
+    grad_rbf_vec = jax.vmap(grad_rbf, in_axes=(None, 0), out_axes=0)
+
+    nodes = cloud.sort_nodes_jnp()
+
+
+    ### Fill Matrix Phi with vectorisation from axis=1 ###
 
     for i in range(Ni, N):
-        k = i-Ni        ## Actual index in the matrices
+        ii = i-Ni        ## Actual index in the matrices
         assert cloud.node_boundary_types[i] in ["d", "n"], "not a boundary node"    ## Internal node
 
-        for j in cloud.local_supports[i]:
-            if cloud.node_boundary_types[i] == "d":
-                bdPhi = bdPhi.at[k, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
-            elif cloud.node_boundary_types[i] == "n":    ## Neumann node
-                grad = grad_rbf(cloud.nodes[i], cloud.nodes[j])
-                normal = cloud.outward_normals[i]
-                bdPhi = bdPhi.at[k, j].set(jnp.dot(grad, normal))
+        if cloud.node_boundary_types[i] == "d":
+            support_d = jnp.array([j for j in cloud.local_supports[i]])
+            bdPhi = bdPhi.at[ii, support_d].set(nodal_rbf_vec(cloud.nodes[i], nodes[support_d]))
 
+        elif cloud.node_boundary_types[i] == "n":    ## Neumann node
+            support_n = jnp.array([j for j in cloud.local_supports[i]])
+            grads = grad_rbf_vec(cloud.nodes[i], nodes[support_n])
+            bdPhi = bdPhi.at[ii, support_n].set(jnp.dot(grads, cloud.outward_normals[i]))
+
+
+    ### Fill Matrix P with vectorisation from axis=0 ###
+    node_ids_d = jnp.array([k for k,v in cloud.node_boundary_types.items() if v == "d"])
+    node_ids_n = jnp.array([k for k,v in cloud.node_boundary_types.items() if v == "n"])
+
+    if node_ids_d.shape[0] > 0:
         for j in range(M):
             monomial = Partial(make_monomial, id=j)
-            grad_monomial = jax.jit(jax.grad(monomial))
+            monomial_vec = jax.vmap(monomial, in_axes=(0,), out_axes=0)
+            bdP = bdP.at[node_ids_d-Ni, j].set(monomial_vec(nodes[node_ids_d]))
 
-            if cloud.node_boundary_types[i] == "d":
-                bdP = bdP.at[k, j].set(monomial(cloud.nodes[i]))
-            elif cloud.node_boundary_types[i] == "n":    ## Neumann node
-                grad = grad_monomial(cloud.nodes[i])
-                normal = cloud.outward_normals[i]
-                bdP = bdP.at[k, j].set(jnp.dot(grad, normal))
+    if node_ids_n.shape[0] > 0:
+        normals_n = jnp.stack([cloud.outward_normals[i] for i in node_ids_n.tolist()], axis=0)
+        dot_vec = jax.vmap(jnp.dot, in_axes=(0,0), out_axes=0)
+        for j in range(M):
+            monomial = Partial(make_monomial, id=j)
+            grad_monomial = jax.grad(monomial)
+            grad_monomial_vec = jax.vmap(grad_monomial, in_axes=(0,), out_axes=0)
+            grads = grad_monomial_vec(nodes[node_ids_n])
+            bdP = bdP.at[node_ids_n-Ni, j].set(dot_vec(grads, normals_n))
 
     return bdPhi, bdP
 
@@ -177,9 +181,10 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
     M = compute_nb_monomials(max_degree, 2)
 
     # Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, M)
-    nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
-    opPhi, opP = assemble_op_Phi_P(operator, cloud, M, nodal_rbf, *args)
-    bdPhi, bdP = assemble_bd_Phi_P(cloud, rbf, M, *args)
+    rbf = Partial(make_nodal_rbf, rbf=rbf)
+
+    opPhi, opP = assemble_op_Phi_P(operator, cloud, M, rbf, *args)
+    bdPhi, bdP = assemble_bd_Phi_P(cloud, M, rbf, *args)
 
     full_opPhi = jnp.zeros((N, N))
     full_opP = jnp.zeros((N, M))
@@ -187,16 +192,11 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
     full_opPhi = full_opPhi.at[:Ni, :].set(opPhi[:, :])
     full_opP = full_opP.at[:Ni, :].set(opP[:, :])
 
-    # full_opPhi = full_opPhi.at[Ni:, :].set(Phi[Ni:, :])
-    # full_opP = full_opP.at[Ni:, :].set(P[Ni:, :])
-
     full_opPhi = full_opPhi.at[Ni:, :].set(bdPhi[:, :])
     full_opP = full_opP.at[Ni:, :].set(bdP[:, :])
 
     diffMat = jnp.concatenate((full_opPhi, full_opP), axis=-1)
 
-    # with jax.debug_nans:
-    # epsdiag = jnp.diag(jnp.full((N+M,), 1e-10))         ## TODO: What is support size too small. To avoid 0 on diagonals: https://github.com/google/jax/issues/646#issuecomment-487691861
     A = assemble_A(cloud, rbf, M)
 
     inv_A = jnp.linalg.inv(A)
@@ -214,20 +214,20 @@ def assemble_q(operator:callable, cloud:Cloud, boundary_functions:dict):
     Ni = cloud.Ni
     q = jnp.zeros((N,))
 
-    for i in range(Ni):              ## TODO: Vectorise this with VMAP. it's sucking a lot of time
-        assert cloud.node_boundary_types[i]=="i", "not an internal node"
-        q = q.at[i].set(operator(cloud.nodes[i]))
+    ## Internal node
+    operator_vec = jax.vmap(operator, in_axes=(0,), out_axes=(0))
+    nodes = cloud.sort_nodes_jnp()
+    internal_ids = jnp.arange(Ni)
+    q = q.at[internal_ids].set(operator_vec(nodes[internal_ids]))
 
-    # for i in range(Ni, N):
-    #     assert cloud.node_boundary_types[i] in ["d", "n"], "not a dirichlet nor neumann node"
-    #     bd_op = boundary_functions[cloud.surfaces[i]]
-    #     q = q.at[i].set(bd_op(cloud.nodes[i]))
 
+    ## Facet nodes
     for f_id in cloud.facet_types.keys():
         assert f_id in boundary_functions.keys(), "facets and boundary functions don't match ids"
 
-        bd_op = boundary_functions[f_id]  
-        for i in cloud.facet_nodes[f_id]:
-            q = q.at[i].set(bd_op(cloud.nodes[i]))
+        bd_op = boundary_functions[f_id]
+        bd_op_vec = jax.vmap(bd_op, in_axes=(0,), out_axes=0)
+        bd_node_ids = jnp.array(cloud.facet_nodes[f_id])
+        q = q.at[bd_node_ids].set(bd_op_vec(nodes[bd_node_ids]))
 
     return q

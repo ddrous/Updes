@@ -23,7 +23,7 @@ key = jax.random.PRNGKey(42)
 
 RBF = polyharmonic
 MAX_DEGREE = 4
-Nx = 8
+Nx = 20
 Ny = Nx
 SUPPORT_SIZE = Nx*Ny-1
 
