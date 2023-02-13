@@ -2,12 +2,13 @@ import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
 
-from updec.utils import compute_nb_monomials
+from functools import cache
+
+from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials
 from updec.cloud import Cloud
-from updec.utils import make_nodal_rbf, make_monomial, polyharmonic
 
 
-def assemble_Phi(cloud:Cloud, rbf:callable=None):
+def assemble_Phi(cloud:Cloud, nodal_rbf:callable=None):
     """ Assemble the matrix Phi (see equation 5) from Shahane """
     ## TODO: Make this matrix sparse. Only consider local supports
     ## rbf could be a string instead
@@ -16,7 +17,7 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     Phi = jnp.zeros((N, N))
     # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))         
     # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)                    ## TODO Use the prexisting nodal_rbf func
-    nodal_rbf_vec = jax.vmap(rbf, in_axes=(None, 0), out_axes=0)
+    nodal_rbf_vec = jax.vmap(nodal_rbf, in_axes=(None, 0), out_axes=0)
     nodes = cloud.sort_nodes_jnp()
 
     for i in range(N):
@@ -49,10 +50,11 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
 
 
 ## Cache the results for future calls to this function
-def assemble_A(cloud, rbf, nb_monomials=2):
+@cache
+def assemble_A(cloud, nodal_rbf, nb_monomials=2):
     """ Assemble matrix A, see (4) from Shanane """
 
-    Phi = assemble_Phi(cloud, rbf)
+    Phi = assemble_Phi(cloud, nodal_rbf)
     P = assemble_P(cloud, nb_monomials)
 
     N, M = Phi.shape[1], P.shape[1]
@@ -64,9 +66,13 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 
     return A
 
+@cache          ## Turn this into assemble and LU decompose
+def assemble_invert_A(cloud, nodal_rbf, nb_monomials):
+    A = assemble_A(cloud, nodal_rbf, nb_monomials)
+    return jnp.linalg.inv(A)
 
 
-def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, rbf:callable, *args):
+def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, nodal_rbf:callable, *args):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
 
@@ -86,12 +92,12 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, rbf:call
 
     # operator_rbf = Partial(operator, monomial=None)
     def operator_rbf(x, node=None, args=None): 
-        return operator(x, node, None, rbf, args)
+        return operator(x, node, None, nodal_rbf, args)
     operator_rbf_vec = jax.vmap(operator_rbf, in_axes=(None, 0, None), out_axes=0)
 
     # operator_mon = Partial(operator, node=None)
     def operator_mon(x, args=None, monomial=None):
-        return operator(x, None, monomial, rbf, args)
+        return operator(x, None, monomial, nodal_rbf, args)
 
     coords = cloud.sort_nodes_jnp()
     internal_ids = jnp.arange(Ni)
@@ -112,7 +118,7 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, rbf:call
 
 
 
-def assemble_bd_Phi_P(cloud:Cloud, nb_monomials:int, rbf:callable, *args):
+def assemble_bd_Phi_P(cloud:Cloud, nb_monomials:int, nodal_rbf:callable, *args):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
 
@@ -125,10 +131,10 @@ def assemble_bd_Phi_P(cloud:Cloud, nb_monomials:int, rbf:callable, *args):
     bdP = jnp.zeros((Nd+Nn+Nr, M))
 
     # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting nodal_rbf func
-    grad_rbf = jax.grad(rbf)
+    grad_rbf = jax.grad(nodal_rbf)
     # grad_rbf = jax.jit(jax.grad(nodal_rbf))
 
-    nodal_rbf_vec = jax.vmap(rbf, in_axes=(None, 0), out_axes=0)
+    nodal_rbf_vec = jax.vmap(nodal_rbf, in_axes=(None, 0), out_axes=0)
     grad_rbf_vec = jax.vmap(grad_rbf, in_axes=(None, 0), out_axes=0)
 
     nodes = cloud.sort_nodes_jnp()
@@ -181,10 +187,10 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
     M = compute_nb_monomials(max_degree, 2)
 
     # Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, M)
-    rbf = Partial(make_nodal_rbf, rbf=rbf)
+    nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
 
-    opPhi, opP = assemble_op_Phi_P(operator, cloud, M, rbf, *args)
-    bdPhi, bdP = assemble_bd_Phi_P(cloud, M, rbf, *args)
+    opPhi, opP = assemble_op_Phi_P(operator, cloud, M, nodal_rbf, *args)
+    bdPhi, bdP = assemble_bd_Phi_P(cloud, M, nodal_rbf, *args)
 
     full_opPhi = jnp.zeros((N, N))
     full_opP = jnp.zeros((N, M))
@@ -197,9 +203,11 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
 
     diffMat = jnp.concatenate((full_opPhi, full_opP), axis=-1)
 
-    A = assemble_A(cloud, rbf, M)
+    # A = assemble_A(cloud, nodal_rbf, M)       ## TODO make this work for nodal_rbf
+    # A = assemble_A(cloud, rbf, M)
 
-    inv_A = jnp.linalg.inv(A)
+    inv_A = assemble_invert_A(cloud, nodal_rbf, M)
+
     B = diffMat @ inv_A
 
     B1 = B[:, :N]

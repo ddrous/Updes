@@ -5,7 +5,7 @@ from updec.utils import distance
 
 from functools import cache
 
-class Cloud(object):
+class Cloud(object):        ## TODO: implemtn len, get_item, etc.
     def __init__(self):
         self.N = 0 
         self.Ni = 0
