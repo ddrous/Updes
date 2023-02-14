@@ -72,7 +72,7 @@ def assemble_invert_A(cloud, rbf, nb_monomials):
     return jnp.linalg.inv(A)
 
 
-def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, rbf:callable, *args):
+def assemble_op_Phi_P(operator:callable, cloud:Cloud, rbf:callable, nb_monomials:int, args:list):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
 
@@ -85,10 +85,12 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, rbf:call
     opP = jnp.zeros((Ni, M))
 
     nodes = cloud.sort_nodes_jnp()
-    if len(args) > 0:
-        fields = jnp.stack(args, axis=-1)
-    else:
-        fields = jnp.ones((N,1))     ## TODO Won't be used tho. FIx this !
+    # if len(args) > 0:
+    #     # fields = jnp.stack(args, axis=-1)
+    #     fields = jnp.stack(args, axis=-1)
+    # else:
+    #     fields = jnp.ones((N,1))     ## TODO Won't be used tho. FIx this !
+    fields = jnp.stack(args, axis=-1) if args else jnp.ones((N,1))      ## TODO Find a better way. Will never be used
 
     # operator_rbf = Partial(operator, monomial=None)
     def operator_rbf(x, center=None, args=None): 
@@ -118,7 +120,7 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, nb_monomials:int, rbf:call
 
 
 
-def assemble_bd_Phi_P(cloud:Cloud, nb_monomials:int, rbf:callable, *args):
+def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
 
@@ -180,17 +182,20 @@ def assemble_bd_Phi_P(cloud:Cloud, nb_monomials:int, rbf:callable, *args):
 
 
 
-def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *args):
+def assemble_B(operator:callable, cloud:Cloud, rbf:callable, nb_monomials:int, diff_args:list):
     """ Assemble B using opPhi, P, and A """
 
     N, Ni = cloud.N, cloud.Ni
-    M = compute_nb_monomials(max_degree, 2)
+    # M = compute_nb_monomials(max_degree, 2)
+    M = nb_monomials
 
     # Phi, P = assemble_Phi(cloud, rbf), assemble_P(cloud, M)
     # rbf = Partial(make_rbf, rbf=rbf)
 
-    opPhi, opP = assemble_op_Phi_P(operator, cloud, M, rbf, *args)
-    bdPhi, bdP = assemble_bd_Phi_P(cloud, M, rbf, *args)
+    ## Compute coefficients here
+
+    opPhi, opP = assemble_op_Phi_P(operator, cloud, rbf, M, diff_args)
+    bdPhi, bdP = assemble_bd_Phi_P(cloud, rbf, M)
 
     full_opPhi = jnp.zeros((N, N))
     full_opP = jnp.zeros((N, M))
@@ -207,26 +212,42 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, max_degree:int, *ar
     # A = assemble_A(cloud, rbf, M)
 
     inv_A = assemble_invert_A(cloud, rbf, M)
-
     B = diffMat @ inv_A
 
-    B1 = B[:, :N]
-    return B1
+    return B[:, :N]
 
 
-def assemble_q(operator:callable, cloud:Cloud, boundary_functions:dict):
+def new_compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, nb_monomials:int):
+    """ Find nodal and polynomial coefficients for scaar field s """ 
+
+    rhs = jnp.concatenate((field, jnp.zeros((nb_monomials))))
+    inv_A = assemble_invert_A(cloud, rbf, nb_monomials)
+
+    return inv_A@rhs
+
+
+
+def assemble_q(operator:callable, boundary_functions:dict, cloud:Cloud, rbf:callable, nb_monomials:int, rhs_args:list):
     """ Assemble the right hand side q using the operator """
     ### Boundary conditions should match all the types of boundaries
 
     N = cloud.N
     Ni = cloud.Ni
+    M = nb_monomials
     q = jnp.zeros((N,))
 
+    ## Compute coefficients here
+    if rhs_args != None:
+        fields_coeffs = [new_compute_coefficients(field, cloud, rbf, M) for field in rhs_args]
+        fields_coeffs = jnp.stack(fields_coeffs, axis=-1)
+    else:
+        fields_coeffs = None
+
     ## Internal node
-    operator_vec = jax.vmap(operator, in_axes=(0,), out_axes=(0))
+    operator_vec = jax.vmap(operator, in_axes=(0, None, None, None), out_axes=(0))
     nodes = cloud.sort_nodes_jnp()
     internal_ids = jnp.arange(Ni)
-    q = q.at[internal_ids].set(operator_vec(nodes[internal_ids]))
+    q = q.at[internal_ids].set(operator_vec(nodes[internal_ids], nodes, rbf, fields_coeffs))
 
 
     ## Facet nodes

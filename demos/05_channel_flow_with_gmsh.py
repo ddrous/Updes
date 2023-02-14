@@ -80,22 +80,33 @@ p = jnp.ones((cloud.N,))
 RHO = 1
 NU = 1
 
-def diff_operator_u(x, center=None, rbf=None, monomial=None, args=None):
-    u_val = nodal_value(x, center, monomial, rbf=rbf)
-    grad_u = nodal_gradient(x, center, monomial, rbf=rbf)
-    return  u_val * grad_u[0] + args[0]*grad_u[1]                           ## TODO: Actually, this is wrong. write this nodal fomrula down !
+def diff_operator_u(x, center=None, rbf=None, monomial=None, fields=None):
+    v = fields[0]                                                      ## TODO Make it clear that this is v at this particular center
+    u = nodal_value(x, center, rbf, monomial)
+    grad_u = nodal_gradient(x, center, rbf, monomial)
+    return  u * grad_u[0] + v * grad_u[1]                           ## TODO: Actually, this is wrong. write this nodal fomrula down !
 
 
 # nodal_rbf = Partial(make_nodal_rbf, rbf=RBF)   ### TODO Do this in code
 
-def rhs_operator_u(x, fields=None,):
-    grad_p = gradient(x, p, cloud, rbf=RBF, max_degree=MAX_DEGREE)
-    lap_u = laplacian(x, u, cloud, rbf=RBF, max_degree=MAX_DEGREE)
+def rhs_operator_u(x, centers=None, rbf=None, fields=None):
+    p, u = fields[:, 0], fields[:, 1]
+    # grad_p = gradient(x, p, cloud, rbf=RBF, max_degree=MAX_DEGREE)
+    grad_p = gradient(x, p, centers, rbf=rbf)
+    # lap_u = laplacian(x, u, cloud, rbf=RBF, max_degree=MAX_DEGREE)
+    lap_u = laplacian(x, u, centers, rbf=rbf)
     return  (-grad_p[0] / RHO) + (NU * lap_u)
 
-u = pde_solver(diff_operator_u, rhs_operator_u, cloud, boundary_conditions, RBF, MAX_DEGREE, diff_args=[v], rhs_args=[p,u])
+u = pde_solver(diff_operator=diff_operator_u, 
+                diff_args=[v], 
+                rhs_operator = rhs_operator_u, 
+                rhs_args=[p,u], 
+                cloud = cloud, 
+                boundary_conditions = boundary_conditions, 
+                rbf=RBF, 
+                max_degree=MAX_DEGREE)
 
-print(u)
+print(u.vals)
 
 # def diff_operator_v(x, node=None, monomial=None, *args):
 #     val_v = nodal_value(x, node, monomial, rbf=RBF)
@@ -119,5 +130,5 @@ print(u)
 
 # p = pde_solver(diff_operator_p, rhs_operator_p, cloud, boundary_conditions, RBF, MAX_DEGREE)
 
-cloud.visualize_field(u, cmap="viridis", projection="2d", ax=None, figsize=(7,4));
+cloud.visualize_field(u.vals, cmap="viridis", projection="2d", ax=None, figsize=(7,4));
 plt.show()

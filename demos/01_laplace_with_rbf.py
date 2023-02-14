@@ -35,12 +35,12 @@ cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, suppor
 
 
 ## Diffeerential operator
-def my_diff_operator(x, center=None, rbf=None, monomial=None, args=None):
+def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
     # a, b = args[0], args[1]   ## agrs is a array
-    return  nodal_laplacian(x, center, rbf, monomial)
+    return nodal_laplacian(x, center, rbf, monomial)
 
 # Right-hand side operator
-def my_rhs_operator(x):
+def my_rhs_operator(x, centers=None, rbf=None, fields=None):
     return 0.0
 
 d_north = lambda node: jnp.sin(jnp.pi * node[0])
@@ -48,7 +48,13 @@ d_zero = lambda node: 0.0
 boundary_conditions = {"south":d_zero, "west":d_zero, "north":d_north, "east":d_zero}
 
 start = time.time()
-solution_field = pde_solver(my_diff_operator, my_rhs_operator, cloud, boundary_conditions, RBF, MAX_DEGREE)
+# solution_field = pde_solver(my_diff_operator, my_rhs_operator, cloud, boundary_conditions, RBF, MAX_DEGREE)
+sol = pde_solver(diff_operator=my_diff_operator, 
+                rhs_operator = my_rhs_operator, 
+                cloud = cloud, 
+                boundary_conditions = boundary_conditions, 
+                rbf=RBF,
+                max_degree=MAX_DEGREE)
 walltime = time.time() - start
 
 minutes = walltime // 60 % 60
@@ -63,7 +69,7 @@ coords = cloud.sort_nodes_jnp()
 laplace_exact_sol = jax.vmap(laplace_exact_sol, in_axes=(0,), out_axes=0)
 
 exact_sol = laplace_exact_sol(coords)
-error = jnp.mean((exact_sol-solution_field)**2)
+error = jnp.mean((exact_sol-sol.vals)**2)
 
 
 
@@ -79,9 +85,9 @@ fig = plt.figure(figsize=(6*3,5))
 ax1= fig.add_subplot(1, 3, 1, projection='3d')
 ax2 = fig.add_subplot(1, 3, 2, projection='3d')
 ax3 = fig.add_subplot(1, 3, 3, projection='3d')
-cloud.visualize_field(solution_field, cmap="jet", projection="3d", title="RBF solution", ax=ax1);
+cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution", ax=ax1);
 cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", ax=ax2);
-cloud.visualize_field(jnp.abs(solution_field-exact_sol), cmap="magma", projection="3d", title="MSE error", ax=ax3);
+cloud.visualize_field(jnp.abs(sol.vals-exact_sol), cmap="magma", projection="3d", title="MSE error", ax=ax3);
 plt.show()
 
 

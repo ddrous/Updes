@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
+from collections import namedtuple
 
 import matplotlib.pyplot as plt
 import math
@@ -93,6 +94,10 @@ def make_monomial(x, id):
 
 def compute_nb_monomials(max_degree, problem_dimension):
     return math.comb(max_degree+problem_dimension, max_degree)
+
+
+RBFsol = namedtuple('RBFsol', ['vals', 'coeffs'])
+
 
 
 # plt.style.use('bmh')
