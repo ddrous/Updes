@@ -80,20 +80,20 @@ p = jnp.ones((cloud.N,))
 RHO = 1
 NU = 1
 
-def diff_operator_u(x, node=None, monomial=None, nodal_rbf=None, args=None):
-    u_val = nodal_value(x, node, monomial, nodal_rbf=nodal_rbf)
-    grad_u = nodal_gradient(x, node, monomial, nodal_rbf=nodal_rbf)
+def diff_operator_u(x, center=None, rbf=None, monomial=None, args=None):
+    u_val = nodal_value(x, center, monomial, rbf=rbf)
+    grad_u = nodal_gradient(x, center, monomial, rbf=rbf)
     return  u_val * grad_u[0] + args[0]*grad_u[1]                           ## TODO: Actually, this is wrong. write this nodal fomrula down !
 
 
-nodal_rbf = Partial(make_nodal_rbf, rbf=RBF)   ### TODO Do this in code
+# nodal_rbf = Partial(make_nodal_rbf, rbf=RBF)   ### TODO Do this in code
 
-def rhs_operator_u(x):
-    grad_p = gradient(x, p, cloud, nodal_rbf=nodal_rbf, max_degree=MAX_DEGREE)
-    lap_u = laplacian(x, u, cloud, nodal_rbf=nodal_rbf, max_degree=MAX_DEGREE)
+def rhs_operator_u(x, fields=None,):
+    grad_p = gradient(x, p, cloud, rbf=RBF, max_degree=MAX_DEGREE)
+    lap_u = laplacian(x, u, cloud, rbf=RBF, max_degree=MAX_DEGREE)
     return  (-grad_p[0] / RHO) + (NU * lap_u)
 
-u = pde_solver(diff_operator_u, rhs_operator_u, cloud, boundary_conditions, RBF, MAX_DEGREE, v)
+u = pde_solver(diff_operator_u, rhs_operator_u, cloud, boundary_conditions, RBF, MAX_DEGREE, diff_args=[v], rhs_args=[p,u])
 
 print(u)
 

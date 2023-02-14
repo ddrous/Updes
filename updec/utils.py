@@ -24,7 +24,7 @@ def multiquadric(r):
 
 
 @jax.jit
-def polyharmonic(r):
+def polyharmonic_func(r):
     a = 1
     return r**(2*a+1)
 
@@ -35,6 +35,11 @@ def gaussian(r, eps=1.):
 # @jax.jit
 # def gaussian(r, alpha, h):
 #     return jnp.exp(-(alpha * r / h)**2)
+
+
+@jax.jit
+def polyharmonic(x, center):
+    return polyharmonic_func(distance(x, center))
 
 # @jax.jit
 @Partial(jax.jit, static_argnums=2)

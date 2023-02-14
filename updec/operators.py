@@ -9,7 +9,7 @@ from updec.cloud import Cloud
 from updec.assembly import assemble_A, assemble_invert_A, assemble_B, assemble_q
 
 
-def nodal_value(x, node=None, monomial_func=None, nodal_rbf=None):
+def nodal_value(x, node=None, rbf=None, monomial=None):
     """ Computes the rbf and polynomial functions """
     """ x: gradient at position x 
         node: the node defining the rbf function (if for a monomial)
@@ -18,26 +18,26 @@ def nodal_value(x, node=None, monomial_func=None, nodal_rbf=None):
     """
     ## Only one of node_j or monomial_j can be given
     if node != None:
-        # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
-        return nodal_rbf(x, node)
-    elif monomial_func != None:
-        # monomial_func = Partial(make_monomial, id=monomial)
-        return monomial_func(x)
+        # rbf = Partial(make_rbf, rbf=rbf)
+        return rbf(x, node)
+    elif monomial != None:
+        # monomial = Partial(make_monomial, id=monomial)
+        return monomial(x)
 
 
 @cache
-def core_gradient_rbf(nodal_rbf):
-    return jax.grad(nodal_rbf)
+def core_gradient_rbf(rbf):
+    return jax.grad(rbf)
 
 ## LRU cache this
 # @lru_cache(maxsize=32)
 @cache
-def core_gradient_mon(monomial_func):
-    # monomial_func = Partial(make_monomial, id=monomial)
-    return jax.grad(monomial_func)
+def core_gradient_mon(monomial):
+    # monomial = Partial(make_monomial, id=monomial)
+    return jax.grad(monomial)
 
 ## Does calling this all the time cause problems ?
-def nodal_gradient(x, node=None, monomial_func=None, nodal_rbf=None):
+def nodal_gradient(x, node=None, rbf=None, monomial=None):
     """ Computes the gradients of the RBF and polynomial functions """
     """ x: gradient at position x 
         node: the node defining the rbf function (if for a monomial)
@@ -49,42 +49,42 @@ def nodal_gradient(x, node=None, monomial_func=None, nodal_rbf=None):
         # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         # return jax.grad(nodal_rbf)(x, node)
         # return jnp.where(jnp.all(x==node), jax.grad(nodal_rbf)(x, node), jnp.array([0., 0.]))
-        return core_gradient_rbf(nodal_rbf)(x, node)
-    elif monomial_func != None:
-        # monomial_func = Partial(make_monomial, id=monomial)
+        return core_gradient_rbf(rbf)(x, node)
+    elif monomial != None:
+        # monomial = Partial(make_monomial, id=monomial)
         # return jax.grad(monomial)(x)
-        return core_gradient_mon(monomial_func)(x)
+        return core_gradient_mon(monomial)(x)
 
 ### N.B: """ No divergence for RBF and Polynomial functions, because they are scalars """
 
 ## LRU cache this
 # @lru_cache(maxsize=32)
 @cache
-def core_laplacian_rbf(nodal_rbf):
-    return jax.jacfwd(jax.grad(nodal_rbf))
+def core_laplacian_rbf(rbf):
+    return jax.jacfwd(jax.grad(rbf))
 
 ## LRU cache this
 # @lru_cache(maxsize=32)
 @cache
-def core_laplacian_mon(monomial_func):
-    # monomial_func = Partial(make_monomial, id=monomial)
-    return jax.jacfwd(jax.grad(monomial_func))
+def core_laplacian_mon(monomial):
+    # monomial = Partial(make_monomial, id=monomial)
+    return jax.jacfwd(jax.grad(monomial))
 
-def nodal_laplacian(x, node=None, monomial_func=None, nodal_rbf=None):     ## TODO Jitt through this efficiently
+def nodal_laplacian(x, center=None, rbf=None, monomial=None):     ## TODO Jitt through this efficiently
     """ Computes the lapalcian of the RBF and polynomial functions """
-    if node != None:
+    if center != None:
         # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         # nodal_rbf = rbf
-        return jnp.trace(core_laplacian_rbf(nodal_rbf)(x, node))      ## TODO: try reverse mode
-    elif monomial_func != None:
-        # monomial_func = Partial(make_monomial, id=monomial)
-        # monomial_func = monomial
-        return jnp.trace(core_laplacian_mon(monomial_func)(x))
+        return jnp.trace(core_laplacian_rbf(rbf)(x, center))      ## TODO: try reverse mode
+    elif monomial != None:
+        # monomial = Partial(make_monomial, id=monomial)
+        # monomial = monomial
+        return jnp.trace(core_laplacian_mon(monomial)(x))
 
 
 
-def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, nodal_rbf:callable, max_degree:int):
-    """ Find nodal and polynomial coefficients for scaar field s """
+def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_degree:int):
+    """ Find nodal and polynomial coefficients for scaar field s """ 
     N = cloud.N
     M = compute_nb_monomials(max_degree, 2)     ## Carefull with the problem dimension: 2
 
@@ -93,7 +93,7 @@ def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, nodal_rbf:callable,
 
     rhs = jnp.concatenate((field, jnp.zeros((M))))
     # A = assemble_A(cloud, nodal_rbf, M)
-    inv_A = assemble_invert_A(cloud, nodal_rbf, M)
+    inv_A = assemble_invert_A(cloud, rbf, M)
     # coefficients = jnp.linalg.solve(A, rhs)
     coefficients = inv_A@rhs
 
@@ -103,10 +103,10 @@ def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, nodal_rbf:callable,
     return lambdas[:, jnp.newaxis], gammas[:, jnp.newaxis]
 
 
-def gradient(x, field, cloud:Cloud, nodal_rbf=None, max_degree=2):
+def gradient(x, field, cloud, rbf=None, max_degree=2):
     """ Computes the gradient of field quantity s at position x """
     ## Find coefficients for s on the cloud
-    lambdas, gammas = compute_coefficients(field, cloud, nodal_rbf, max_degree)
+    lambdas, gammas = compute_coefficients(field, cloud, rbf, max_degree)
 
     ## Now, compute the gradient of the field
     final_grad = jnp.array([0.,0.])
@@ -130,12 +130,12 @@ def gradient(x, field, cloud:Cloud, nodal_rbf=None, max_degree=2):
         # if jnp.all(x==node_j):      ## Non-differentiable case
         #     continue
         # rbf_grad = nodal_gradient(x, node=node_j, rbf=rbf)
-        rbf_grad = jnp.where(jnp.all(x==node_j), 0., nodal_gradient(x, node=node_j, nodal_rbf=nodal_rbf))       ## TODO To account for non-differentiable case
+        rbf_grad = jnp.where(jnp.all(x==node_j), 0., nodal_gradient(x, node=node_j, rbf=rbf))       ## TODO To account for non-differentiable case
         final_grad = final_grad.at[:].add(lambdas[j] * rbf_grad)
 
     for j in range(gammas.shape[0]):                                                   ### TODO: Use VMAP to vectorise this too !!
-        monomial_func = Partial(make_monomial, id=j)
-        polynomial_grad = nodal_gradient(x, monomial_func=monomial_func)
+        monomial = Partial(make_monomial, id=j)
+        polynomial_grad = nodal_gradient(x, monomial=monomial)
         final_grad = final_grad.at[:].add(gammas[j] * polynomial_grad)
 
     return final_grad
@@ -149,34 +149,36 @@ def divergence(x, field, cloud, rbf=None, max_degree=2):
     return dfieldx_dx + dfieldy_dy
 
 
-def laplacian(x, field, cloud, nodal_rbf=None, max_degree=2):
+def laplacian(x, field, cloud, rbf=None, max_degree=2):
     """ Computes the laplacian of quantity s at position x """
     ## Find coefficients for s
-    lambdas, gammas = compute_coefficients(field, cloud, nodal_rbf, max_degree)
+    lambdas, gammas = compute_coefficients(field, cloud, rbf, max_degree)
 
     ## Now, compute the laplacian of the field
     final_lap = jnp.array([0.])
     for j in range(lambdas.shape[0]):
         node_j = cloud.nodes[j]
         # rbf_lap = nodal_laplacian(x, node=node_j, rbf=rbf)
-        rbf_lap = jnp.where(jnp.all(x==node_j), 0., nodal_laplacian(x, node=node_j, nodal_rbf=nodal_rbf))
+        rbf_lap = jnp.where(jnp.all(x==node_j), 0., nodal_laplacian(x, node=node_j, rbf=rbf))
         final_lap = final_lap.at[:].add(lambdas[j] * rbf_lap)
 
     for j in range(gammas.shape[0]):
-        monomial_func = Partial(make_monomial, id=j)
-        poly_lap = nodal_laplacian(x, monomial_func=monomial_func)
+        monomial = Partial(make_monomial, id=j)
+        poly_lap = nodal_laplacian(x, monomial=monomial)
         final_lap = final_lap.at[:].add(gammas[j] * poly_lap)
 
     return final_lap[0]
 
 
 ## Devise different LU, LDL decomposition strategies make functions here
-def pde_solver(nodal_operator:callable, 
-                global_operator:callable, 
+def pde_solver(diff_operator:callable, 
+                rhs_operator:callable, 
                 cloud:Cloud, 
                 boundary_conditions:dict, 
                 rbf:callable, 
                 max_degree:int,
+                diff_args = None,
+                rhs_args = None,
                 *args):
     """ Solve a PDE """
 
@@ -184,6 +186,11 @@ def pde_solver(nodal_operator:callable,
     # nodal_operator = jax.jit(nodal_operator)
     # global_operator = jax.jit(global_operator)
 
-    B1 = assemble_B(nodal_operator, cloud, rbf, max_degree, *args)
-    rhs = assemble_q(global_operator, cloud, boundary_conditions)
-    return jnp.linalg.solve(B1, rhs)
+    B1 = assemble_B(diff_operator, cloud, rbf, max_degree, *args)
+    rhs = assemble_q(rhs_operator, cloud, boundary_conditions)
+
+    sol_vals = jnp.linalg.solve(B1, rhs)
+    # sol_coeffs = compute_coefficients(sol_vals, cloud, rbf, max_degree)
+
+    # return sol_vals, jnp.concatenate(sol_coeffs)         ## TODO: return an object like solve_ivp
+    return sol_vals

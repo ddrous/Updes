@@ -35,9 +35,9 @@ cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, suppor
 
 
 ## Diffeerential operator
-def my_diff_operator(x, node=None, monomial=None, nodal_rbf=None, args=None):
+def my_diff_operator(x, center=None, rbf=None, monomial=None, args=None):
     # a, b = args[0], args[1]   ## agrs is a array
-    return  nodal_laplacian(x, node, monomial, nodal_rbf=nodal_rbf)
+    return  nodal_laplacian(x, center, rbf, monomial)
 
 # Right-hand side operator
 def my_rhs_operator(x):
