@@ -17,6 +17,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         self.node_boundary_types = {}
         self.facet_types = {}
         self.facet_nodes = {}
+        self.dim = 2                ## TODO: default problem dimension is 2
         # self.facet_names = {}
 
     def average_spacing(self):
@@ -26,8 +27,8 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
                 spacings.append(distance(self.nodes[i], self.nodes[j]))
         return jnp.mean(jnp.array(spacings))
 
-    @cache
-    def sort_nodes_jnp(self):       ## LRU cache this, or turn it into @Property
+    # @cache
+    def get_sorted_nodes(self):       ## LRU cache this, or turn it into @Property
         """ Return numpy arrays """
         sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         return jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
@@ -107,7 +108,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
         # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         # coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
-        coords = self.sort_nodes_jnp()
+        coords = self.sorted_nodes
 
         ax = fig.add_subplot(1, 1, 1)
 
@@ -142,8 +143,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
         # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         # coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
-        coords = self.sort_nodes_jnp()
-        x, y = coords[:, 0], coords[:, 1]
+        x, y = self.sorted_nodes[:, 0], self.sorted_nodes[:, 1]
 
         if ax is None:
             fig = plt.figure(figsize=figsize)
@@ -196,6 +196,8 @@ class SquareCloud(Cloud):
         self.define_outward_normals()
 
         self.renumber_nodes()
+
+        self.sorted_nodes = self.get_sorted_nodes()
 
         # self.visualise_cloud()        ## TODO Finsih this properly
 
@@ -310,6 +312,8 @@ class GmshCloud(Cloud):
         self.define_outward_normals()
         self.define_local_supports(support_size)
         self.renumber_nodes()
+
+        self.sorted_nodes = self.get_sorted_nodes()
 
 
 

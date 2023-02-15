@@ -18,7 +18,9 @@ os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
 import numpy as np
 import jax
 import jax.numpy as jnp
+from jax.tree_util import Partial
 jax.config.update('jax_platform_name', 'cpu')           ## CPU is faster here !
+
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -41,6 +43,10 @@ facet_types = {"inlet":"d", "wall":"d", "blowing":"d", "outlet":"n", "suction":"
 cloud = GmshCloud("./demos/meshes/channel.msh", facet_types, support_size=20)       ## TODO do not hardcode this path
 
 cloud.visualize_cloud(figsize=(6,4));
+
+
+# exit(0)
+
 
 RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 4
@@ -80,6 +86,7 @@ p = jnp.ones((cloud.N,))
 RHO = 1
 NU = 1
 
+@Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_u(x, center=None, rbf=None, monomial=None, fields=None):
     v = fields[0]                                                      ## TODO Make it clear that this is v at this particular center
     u = nodal_value(x, center, rbf, monomial)
@@ -89,24 +96,21 @@ def diff_operator_u(x, center=None, rbf=None, monomial=None, fields=None):
 
 # nodal_rbf = Partial(make_nodal_rbf, rbf=RBF)   ### TODO Do this in code
 
+@Partial(jax.jit, static_argnums=[2])
 def rhs_operator_u(x, centers=None, rbf=None, fields=None):
     p, u = fields[:, 0], fields[:, 1]
-    # grad_p = gradient(x, p, cloud, rbf=RBF, max_degree=MAX_DEGREE)
     grad_p = gradient(x, p, centers, rbf=rbf)
-    # lap_u = laplacian(x, u, cloud, rbf=RBF, max_degree=MAX_DEGREE)
     lap_u = laplacian(x, u, centers, rbf=rbf)
     return  (-grad_p[0] / RHO) + (NU * lap_u)
 
-u = pde_solver(diff_operator=diff_operator_u, 
+usol = pde_solver(diff_operator=diff_operator_u, 
                 diff_args=[v], 
                 rhs_operator = rhs_operator_u, 
                 rhs_args=[p,u], 
                 cloud = cloud, 
-                boundary_conditions = boundary_conditions, 
-                rbf=RBF, 
-                max_degree=MAX_DEGREE)
+                boundary_conditions = boundary_conditions)
 
-print(u.vals)
+# print(usol.vals)
 
 # def diff_operator_v(x, node=None, monomial=None, *args):
 #     val_v = nodal_value(x, node, monomial, rbf=RBF)
@@ -130,5 +134,5 @@ print(u.vals)
 
 # p = pde_solver(diff_operator_p, rhs_operator_p, cloud, boundary_conditions, RBF, MAX_DEGREE)
 
-cloud.visualize_field(u.vals, cmap="viridis", projection="2d", ax=None, figsize=(7,4));
+cloud.visualize_field(usol.vals, cmap="viridis", projection="2d", ax=None, figsize=(7,4));
 plt.show()

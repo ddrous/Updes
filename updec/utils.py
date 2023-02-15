@@ -30,12 +30,16 @@ def polyharmonic_func(r):
     return r**(2*a+1)
 
 @jax.jit
-def gaussian(r, eps=1.):
+def gaussian_func(r, eps=1.):
     return jnp.exp(-(eps * r)**2)
 
 # @jax.jit
 # def gaussian(r, alpha, h):
 #     return jnp.exp(-(alpha * r / h)**2)
+
+@jax.jit
+def gaussian(x, center):
+    return gaussian_func(distance(x, center))
 
 
 @jax.jit
@@ -96,7 +100,7 @@ def compute_nb_monomials(max_degree, problem_dimension):
     return math.comb(max_degree+problem_dimension, max_degree)
 
 
-RBFsol = namedtuple('RBFsol', ['vals', 'coeffs'])
+SteadySol = namedtuple('SteadySolution', ['vals', 'coeffs'])
 
 
 

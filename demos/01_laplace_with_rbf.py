@@ -35,11 +35,13 @@ cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, suppor
 
 
 ## Diffeerential operator
+@Partial(jax.jit, static_argnums=[2,3])
 def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
     # a, b = args[0], args[1]   ## agrs is a array
     return nodal_laplacian(x, center, rbf, monomial)
 
 # Right-hand side operator
+@Partial(jax.jit, static_argnums=[2])
 def my_rhs_operator(x, centers=None, rbf=None, fields=None):
     return 0.0
 
@@ -65,10 +67,9 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 ## Exact solution
 def laplace_exact_sol(coord):
     return jnp.sin(jnp.pi*coord[0])*jnp.cosh(jnp.pi*coord[1]) / jnp.cosh(jnp.pi)
-coords = cloud.sort_nodes_jnp()
 laplace_exact_sol = jax.vmap(laplace_exact_sol, in_axes=(0,), out_axes=0)
 
-exact_sol = laplace_exact_sol(coords)
+exact_sol = laplace_exact_sol(cloud.sorted_nodes)
 error = jnp.mean((exact_sol-sol.vals)**2)
 
 

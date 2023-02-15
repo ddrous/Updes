@@ -4,6 +4,7 @@ from jax.tree_util import Partial
 
 from functools import cache
 
+# from updec.config import RBF, MAX_DEGREE, DIM
 from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials
 from updec.cloud import Cloud
 
@@ -18,14 +19,14 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     # nodal_rbf = jax.jit(partial(make_nodal_rbf, rbf=rbf))         
     # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)                    ## TODO Use the prexisting nodal_rbf func
     rbf_vec = jax.vmap(rbf, in_axes=(None, 0), out_axes=0)
-    nodes = cloud.sort_nodes_jnp()
+    nodes = cloud.sorted_nodes
 
     for i in range(N):
         # for j in cloud.local_supports[i]:
         #     Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
 
         support_ids = jnp.array(cloud.local_supports[i])
-        Phi = Phi.at[i, support_ids].set(rbf_vec(cloud.nodes[i], nodes[support_ids]))
+        Phi = Phi.at[i, support_ids].set(rbf_vec(nodes[i], nodes[support_ids]))
 
     return Phi
 
@@ -35,7 +36,7 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     N = cloud.N
     M = nb_monomials
     P = jnp.zeros((N, M))
-    nodes = cloud.sort_nodes_jnp()
+    nodes = cloud.sorted_nodes
 
     for j in range(M):
         # monomial = jax.jit(Partial(make_monomial, id=j))      ## IS
@@ -84,7 +85,7 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, rbf:callable, nb_monomials
     opPhi = jnp.zeros((Ni, N))
     opP = jnp.zeros((Ni, M))
 
-    nodes = cloud.sort_nodes_jnp()
+    nodes = cloud.sorted_nodes
     # if len(args) > 0:
     #     # fields = jnp.stack(args, axis=-1)
     #     fields = jnp.stack(args, axis=-1)
@@ -101,20 +102,20 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, rbf:callable, nb_monomials
     def operator_mon(x, args=None, monomial=None):
         return operator(x, None, rbf, monomial, args)
 
-    coords = cloud.sort_nodes_jnp()
+    # coords = cloud.sorted_nodes
     internal_ids = jnp.arange(Ni)
 
     for i in range(Ni):
         assert cloud.node_boundary_types[i] == "i", "not an internal node"    ## Internal node
 
         support_ids = jnp.array(cloud.local_supports[i])
-        opPhi = opPhi.at[i, support_ids].set(operator_rbf_vec(cloud.nodes[i], nodes[support_ids], fields[i]))
+        opPhi = opPhi.at[i, support_ids].set(operator_rbf_vec(nodes[i], nodes[support_ids], fields[i]))
 
     for j in range(M):
         monomial = Partial(make_monomial, id=j)
         operator_mon_func = Partial(operator_mon, monomial=monomial)
         operator_mon_vec = jax.vmap(operator_mon_func, in_axes=(0, 0), out_axes=0)
-        opP = opP.at[internal_ids, j].set(operator_mon_vec(coords[internal_ids], fields[internal_ids]))
+        opP = opP.at[internal_ids, j].set(operator_mon_vec(nodes[internal_ids], fields[internal_ids]))
 
     return opPhi, opP
 
@@ -139,7 +140,7 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
     rbf_vec = jax.vmap(rbf, in_axes=(None, 0), out_axes=0)
     grad_rbf_vec = jax.vmap(grad_rbf, in_axes=(None, 0), out_axes=0)
 
-    nodes = cloud.sort_nodes_jnp()
+    nodes = cloud.sorted_nodes
 
 
     ### Fill Matrix Phi with vectorisation from axis=1 ###
@@ -150,11 +151,11 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
 
         if cloud.node_boundary_types[i] == "d":
             support_d = jnp.array([j for j in cloud.local_supports[i]])
-            bdPhi = bdPhi.at[ii, support_d].set(rbf_vec(cloud.nodes[i], nodes[support_d]))
+            bdPhi = bdPhi.at[ii, support_d].set(rbf_vec(nodes[i], nodes[support_d]))
 
         elif cloud.node_boundary_types[i] == "n":    ## Neumann node
             support_n = jnp.array([j for j in cloud.local_supports[i]])
-            grads = grad_rbf_vec(cloud.nodes[i], nodes[support_n])
+            grads = grad_rbf_vec(nodes[i], nodes[support_n])
             bdPhi = bdPhi.at[ii, support_n].set(jnp.dot(grads, cloud.outward_normals[i]))
 
 
@@ -245,7 +246,7 @@ def assemble_q(operator:callable, boundary_functions:dict, cloud:Cloud, rbf:call
 
     ## Internal node
     operator_vec = jax.vmap(operator, in_axes=(0, None, None, None), out_axes=(0))
-    nodes = cloud.sort_nodes_jnp()
+    nodes = cloud.sorted_nodes
     internal_ids = jnp.arange(Ni)
     q = q.at[internal_ids].set(operator_vec(nodes[internal_ids], nodes, rbf, fields_coeffs))
 

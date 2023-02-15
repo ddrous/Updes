@@ -4,11 +4,14 @@ from jax.tree_util import Partial
 
 from functools import cache, lru_cache
 
-from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, RBFsol
+# from updec.config import RBF, MAX_DEGREE, DIM
+import updec.config as UPDEC
+from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, SteadySol, polyharmonic, gaussian
 from updec.cloud import Cloud
 from updec.assembly import assemble_A, assemble_invert_A, assemble_B, assemble_q, new_compute_coefficients
 
 
+@Partial(jax.jit, static_argnums=[2,3])
 def nodal_value(x, center=None, rbf=None, monomial=None):
     """ Computes the rbf and polynomial functions """
     """ x: gradient at position x 
@@ -44,6 +47,7 @@ def nodal_gradient(x, center=None, rbf=None, monomial=None):
         rbf: rbf function to use
         monomial: the id of the monomial (if for a monomial)
     """
+    # cfg.RBFtest = gaussian
     ## Only one of node_j or monomial_j can be given
     if center != None:
         # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
@@ -112,7 +116,7 @@ def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_d
 #     final_grad = jnp.array([0.,0.])
 
 #     ################################        ATTEMPT TO VECTORIZE ... TODO Only rbf works, nor monom. and still, with nans
-#     # sorted_nodes = cloud.sort_nodes_jnp()
+#     # sorted_nodes = cloud.sorted_nodes
 #     # monomial_ids = jnp.arange(gammas.shape[0])
 
 #     # nodal_grad_vec_rbf = jax.vmap(nodal_gradient, in_axes=(None, 0, None, None), out_axes=0)
@@ -207,7 +211,7 @@ def pde_solver( diff_operator:callable,
                 rhs_operator:callable,
                 cloud:Cloud, 
                 boundary_conditions:dict, 
-                rbf:callable, 
+                rbf:callable,
                 max_degree:int,
                 diff_args = None,
                 rhs_args = None):
@@ -217,9 +221,16 @@ def pde_solver( diff_operator:callable,
     # nodal_operator = jax.jit(nodal_operator)
     # global_operator = jax.jit(global_operator
     # 
+
+    ### For rememmering purposes
+    UPDEC.BRF = rbf
+    UPDEC.MAX_DEGREE = max_degree
+    UPDEC.DIM = cloud.dim
+
+
     # 
     # TODO Here
-    nb_monomials = compute_nb_monomials(max_degree, 2)
+    nb_monomials = compute_nb_monomials(max_degree, cloud.dim)
 
     B1 = assemble_B(diff_operator, cloud, rbf, nb_monomials, diff_args)
     rhs = assemble_q(rhs_operator, boundary_conditions, cloud, rbf, nb_monomials, rhs_args)
@@ -229,4 +240,4 @@ def pde_solver( diff_operator:callable,
     sol_coeffs = new_compute_coefficients(sol_vals, cloud, rbf, nb_monomials)
 
     # return sol_vals, jnp.concatenate(sol_coeffs)         ## TODO: return an object like solve_ivp
-    return RBFsol(sol_vals, sol_coeffs)
+    return SteadySol(sol_vals, sol_coeffs)
