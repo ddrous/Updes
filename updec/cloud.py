@@ -1,3 +1,4 @@
+import warnings
 import jax
 import jax.numpy as jnp
 from sklearn.neighbors import BallTree
@@ -6,7 +7,7 @@ from updec.utils import distance
 from functools import cache
 
 class Cloud(object):        ## TODO: implemtn len, get_item, etc.
-    def __init__(self):
+    def __init__(self, facet_types, support_size="max"):
         self.N = 0 
         self.Ni = 0
         self.Nd = 0
@@ -15,8 +16,9 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         self.nodes = {}
         self.outward_normals = {}
         self.node_boundary_types = {}
-        self.facet_types = {}
         self.facet_nodes = {}
+        self.facet_types = facet_types
+        self.support_size = support_size
         self.dim = 2                ## TODO: default problem dimension is 2
         # self.facet_names = {}
 
@@ -33,10 +35,15 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         return jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
 
-    def define_local_supports(self, support_size):
+    def define_local_supports(self):
         ## finds the 'support_size' nearest neighbords of each node
         self.local_supports = {}
-        assert support_size <= self.N-1, "Support size must be strictly less than the number of nodes"
+        # if self.support_size < 0 or self.support_size==None or self.support_size>self.N-1:
+        if self.support_size == "max":
+            # warnings.warn("Support size is too big. Setting it to maximum")
+            self.support_size = self.N-1
+        assert self.support_size > 0, "Support size must be strictly greater than 0"
+        assert self.support_size < self.N, "Support size must be strictly less than the number of nodes"
 
         #### BALL TREE METHOD
         renumb_map = {i:k for i,k in enumerate(self.nodes.keys())}
@@ -44,7 +51,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         # ball_tree = KDTree(coords, leaf_size=40, metric='euclidean')
         ball_tree = BallTree(coords, leaf_size=40, metric='euclidean')
         for i in range(self.N):
-            _, neighboorhs = ball_tree.query(coords[i:i+1], k=support_size+1)
+            _, neighboorhs = ball_tree.query(coords[i:i+1], k=self.support_size+1)
             neighboorhs = neighboorhs[0][1:]                    ## Result is a 2d list, with the first el itself
             self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighboorhs]
 
@@ -99,7 +106,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
 
 
-    def visualize_cloud(self, ax=None, figsize=(6,5), **kwargs):
+    def visualize_cloud(self, ax=None, title="Cloud", figsize=(6,5), **kwargs):
         import matplotlib.pyplot as plt
         ## TODO Color and print important stuff appropriately
 
@@ -126,13 +133,19 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         # groups = [0, 1, 2]
         # cdict = dict(zip(["i", "d", "n"], ["k", "r", "g"]))
         Ni, Nd, Nn = self.Ni, self.Nd, self.Nn
-        ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", s=15, label="internal", **kwargs)
-        ax.scatter(x=coords[Ni:Ni+Nd, 0], y=coords[Ni:Ni+Nd, 1], c="r", label="dirichlet", **kwargs)
-        ax.scatter(x=coords[Ni+Nd:Ni+Nd+Nn, 0], y=coords[Ni+Nd:Ni+Nd+Nn, 1], c="g", label="neumann", **kwargs)
-        ax.scatter(x=coords[Ni+Nd+Nn:, 0], y=coords[Ni+Nd+Nn:, 1], c="b", label="robin", **kwargs)
+        if Ni > 0:
+            ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", label="internal", **kwargs)
+        if Nd > 0:
+            ax.scatter(x=coords[Ni:Ni+Nd, 0], y=coords[Ni:Ni+Nd, 1], c="r", label="dirichlet", **kwargs)
+        if Nn > 0:
+            ax.scatter(x=coords[Ni+Nd:Ni+Nd+Nn, 0], y=coords[Ni+Nd:Ni+Nd+Nn, 1], c="g", label="neumann", **kwargs)
+        if Ni+Nd+Nn < self.N:
+            ax.scatter(x=coords[Ni+Nd+Nn:, 0], y=coords[Ni+Nd+Nn:, 1], c="b", label="robin", **kwargs)
 
         ax.set_xlabel(r'$x$')
         ax.set_ylabel(r'$y$')
+        ax.set_title(title)
+        # plt.tight_layout()
         ax.legend(loc='upper right')
 
         return ax
@@ -177,24 +190,19 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
 
 class SquareCloud(Cloud):
-    def __init__(self, Nx=7, Ny=5, facet_types={0:"d", 1:"d", 2:"d", 3:"n"}, support_size=35, noise_key=None):
-        super().__init__()
+    def __init__(self, Nx=7, Ny=5, noise_key=None, **kwargs):
+        super().__init__(**kwargs)
 
         self.Nx = Nx
         self.Ny = Ny
         self.N = self.Nx*self.Ny
-        self.facet_types = facet_types
+        # self.facet_types = facet_types
 
         self.define_global_indices()
-
         self.define_node_boundary_types()
-
         self.define_node_coordinates(noise_key)
-
-        self.define_local_supports(support_size)
-
+        self.define_local_supports()
         self.define_outward_normals()
-
         self.renumber_nodes()
 
         self.sorted_nodes = self.get_sorted_nodes()
@@ -222,9 +230,11 @@ class SquareCloud(Cloud):
         y = jnp.linspace(0, 1., self.Ny)
         xx, yy = jnp.meshgrid(x, y)
 
-        if noise_key is not None:
-            key = jax.random.split(noise_key, self.N)
-            delta_noise = min((x[1]-x[0], y[1]-y[0])) / 2.   ## To make sure nodes don't go into each other
+        if noise_key is None:
+            noise_key = jax.random.PRNGKey(42)
+ 
+        key = jax.random.split(noise_key, self.N)
+        delta_noise = min((x[1]-x[0], y[1]-y[0])) / 2.   ## To make sure nodes don't go into each other
 
         self.nodes = {}
 
@@ -301,16 +311,16 @@ class SquareCloud(Cloud):
 class GmshCloud(Cloud):
     """ Parses gmsh format 4.0.8, not the newer version """
 
-    def __init__(self, filename, facet_types, support_size=7):
+    def __init__(self, filename, **kwargs):
 
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.filename = filename
-        self.facet_types = facet_types
+        # self.facet_types = facet_types
 
         self.extract_nodes_and_boundary_type()
         self.define_outward_normals()
-        self.define_local_supports(support_size)
+        self.define_local_supports()
         self.renumber_nodes()
 
         self.sorted_nodes = self.get_sorted_nodes()

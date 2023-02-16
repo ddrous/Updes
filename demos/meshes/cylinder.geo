@@ -1,0 +1,31 @@
+h = 0.6;
+L = 1.0;
+
+Point(1) = {-3*L, -1/2, 0, h/2};
+Point(2) = {8*L, -1/2, 0, h/2};
+Point(3) = {8*L, 1/2, 0, h/2};
+Point(4) = {-3*L, 1/2, 0, h/2};
+Point(5) = {-L/10, -L/10, 0, h/5};
+Point(6) = {L/10, -L/10, 0, h/5};
+Point(7) = {L/10, L/10, 0, h/5};
+Point(8) = {-L/10, L/10, 0, h/5};
+Line(1) = {1, 2};
+Line(2) = {2, 3};
+Line(3) = {3, 4};
+Line(4) = {4, 1};
+Line(5) = {5, 6};
+Line(6) = {6, 7};
+Line(7) = {7, 8};
+Line(8) = {8, 5};
+Line Loop(11) = {4, 1, 2, 3, -7, -6, -5, -8};
+Plane Surface(11) = {11};
+Physical Line("Square", 1) = {5, 6, 7, 8};
+Physical Line("Inflow", 2) = {4};
+Physical Line("Outflow", 3) = {2};
+Physical Line("Wall", 4) = {1,3};
+
+Coherence;
+Line Loop(12) = {4, 1, 2, 3};
+Line Loop(13) = {8, 5, 6, 7};
+Plane Surface(14) = {12, 13};
+Physical Surface("Domain") = {11};

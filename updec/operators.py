@@ -147,6 +147,32 @@ def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_d
 
 
 
+
+def value(x, field, centers, rbf=None):
+    """ Computes the gradient of field quantity s at position x """
+    ## Find coefficients for s on the cloud
+
+    ## Now, compute the value of the field
+    N = centers.shape[0]
+    lambdas, gammas = field[:N], field[N:]
+
+    final_val = jnp.array([0.])
+    for j in range(lambdas.shape[0]):                                           ## TODO: Awwfull !! Vectorize this please !
+        rbf_val = nodal_value(x, center=centers[j], rbf=rbf)       ## TODO To account for non-differentiable case
+        final_val = final_val.at[:].add(lambdas[j] * rbf_val)
+
+    for j in range(gammas.shape[0]):                                                   ### TODO: Use VMAP to vectorise this too !!
+        monomial = Partial(make_monomial, id=j)
+        polynomial_val = nodal_value(x, monomial=monomial)
+        final_val = final_val.at[:].add(gammas[j] * polynomial_val)
+
+    return final_val[0]
+
+
+
+
+
+
 def gradient(x, field, centers, rbf=None):
     """ Computes the gradient of field quantity s at position x """
     ## Find coefficients for s on the cloud
@@ -170,7 +196,7 @@ def gradient(x, field, centers, rbf=None):
 
     return final_grad
 
-
+gradient_vec = jax.vmap(gradient, in_axes=(0, None, None, None), out_axes=0)
 
 
 
@@ -204,6 +230,13 @@ def laplacian(x, field, centers, rbf=None):
         final_lap = final_lap.at[:].add(gammas[j] * poly_lap)
 
     return final_lap[0]
+
+
+def interpolate_field(field, cloud1, cloud2):
+    """ Interpolates field from cloud1 to cloud2 """
+    # print(cloud1.nodes.keys())
+    # print(cloud2.nodes.keys())
+    return field            ## TODO Think of a way to do this
 
 
 ## Devise different LU, LDL decomposition strategies make functions here
