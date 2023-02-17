@@ -38,12 +38,9 @@ facet_types_phi = {"Wall":"n", "Square":"n", "Inflow":"n", "Outflow":"n"}
 cloud_vel = GmshCloud(filename="./demos/meshes/cylinder.msh", facet_types=facet_types_vel, support_size="max")       ## TODO do not hardcode this path
 cloud_phi = GmshCloud(filename="./demos/meshes/cylinder.msh", facet_types=facet_types_phi, support_size="max")       ## TODO do not hardcode this path
 
-cloud_vel.visualize_cloud(figsize=(20,2), s=12, title="Cloud for velocity");
-cloud_phi.visualize_cloud(figsize=(20,2), s=12, title=r"Cloud for $\phi$");
+cloud_vel.visualize_cloud(figsize=(20,1.4), s=12, title="Cloud for velocity");
+cloud_phi.visualize_cloud(figsize=(20,1.4), s=12, title=r"Cloud for $\phi$");
 
-# print("Out", cloud_vel.facet_nodes["Outflow"])
-# print("Normal", cloud_vel.outward_normals)
-# print("ss", cloud_vel.N, cloud_vel.support_size)
 print("Total number of nodes:", cloud_vel.N)
 # plt.show()
 # exit(0)
@@ -115,14 +112,15 @@ def rhs_operator_phi(x, centers=None, rbf=None, fields=None):
 ## Initial states, all defined on cloud_vel
 u = jnp.zeros((cloud_vel.N,))
 v = jnp.zeros((cloud_vel.N,))
-p = jnp.zeros((cloud_vel.N,))       ## on cloud_vel
+p_ = jnp.zeros((cloud_vel.N,))       ## on cloud_phi
 
-nb_iter = 2
-# print("Outward normals PHI", cloud_vel.outward_normals.keys())
-# exit()
+nb_iter = 1
 
 for i in tqdm(range(nb_iter)):
     # print("Starting iteration %d" % i)
+
+    ## TODO Interpolate p and gradphi onto cloud_vel
+    p = interpolate_field(p_, cloud_phi, cloud_vel)
 
     usol = pde_solver(diff_operator=diff_operator_u, 
                     # diff_args=[v], 
@@ -161,21 +159,26 @@ for i in tqdm(range(nb_iter)):
     p_ = p_ + phisol_.vals
     gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
 
+    ## TODO Visualise gradphi and make sure it's correct
+    # Try a normal poisson probblem with neumann bd conditions
+
+
     ## TODO Interpolate p and gradphi onto cloud_vel
-    p = interpolate_field(p_, cloud_phi, cloud_vel)
     gradphi = interpolate_field(gradphi_, cloud_phi, cloud_vel)
 
-    U = Ustar - gradphi
+    # U = Ustar - gradphi
+    U = Ustar
     u, v = U[:,0], U[:,1]
 
     vel = jnp.linalg.norm(U, axis=-1)
-    cloud_vel.visualize_field(vel, cmap="jet", projection="2d", ax=None, figsize=(20,1.5));
+cloud_vel.visualize_field(vel, cmap="jet", title="Velocity norm", projection="2d", ax=None, figsize=(20,1.5));
 
 
 
 # u = usol.vals
 # v = vsol.vals
-# cloud_vel.visualize_field(u, cmap="jet", projection="2d", ax=None, figsize=(20,1.5));
-# cloud_vel.visualize_field(v, cmap="jet", projection="2d", ax=None, figsize=(20,1.5));
+cloud_vel.visualize_field(u, cmap="jet", title="Velocity along x", projection="2d", ax=None, figsize=(20,1.5));
+cloud_vel.visualize_field(v, cmap="jet", title="Velocity along y", projection="2d", ax=None, figsize=(20,1.5));
+cloud_phi.visualize_field(p_, cmap="jet", title="Pressure", projection="2d", ax=None, figsize=(20,1.5));
 
 plt.show()

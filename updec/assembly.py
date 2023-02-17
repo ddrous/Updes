@@ -150,12 +150,13 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
         assert cloud.node_boundary_types[i] in ["d", "n"], "not a boundary node"    ## Internal node
 
         if cloud.node_boundary_types[i] == "d":
-            support_d = jnp.array([j for j in cloud.local_supports[i]])
+            support_d = jnp.array(cloud.local_supports[i])
             bdPhi = bdPhi.at[ii, support_d].set(rbf_vec(nodes[i], nodes[support_d]))
 
         elif cloud.node_boundary_types[i] == "n":    ## Neumann node
-            support_n = jnp.array([j for j in cloud.local_supports[i]])
+            support_n = jnp.array(cloud.local_supports[i])
             grads = grad_rbf_vec(nodes[i], nodes[support_n])
+            # norm = cloud.outward_normals[i]     ### Remove this line
             bdPhi = bdPhi.at[ii, support_n].set(jnp.dot(grads, cloud.outward_normals[i]))
 
 

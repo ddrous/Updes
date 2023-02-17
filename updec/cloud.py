@@ -285,10 +285,10 @@ class SquareCloud(Cloud):
 
     def define_outward_normals(self):
         ## Makes the outward normal vectors to boundaries
-        nr_nodes = [k for k,v in self.node_boundary_types.items() if v in ["n", "r"]]   ## Neumann or Robin nodes
+        bd_nodes = [k for k,v in self.node_boundary_types.items() if v in ["n", "r"]]   ## Neumann or Robin nodes
         self.outward_normals = {}
 
-        for i in nr_nodes:
+        for i in bd_nodes:
             k, l = self.global_indices_rev[i]
             if k==0:
                 n = jnp.array([-1., 0.])
@@ -360,10 +360,9 @@ class GmshCloud(Cloud):
         while line.find("$Nodes") < 0: line = f.readline()
         splitline = f.readline().split()
 
-        import numpy as np
         self.N = int(splitline[1])
         self.nodes = {}
-        self.facet_nodes = {}
+        self.facet_nodes = {v:[] for v in self.facet_names.values()}
         self.node_boundary_types = {}
         corner_nodes = []
 
@@ -395,7 +394,7 @@ class GmshCloud(Cloud):
                     self.node_boundary_types[node_id] = "i"
 
             if dim==1:
-                self.facet_nodes[self.facet_names[entity_id]] = facet_nodes
+                self.facet_nodes[self.facet_names[entity_id]] += facet_nodes
 
             line = f.readline()
 
