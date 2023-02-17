@@ -4,6 +4,11 @@ from jax.tree_util import Partial
 from collections import namedtuple
 
 import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set(context='notebook', style='ticks',
+        font='sans-serif', font_scale=1, color_codes=True, rc={"lines.linewidth": 2})
+plt.style.use("dark_background")
+
 import math
 
 ## Euclidian distance
@@ -100,7 +105,7 @@ def compute_nb_monomials(max_degree, problem_dimension):
     return math.comb(max_degree+problem_dimension, max_degree)
 
 
-SteadySol = namedtuple('SteadySolution', ['vals', 'coeffs'])
+SteadySol = namedtuple('PDESolution', ['vals', 'coeffs'])
 
 
 

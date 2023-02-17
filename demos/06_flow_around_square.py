@@ -19,14 +19,7 @@ from tqdm import tqdm
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
-jax.config.update('jax_platform_name', 'cpu')           ## CPU is faster here !
-
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-sns.set(context='notebook', style='ticks',
-        font='sans-serif', font_scale=1, color_codes=True, rc={"lines.linewidth": 2})
-# plt.style.use("dark_background")
+# jax.config.update('jax_platform_name', 'cpu')           ## CPU is faster here !
 
 from updec import *
 
@@ -112,7 +105,7 @@ def rhs_operator_phi(x, centers=None, rbf=None, fields=None):
 ## Initial states, all defined on cloud_vel
 u = jnp.zeros((cloud_vel.N,))
 v = jnp.zeros((cloud_vel.N,))
-p_ = jnp.zeros((cloud_vel.N,))       ## on cloud_phi
+p_ = jnp.zeros((cloud_phi.N,))       ## on cloud_phi
 
 nb_iter = 1
 

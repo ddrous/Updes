@@ -207,6 +207,8 @@ def divergence(x, field, centers, rbf=None):
 
     return dfieldx_dx + dfieldy_dy
 
+divergence_vec = jax.vmap(divergence, in_axes=(0, None, None, None), out_axes=0)
+
 
 def laplacian(x, field, centers, rbf=None):
     """ Computes the laplacian of quantity s at position x """
@@ -234,6 +236,7 @@ def laplacian(x, field, centers, rbf=None):
 
 def interpolate_field(field, cloud1, cloud2):
     """ Interpolates field from cloud1 to cloud2 """
+    # print("In the function interpolate, we have the same ordering ... (for now)")
     # print(cloud1.nodes.keys())
     # print(cloud2.nodes.keys())
     return field            ## TODO Think of a way to do this
@@ -251,9 +254,8 @@ def pde_solver( diff_operator:callable,
     """ Solve a PDE """
 
     # nodal_operator = jax.jit(nodal_operator, static_argnums=2)
-    # nodal_operator = jax.jit(nodal_operator)
-    # global_operator = jax.jit(global_operator
-    # 
+    diff_operator = jax.jit(diff_operator, static_argnums=[2,3])
+    rhs_operator = jax.jit(rhs_operator, static_argnums=2)
 
     ### For rememmering purposes
     UPDEC.BRF = rbf

@@ -134,7 +134,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         # cdict = dict(zip(["i", "d", "n"], ["k", "r", "g"]))
         Ni, Nd, Nn = self.Ni, self.Nd, self.Nn
         if Ni > 0:
-            ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", label="internal", **kwargs)
+            ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="w", label="internal", **kwargs)
         if Nd > 0:
             ax.scatter(x=coords[Ni:Ni+Nd, 0], y=coords[Ni:Ni+Nd, 1], c="r", label="dirichlet", **kwargs)
         if Nn > 0:
@@ -151,7 +151,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         return ax
 
 
-    def visualize_field(self, field, projection, title="Field", levels=50, ax=None, figsize=(6,5), **kwargs):
+    def visualize_field(self, field, projection="2d", title="Field", levels=50, ax=None, figsize=(6,5), **kwargs):
         import matplotlib.pyplot as plt
 
         # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
@@ -299,7 +299,21 @@ class SquareCloud(Cloud):
             elif l==self.Ny-1:
                 n = jnp.array([0., 1.])
 
+            ## How to enfore zeros normals at corners nodes
+            # nx, ny = 1., 1.
+            # if k==0:
+            #     nx, ny = -nx, 0. 
+            # elif k==self.Nx-1:
+            #     nx, ny = nx, 0. 
+            # elif l==0:
+            #     nx, ny = 0., -ny 
+            # elif l==self.Ny-1:
+            #     nx, ny = 0., ny
+
+            # self.outward_normals[int(self.global_indices[k,l])] = jnp.array([nx, ny])
             self.outward_normals[int(self.global_indices[k,l])] = n
+
+
 
 
 

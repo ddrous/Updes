@@ -30,20 +30,22 @@ SUPPORT_SIZE = Nx*Ny-1
 # print(run_name)
 
 facet_types={"south":"n", "west":"d", "north":"d", "east":"d"}
+# facet_types={"south":"n", "west":"n", "north":"n", "east":"n"}
+# facet_types={"south":"d", "west":"d", "north":"d", "east":"d"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
 
 
 
 ## Diffeerential operator
-@Partial(jax.jit, static_argnums=[2,3])
+# @Partial(jax.jit, static_argnums=[2,3])
 def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
     # a, b = args[0], args[1]   ## agrs is a array
     return nodal_laplacian(x, center, rbf, monomial)
 
 # Right-hand side operator
-@Partial(jax.jit, static_argnums=[2])
+# @Partial(jax.jit, static_argnums=[2])
 def my_rhs_operator(x, centers=None, rbf=None, fields=None):
-    return 0.0
+    return -1.0
 
 d_north = lambda node: jnp.sin(jnp.pi * node[0])
 d_zero = lambda node: 0.0
