@@ -45,7 +45,7 @@ def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
 # Right-hand side operator
 # @Partial(jax.jit, static_argnums=[2])
 def my_rhs_operator(x, centers=None, rbf=None, fields=None):
-    return -1.0
+    return 0.0
 
 d_north = lambda node: jnp.sin(jnp.pi * node[0])
 d_zero = lambda node: 0.0
