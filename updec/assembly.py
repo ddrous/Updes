@@ -2,10 +2,10 @@ import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
 
-from functools import cache
+from functools import cache, partial
 
 # from updec.config import RBF, MAX_DEGREE, DIM
-from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials
+from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, make_all_monomials
 from updec.cloud import Cloud
 
 
@@ -93,14 +93,16 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, rbf:callable, nb_monomials
     #     fields = jnp.ones((N,1))     ## TODO Won't be used tho. FIx this !
     fields = jnp.stack(args, axis=-1) if args else jnp.ones((N,1))      ## TODO Find a better way. Will never be used
 
-    # operator_rbf = Partial(operator, monomial=None)
+    # operator_rbf = partial(operator, monomial=None)
+    # @jax.jit
     def operator_rbf(x, center=None, args=None): 
         return operator(x, center, rbf, None, args)
-    operator_rbf_vec = jax.vmap(operator_rbf, in_axes=(None, 0, None), out_axes=0)
+    operator_rbf_vec = jax.jit(jax.vmap(operator_rbf, in_axes=(None, 0, None), out_axes=0))
 
     # operator_mon = Partial(operator, node=None)
     def operator_mon(x, args=None, monomial=None):
         return operator(x, None, rbf, monomial, args)
+    monomials = make_all_monomials(M)
 
     # coords = cloud.sorted_nodes
     internal_ids = jnp.arange(Ni)
@@ -112,8 +114,7 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, rbf:callable, nb_monomials
         opPhi = opPhi.at[i, support_ids].set(operator_rbf_vec(nodes[i], nodes[support_ids], fields[i]))
 
     for j in range(M):
-        monomial = Partial(make_monomial, id=j)
-        operator_mon_func = Partial(operator_mon, monomial=monomial)
+        operator_mon_func = Partial(operator_mon, monomial=monomials[j])
         operator_mon_vec = jax.vmap(operator_mon_func, in_axes=(0, 0), out_axes=0)
         opP = opP.at[internal_ids, j].set(operator_mon_vec(nodes[internal_ids], fields[internal_ids]))
 
@@ -164,18 +165,17 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
     node_ids_d = jnp.array([k for k,v in cloud.node_boundary_types.items() if v == "d"])
     node_ids_n = jnp.array([k for k,v in cloud.node_boundary_types.items() if v == "n"])
 
+    monomials = make_all_monomials(M)
     if node_ids_d.shape[0] > 0:
         for j in range(M):
-            monomial = Partial(make_monomial, id=j)
-            monomial_vec = jax.vmap(monomial, in_axes=(0,), out_axes=0)
+            monomial_vec = jax.vmap(monomials[j], in_axes=(0,), out_axes=0)
             bdP = bdP.at[node_ids_d-Ni, j].set(monomial_vec(nodes[node_ids_d]))
 
     if node_ids_n.shape[0] > 0:
         normals_n = jnp.stack([cloud.outward_normals[i] for i in node_ids_n.tolist()], axis=0)
         dot_vec = jax.vmap(jnp.dot, in_axes=(0,0), out_axes=0)
         for j in range(M):
-            monomial = Partial(make_monomial, id=j)
-            grad_monomial = jax.grad(monomial)
+            grad_monomial = jax.grad(monomials[j])
             grad_monomial_vec = jax.vmap(grad_monomial, in_axes=(0,), out_axes=0)
             grads = grad_monomial_vec(nodes[node_ids_n])
             bdP = bdP.at[node_ids_n-Ni, j].set(dot_vec(grads, normals_n))

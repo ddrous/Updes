@@ -170,6 +170,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         if projection == "2d":
             img = ax.tricontourf(x, y, field, levels=levels, **kwargs)
             if colorbar == True:
+                plt.sca(ax)
                 plt.colorbar(img)
 
         elif projection == "3d":

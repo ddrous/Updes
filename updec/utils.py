@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
 from collections import namedtuple
+from functools import cache, partial
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -99,6 +100,12 @@ def make_monomial(x, id):
         return x[1]**4
     else:
         pass        ## Higher order monomials not yet supported
+
+@cache
+def make_all_monomials(nb_monomials):
+    # return jnp.array([Partial(make_monomial, id=j) for j in range(nb_monomials)])
+    return [partial(make_monomial, id=j) for j in range(nb_monomials)]
+
 
 
 def compute_nb_monomials(max_degree, problem_dimension):

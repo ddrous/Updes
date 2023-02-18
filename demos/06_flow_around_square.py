@@ -1,6 +1,4 @@
 
-import os
-os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
 from tqdm import tqdm
 
 import jax
@@ -94,7 +92,7 @@ u = jnp.zeros((cloud_vel.N,))
 v = jnp.zeros((cloud_vel.N,))
 p_ = jnp.zeros((cloud_phi.N,))       ## on cloud_phi
 
-nb_iter = 1
+nb_iter = 5
 # plt.show()
 # exit()
 
@@ -148,10 +146,11 @@ for i in tqdm(range(nb_iter)):
     vel = jnp.linalg.norm(U, axis=-1)
 
     fig, ax = plt.subplots(4, 1, figsize=(9.5,1.4*4), sharex=True)
-    cloud_vel.visualize_field(u, cmap="jet", title="Velocity along x", ax=ax[0], xlabel=False);
-    cloud_vel.visualize_field(v, cmap="jet", title="Velocity along y", ax=ax[1], xlabel=False);
-    cloud_vel.visualize_field(vel, cmap="jet", title="Velocity norm", ax=ax[2], xlabel=False);
-    cloud_phi.visualize_field(p_, cmap="jet", title="Pressure", ax=ax[3]);
+    iter_str = " at iteration " + str(i+1)
+    cloud_vel.visualize_field(u, cmap="jet", title="Velocity along x"+iter_str, ax=ax[0], xlabel=False);
+    cloud_vel.visualize_field(v, cmap="jet", title="Velocity along y"+iter_str, ax=ax[1], xlabel=False);
+    cloud_vel.visualize_field(vel, cmap="jet", title="Velocity norm"+iter_str, ax=ax[2], xlabel=False);
+    cloud_phi.visualize_field(p_, cmap="jet", title="Pressure"+iter_str, ax=ax[3]);
 
 
 plt.show()
