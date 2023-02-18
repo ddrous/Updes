@@ -14,5 +14,6 @@ setup(
    install_requires=[
        "jax >= 0.3.4",
        "pytest",
+       "matplotlib>=3.4.0",
    ],
 )

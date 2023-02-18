@@ -106,18 +106,18 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
 
 
-    def visualize_cloud(self, ax=None, title="Cloud", figsize=(6,5), **kwargs):
+    def visualize_cloud(self, ax=None, title="Cloud", xlabel=r'$x$', ylabel=r'$y$', legend_size=8, figsize=(6,5), **kwargs):
         import matplotlib.pyplot as plt
         ## TODO Color and print important stuff appropriately
 
         if ax is None:
             fig = plt.figure(figsize=figsize)
+            ax = fig.add_subplot(1, 1, 1)
 
         # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         # coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
         coords = self.sorted_nodes
 
-        ax = fig.add_subplot(1, 1, 1)
 
         # colours = []
         # for i in range(self.N):
@@ -142,16 +142,18 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         if Ni+Nd+Nn < self.N:
             ax.scatter(x=coords[Ni+Nd+Nn:, 0], y=coords[Ni+Nd+Nn:, 1], c="b", label="robin", **kwargs)
 
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$y$')
+        if xlabel:
+            ax.set_xlabel(xlabel)
+        if ylabel:
+            ax.set_ylabel(ylabel)
         ax.set_title(title)
-        # plt.tight_layout()
-        ax.legend(loc='upper right')
+        ax.legend(bbox_to_anchor=(1.0, 0.5), loc='center left', prop={'size': legend_size})
+        plt.tight_layout()
 
         return ax
 
 
-    def visualize_field(self, field, projection="2d", title="Field", levels=50, ax=None, figsize=(6,5), **kwargs):
+    def visualize_field(self, field, projection="2d", title="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, colorbar=True, ax=None, figsize=(6,5), **kwargs):
         import matplotlib.pyplot as plt
 
         # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
@@ -167,16 +169,19 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
         if projection == "2d":
             img = ax.tricontourf(x, y, field, levels=levels, **kwargs)
-            fig.colorbar(img)
-            ax.set_title(title)
+            if colorbar == True:
+                plt.colorbar(img)
 
         elif projection == "3d":
             img = ax.plot_trisurf(x, y, field, **kwargs)
             # fig.colorbar(img, shrink=0.25, aspect=20)
-            ax.set_title(title)
 
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$y$')
+        ax.set_title(title)
+        if xlabel:
+            ax.set_xlabel(xlabel)
+        if ylabel:
+            ax.set_ylabel(ylabel)
+        plt.tight_layout()
 
         return ax, img
 
