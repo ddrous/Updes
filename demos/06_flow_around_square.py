@@ -90,7 +90,7 @@ def rhs_operator_phi(x, centers=None, rbf=None, fields=None):
 ## Initial states, all defined on cloud_vel
 u = jnp.zeros((cloud_vel.N,))
 v = jnp.zeros((cloud_vel.N,))
-p_ = jnp.zeros((cloud_phi.N,))       ## on cloud_phi
+p_ = jnp.zeros((cloud_phi.N,))       ## on cloud_phi        ##TODO set this to p_a on Outlet
 
 nb_iter = 5
 # plt.show()
@@ -151,6 +151,6 @@ for i in tqdm(range(nb_iter)):
     cloud_vel.visualize_field(v, cmap="jet", title="Velocity along y"+iter_str, ax=ax[1], xlabel=False);
     cloud_vel.visualize_field(vel, cmap="jet", title="Velocity norm"+iter_str, ax=ax[2], xlabel=False);
     cloud_phi.visualize_field(p_, cmap="jet", title="Pressure"+iter_str, ax=ax[3]);
-
+    plt.savefig('demos/temp/solutions_iter_'+str(i)+'.png')
 
 plt.show()
