@@ -27,54 +27,48 @@ print("Total number of nodes:", cloud_vel.N)
 RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 4
 
-parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
-zero = jax.jit(lambda x: 0.0)
-one = jax.jit(lambda x: -0.25)
 
-bc_u = {"Wall":zero, "Inflow":parabolic, "Outflow":zero}
-bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
-bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero}
+Re = 200
+RHO = 1000          ## Water
+# RHO = 1           ## air
+NU = 1e-6           ## water
+# NU = 1e-5         ## air
+# sigma = 0.07
+DT = 5e-3
 
 
-Du = Re = 200
-DeltaT = 0.0001
+pa = 101325.0
+beta = 0.
 
 @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_u(x, center=None, rbf=None, monomial=None, fields=None):
-    u = nodal_value(x, center, rbf, monomial)
-    # u = nodal_laplacian(x, center, rbf, monomial)
-    return u
+    U_prev = jnp.array([fields[0], fields[1]])
+    u_val = nodal_value(x, center, rbf, monomial)
+    u_grad = nodal_gradient(x, center, rbf, monomial)
+    u_lap = nodal_laplacian(x, center, rbf, monomial)
+    return u_val + DT*jnp.dot(U_prev, u_grad) - DT*NU*u_lap
 
 @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_u(x, centers=None, rbf=None, fields=None):
-    u = value(x, fields[:, 0], centers, rbf) 
-    v = value(x, fields[:, 1], centers, rbf) 
-    U = jnp.array([u,v])
-
-    grad_u = gradient(x, fields[:, 0], centers, rbf)
-    grad_px = gradient(x, fields[:, 2], centers, rbf)[0]
-    lap_u = laplacian(x, fields[:, 0], centers, rbf)
-
-    return  u + DeltaT*(jnp.dot(U, grad_u) - grad_px + lap_u/Re)
+    u_prev = value(x, fields[:, 0], centers, rbf)
+    grad_px = gradient(x, fields[:, 1], centers, rbf)[0]
+    return  u_prev - beta*(DT*grad_px/RHO)
 
 
 
 @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_v(x, center=None, rbf=None, monomial=None, fields=None):
-    v = nodal_value(x, center, rbf, monomial)
-    return  v
+    U_prev = jnp.array([fields[0], fields[1]])
+    v_val = nodal_value(x, center, rbf, monomial)
+    v_grad = nodal_gradient(x, center, rbf, monomial)
+    v_lap = nodal_laplacian(x, center, rbf, monomial)
+    return v_val + DT*jnp.dot(U_prev, v_grad) - DT*NU*v_lap
 
 @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_v(x, centers=None, rbf=None, fields=None):
-    u = value(x, fields[:, 0], centers, rbf) 
-    v = value(x, fields[:, 1], centers, rbf) 
-    U = jnp.array([u,v])
-
-    grad_v = gradient(x, fields[:, 1], centers, rbf)
-    grad_py = gradient(x, fields[:, 2], centers, rbf)[1]
-    lap_v = laplacian(x, fields[:, 1], centers, rbf)
-
-    return v + DeltaT*(jnp.dot(U, grad_v) - grad_py + lap_v/Re)
+    v_prev = value(x, fields[:, 0], centers, rbf)
+    grad_py = gradient(x, fields[:, 1], centers, rbf)[1]
+    return  v_prev - beta*(DT *grad_py/RHO)
 
 
 
@@ -84,13 +78,32 @@ def diff_operator_phi(x, center=None, rbf=None, monomial=None, fields=None):
 
 @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_phi(x, centers=None, rbf=None, fields=None):
-    return divergence(x, fields[:, :2], centers, rbf) / DeltaT
+    return RHO * divergence(x, fields[:, :2], centers, rbf) / DT
+    # return RHO * jnp.min(jnp.array([divergence(x, fields[:, :2], centers, rbf), 0.001])) / DT
 
 
 ## Initial states, all defined on cloud_vel
 u = jnp.zeros((cloud_vel.N,))
 v = jnp.zeros((cloud_vel.N,))
+
 p_ = jnp.zeros((cloud_phi.N,))       ## on cloud_phi        ##TODO set this to p_a on Outlet
+out_nodes = jnp.array(cloud_phi.facet_nodes["Outflow"])
+# p_ = p_.at[out_nodes].set(101325)
+p_ = p_.at[out_nodes].set(pa)
+
+
+
+
+parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
+atmospheric = jax.jit(lambda x: pa*(1. - beta))     ##TODO Carefull: beta and pa must never change
+zero = jax.jit(lambda x: 0.0)
+one = jax.jit(lambda x: -0.25)
+
+bc_u = {"Wall":zero, "Inflow":parabolic, "Outflow":zero}
+bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
+bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero}
+
+
 
 nb_iter = 5
 # plt.show()
@@ -103,18 +116,18 @@ for i in tqdm(range(nb_iter)):
     p = interpolate_field(p_, cloud_phi, cloud_vel)
 
     usol = pde_solver(diff_operator=diff_operator_u, 
-                    # diff_args=[v], 
+                    diff_args=[u, v],
                     rhs_operator = rhs_operator_u, 
-                    rhs_args=[u,v,p], 
+                    rhs_args=[u, p], 
                     cloud = cloud_vel, 
                     boundary_conditions = bc_u,
                     rbf=RBF,
                     max_degree=MAX_DEGREE)
 
     vsol = pde_solver(diff_operator=diff_operator_v,
-                    # diff_args=[v],
+                    diff_args=[u, v],
                     rhs_operator = rhs_operator_v,
-                    rhs_args=[u,v,p], 
+                    rhs_args=[v, p], 
                     cloud = cloud_vel, 
                     boundary_conditions = bc_v,
                     rbf=RBF,
@@ -135,13 +148,13 @@ for i in tqdm(range(nb_iter)):
                     rbf=RBF,
                     max_degree=MAX_DEGREE)
 
-    p_ = p_ + phisol_.vals
+    p_ = beta*p_ + phisol_.vals
     gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
 
     ## TODO Interpolate p and gradphi onto cloud_vel
     gradphi = interpolate_field(gradphi_, cloud_phi, cloud_vel)
 
-    U = Ustar - gradphi*DeltaT
+    U = Ustar - (gradphi*DT/RHO)
     u, v = U[:,0], U[:,1]
     vel = jnp.linalg.norm(U, axis=-1)
 
