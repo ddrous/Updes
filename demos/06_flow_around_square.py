@@ -84,7 +84,7 @@ def diff_operator_phi(x, center=None, rbf=None, monomial=None, fields=None):
 
 @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_phi(x, centers=None, rbf=None, fields=None):
-    return divergence(x, fields[:, :2], centers, rbf)
+    return divergence(x, fields[:, :2], centers, rbf) / DeltaT
 
 
 ## Initial states, all defined on cloud_vel
@@ -141,7 +141,7 @@ for i in tqdm(range(nb_iter)):
     ## TODO Interpolate p and gradphi onto cloud_vel
     gradphi = interpolate_field(gradphi_, cloud_phi, cloud_vel)
 
-    U = Ustar - gradphi
+    U = Ustar - gradphi*DeltaT
     u, v = U[:,0], U[:,1]
     vel = jnp.linalg.norm(U, axis=-1)
 
