@@ -187,8 +187,61 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         return ax, img
 
 
+    def animate_fields(self, fields, filename=None, titles="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, figsize=(6,5), cmaps="jet", cbarsplit=7, duration=5, **kwargs):
+        import matplotlib.pyplot as plt
+        from matplotlib.animation import FuncAnimation
+        import os
+        """ Animation of signals """
 
+        ## If not array already
+        signals = [jnp.stack(field, axis=0) for field in fields]
+        nb_signals = len(signals)
 
+        x, y = self.sorted_nodes[:, 0], self.sorted_nodes[:, 1]
+
+        fig, ax = plt.subplots(nb_signals, 1, figsize=figsize, sharex=True)
+
+        ## Setup animation and colorbars
+        imgs = []
+        boundaries = []
+        for i in range(nb_signals):
+            minmax = jnp.min(signals[i]), jnp.max(signals[i])
+            boundaries = jnp.linspace(minmax[0], minmax[1], cbarsplit)
+
+            imgs.append(ax[i].tricontourf(x, y, signals[i][0], levels=levels, cmap=cmaps[i], **kwargs))
+
+            m = plt.cm.ScalarMappable(cmap=cmaps[i])
+            m.set_array(signals[i])
+            m.set_clim(minmax[0], minmax[1])
+            plt.colorbar(m, boundaries=boundaries, shrink=1.0, aspect=10, ax=ax[i])
+
+            try:
+                title = titles[i]
+            except IndexError:
+                title = "field # "+str(i+1)
+            ax[i].set_title(title)
+
+            if i == nb_signals-1:
+                ax[i].set_xlabel(xlabel)
+            ax[i].set_ylabel(ylabel)
+
+        ## ANimation function
+        def animate(frame):
+            imgs = [ax[i].tricontourf(x, y, signals[i][frame], levels=levels, cmap=cmaps[i], extend='min', **kwargs) for i in range(nb_signals)]
+            # plt.suptitle("iter = "+str(i), size="large", y=0.95)      ## TODO doesn't work well with tight layout
+            return imgs
+
+        step_count = signals[0].shape[0]
+        anim = FuncAnimation(fig, animate, frames=step_count, repeat=False, interval=100)
+        plt.tight_layout()
+
+        ### Save the video
+        if filename:
+            fps = step_count / duration
+            anim.save(filename, writer='ffmpeg', fps=fps)
+            os.system("open "+filename)
+
+        return ax
 
 
 

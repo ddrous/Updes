@@ -34,7 +34,7 @@ RHO = 1000          ## Water
 NU = 1e-6           ## water
 # NU = 1e-5         ## air
 # sigma = 0.07
-DT = 5e-3
+DT = 5e-4
 
 
 pa = 101325.0
@@ -88,7 +88,6 @@ v = jnp.zeros((cloud_vel.N,))
 
 p_ = jnp.zeros((cloud_phi.N,))       ## on cloud_phi        ##TODO set this to p_a on Outlet
 out_nodes = jnp.array(cloud_phi.facet_nodes["Outflow"])
-# p_ = p_.at[out_nodes].set(101325)
 p_ = p_.at[out_nodes].set(pa)
 
 
@@ -106,8 +105,10 @@ bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero}
 
 
 nb_iter = 5
-# plt.show()
-# exit()
+all_u = []
+all_v = []
+all_vel = []
+all_p = []
 
 for i in tqdm(range(nb_iter)):
     # print("Starting iteration %d" % i)
@@ -158,12 +159,18 @@ for i in tqdm(range(nb_iter)):
     u, v = U[:,0], U[:,1]
     vel = jnp.linalg.norm(U, axis=-1)
 
-    fig, ax = plt.subplots(4, 1, figsize=(9.5,1.4*4), sharex=True)
-    iter_str = " at iteration " + str(i+1)
-    cloud_vel.visualize_field(u, cmap="jet", title="Velocity along x"+iter_str, ax=ax[0], xlabel=False);
-    cloud_vel.visualize_field(v, cmap="jet", title="Velocity along y"+iter_str, ax=ax[1], xlabel=False);
-    cloud_vel.visualize_field(vel, cmap="jet", title="Velocity norm"+iter_str, ax=ax[2], xlabel=False);
-    cloud_phi.visualize_field(p_, cmap="jet", title="Pressure"+iter_str, ax=ax[3]);
-    plt.savefig('demos/temp/solutions_iter_'+str(i)+'.png')
+    # fig, ax = plt.subplots(4, 1, figsize=(9.5,1.4*4), sharex=True)
+    # iter_str = " at iteration " + str(i+1)
+    # cloud_vel.visualize_field(u, cmap="jet", title="Velocity along x"+iter_str, ax=ax[0], xlabel=False);
+    # cloud_vel.visualize_field(v, cmap="jet", title="Velocity along y"+iter_str, ax=ax[1], xlabel=False);
+    # cloud_vel.visualize_field(vel, cmap="jet", title="Velocity norm"+iter_str, ax=ax[2], xlabel=False);
+    # cloud_phi.visualize_field(p_, cmap="jet", title="Pressure"+iter_str, ax=ax[3]);
+    # plt.savefig('demos/temp/solutions_iter_'+str(i)+'.png')
+    all_u.append(u)
+    all_v.append(v)
+    all_vel.append(vel)
+    all_p.append(p_)
 
-plt.show()
+
+filename = 'demos/temp/video.mp4'
+cloud_vel.animate_fields([all_u, all_v, all_vel, all_p], filename=filename, cmaps=["jet", "jet", "jet", "magma"], titles=[r"$u$", r"$v$", "Velocity amplitude", "Pressure"], figsize=(9.5,1.4*4));
