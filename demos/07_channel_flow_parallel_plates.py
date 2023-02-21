@@ -38,6 +38,7 @@ DT = 5e-4
 
 
 pa = 101325.0
+# pa = 0.0
 beta = 0.
 
 @Partial(jax.jit, static_argnums=[2,3])
@@ -94,6 +95,7 @@ p_ = p_.at[out_nodes].set(pa)
 
 
 parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
+# parabolic = jax.jit(lambda x: 1.)
 atmospheric = jax.jit(lambda x: pa*(1. - beta))     ##TODO Carefull: beta and pa must never change
 zero = jax.jit(lambda x: 0.0)
 one = jax.jit(lambda x: -0.25)
@@ -104,7 +106,7 @@ bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero}
 
 
 
-nb_iter = 5
+nb_iter = 20
 all_u = []
 all_v = []
 all_vel = []
@@ -173,4 +175,4 @@ for i in tqdm(range(nb_iter)):
 
 
 filename = 'demos/temp/video.mp4'
-cloud_vel.animate_fields([all_u, all_v, all_vel, all_p], filename=filename, cmaps=["jet", "jet", "jet", "magma"], titles=[r"$u$", r"$v$", "Velocity amplitude", "Pressure"], figsize=(9.5,1.4*4));
+cloud_vel.animate_fields([all_u, all_v, all_vel, all_p], filename=filename, cmaps=["jet", "jet", "jet", "magma"], titles=[r"$u$", r"$v$", "Velocity amplitude", "Pressure"], duration=10, figsize=(9.5,1.4*4));
