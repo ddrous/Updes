@@ -8,6 +8,8 @@ from jax.tree_util import Partial
 from updec import *
 
 
+## Conda hook on windows: C:\Users\<username>\anaconda3\shell\condabin\conda-hook.ps1
+
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
 
@@ -29,12 +31,13 @@ MAX_DEGREE = 4
 
 
 Re = 200
-RHO = 1000          ## Water
+RHO = 1          ## Water
 # RHO = 1           ## air
-NU = 1e-6           ## water
+# NU = 1e-3           ## water
+NU = 1           ## water
 # NU = 1e-5         ## air
 # sigma = 0.07
-DT = 5e-4
+DT = 1e-6
 
 
 pa = 101325.0
@@ -94,19 +97,18 @@ p_ = p_.at[out_nodes].set(pa)
 
 
 
-parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
-# parabolic = jax.jit(lambda x: 1.)
+# parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
+parabolic = jax.jit(lambda x: 1.)
 atmospheric = jax.jit(lambda x: pa*(1. - beta))     ##TODO Carefull: beta and pa must never change
 zero = jax.jit(lambda x: 0.0)
-one = jax.jit(lambda x: -0.25)
 
 bc_u = {"Wall":zero, "Inflow":parabolic, "Outflow":zero}
 bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
-bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero}
+bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
 
 
 
-nb_iter = 20
+nb_iter = 25
 all_u = []
 all_v = []
 all_vel = []
