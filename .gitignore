@@ -16,3 +16,5 @@ runs/*
 !runs/README.md
 demos/temp/*
 !demos/temp/README.md
+*msh
+*vtk
