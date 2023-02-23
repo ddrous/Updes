@@ -21,8 +21,9 @@ cloud_vel.visualize_cloud(ax=ax1, s=12, title="Cloud for velocity", xlabel=False
 cloud_phi.visualize_cloud(ax=ax2, s=12, title=r"Cloud for $\phi$");
 
 print("Total number of nodes:", cloud_vel.N)
-# plt.show()
-# exit(0)
+print(cloud_vel.outward_normals)
+plt.show()
+exit(0)
 
 
 RBF = polyharmonic      ## Can define which rbf to use

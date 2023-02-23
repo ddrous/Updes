@@ -8,7 +8,7 @@ gmsh.initialize()
 gmsh.model.add("channel")
 
 
-lc = 0.3
+lc = 0.9
 L = 1.0
 DIM = 2
 

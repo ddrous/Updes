@@ -22,6 +22,8 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         self.support_size = support_size
         self.dim = 2                ## TODO: default problem dimension is 2
         # self.facet_names = {}
+        self.facet_precedence = {k:i for i,(k,v) in enumerate(facet_types.items())}        ## Facet order of precedence usefull for corner nodes membership
+
 
     def average_spacing(self):
         spacings = []
@@ -481,7 +483,9 @@ class GmshCloud(Cloud):
 
             line = f.readline()
 
-        # --- Lecture des éléments du maillage ---#
+        corner_membership = {c_id:[] for c_id in corner_nodes}
+
+        # --- Read mesh elements for corner nodes ---#
         while line.find("$Elements") < 0: line = f.readline()
         f.readline()
 
@@ -492,7 +496,7 @@ class GmshCloud(Cloud):
             dim = int(splitline[1])
             nb = int(splitline[-1])
 
-            if dim == 1:
+            if dim == 1:                ## Only condiering elements of dim=DIM-1
                 for i in range(nb):
                     splitline = [int(n_id)-1 for n_id in f.readline().split()]
 
@@ -501,11 +505,12 @@ class GmshCloud(Cloud):
                         if c_node_id in splitline:
                             for neighboor in splitline:
                                 if neighboor != c_node_id:
-                                    self.node_boundary_types[c_node_id] = self.facet_types[self.facet_names[entity_id]]
-                                    self.facet_nodes[self.facet_names[entity_id]].append(c_node_id)
+                                    # self.node_boundary_types[c_node_id] = self.facet_types[self.facet_names[entity_id]]
+                                    # self.facet_nodes[self.facet_names[entity_id]].append(c_node_id)
+                                    corner_membership[c_node_id].append(entity_id)
                                     break
 
-                            corner_nodes.remove(c_node_id)
+                            # corner_nodes.remove(c_node_id)
 
             else:
                 for i in range(nb): f.readline()
@@ -513,6 +518,17 @@ class GmshCloud(Cloud):
             line = f.readline()
 
         f.close()
+
+        ## Sort the entity ids by precedence
+        for c_id, f_ids in corner_membership.items():
+            f_names = [self.facet_names[f_id] for f_id in f_ids]
+            sorted_f = sorted(f_names, key=lambda f_name:self.facet_precedence[f_name])
+            choosen_facet = sorted_f[0]   ## The corner node belongs to this facet exclusively
+
+            self.node_boundary_types[c_id] = self.facet_types[choosen_facet]
+            self.facet_nodes[choosen_facet].append(c_id)
+
+
         self.Ni = len({k:v for k,v in self.node_boundary_types.items() if v=="i"})
         self.Nd = len({k:v for k,v in self.node_boundary_types.items() if v=="d"})
         self.Nr = len({k:v for k,v in self.node_boundary_types.items() if v=="r"})
@@ -529,14 +545,17 @@ class GmshCloud(Cloud):
                 break
 
         for f_name, f_nodes in self.facet_nodes.items():
-            in_vector = i_point - self.nodes[f_nodes[0]]        ## An inward pointing vector
-            assert len(f_nodes)>1, " Mesh not fine enough for normal computation "
-            tangent = self.nodes[f_nodes[1]] - self.nodes[f_nodes[0]]       ## A tangent vector
 
-            normal = jnp.array([-tangent[1], tangent[0]])
-            if jnp.dot(normal, in_vector) > 0:      ## The normal is pointing inward
-                for j in f_nodes:
-                    self.outward_normals[j] = -normal / jnp.linalg.norm(normal)
-            else:                                   ## The normal is pointing outward
-                for j in f_nodes:
-                    self.outward_normals[j] = normal / jnp.linalg.norm(normal)
+            if self.facet_types[f_name] in ["n", "r"]:      ### Only Neuman and Robin need normals !
+
+                in_vector = i_point - self.nodes[f_nodes[0]]        ## An inward pointing vector
+                assert len(f_nodes)>1, " Mesh not fine enough for normal computation "
+                tangent = self.nodes[f_nodes[1]] - self.nodes[f_nodes[0]]       ## A tangent vector
+
+                normal = jnp.array([-tangent[1], tangent[0]])
+                if jnp.dot(normal, in_vector) > 0:      ## The normal is pointing inward
+                    for j in f_nodes:
+                        self.outward_normals[j] = -normal / jnp.linalg.norm(normal)
+                else:                                   ## The normal is pointing outward
+                    for j in f_nodes:
+                        self.outward_normals[j] = normal / jnp.linalg.norm(normal)
