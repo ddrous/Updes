@@ -8,13 +8,13 @@ gmsh.initialize()
 gmsh.model.add("channel")
 
 
-lc = 0.9
+lc = 0.2
 L = 1.0
 DIM = 2
 
 gmsh.model.geo.addPoint(-3*L, -1/2, 0, lc, 1)
-gmsh.model.geo.addPoint(8*L, -1/2, 0, lc/3, 2)
-gmsh.model.geo.addPoint(8*L, 1/2, 0, lc/3, 3)
+gmsh.model.geo.addPoint(8*L, -1/2, 0, lc/2, 2)
+gmsh.model.geo.addPoint(8*L, 1/2, 0, lc/2, 3)
 gmsh.model.geo.addPoint(-3*L, 1/2, 0, lc)
 
 
@@ -55,8 +55,8 @@ gmsh.model.mesh.generate(DIM)
 corename = os.path.realpath(__file__)[:-2]
 gmsh.write(corename+"msh")
 
-if __name__ == "__main__" and '-nopopup' not in sys.argv:
-    gmsh.fltk.run()     ## TODO only print nodes
+if '-nopopup' not in sys.argv:
+    gmsh.fltk.run()
 
 
 gmsh.finalize()

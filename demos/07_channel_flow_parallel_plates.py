@@ -17,13 +17,12 @@ cloud_vel = GmshCloud(filename="./demos/meshes/channel.py", facet_types=facet_ty
 cloud_phi = GmshCloud(filename="./demos/meshes/channel.msh", facet_types=facet_types_phi, support_size="max")
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
-cloud_vel.visualize_cloud(ax=ax1, s=12, title="Cloud for velocity", xlabel=False);
-cloud_phi.visualize_cloud(ax=ax2, s=12, title=r"Cloud for $\phi$");
+cloud_vel.visualize_cloud(ax=ax1, s=6, title="Cloud for velocity", xlabel=False);
+cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
 
 print("Total number of nodes:", cloud_vel.N)
-print(cloud_vel.outward_normals)
-plt.show()
-exit(0)
+# plt.show()
+# exit(0)
 
 
 RBF = polyharmonic      ## Can define which rbf to use
@@ -97,8 +96,8 @@ p_ = p_.at[out_nodes].set(pa)
 
 
 
-# parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
-parabolic = jax.jit(lambda x: 1.)
+parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
+# parabolic = jax.jit(lambda x: 1.)
 atmospheric = jax.jit(lambda x: pa*(1. - beta))     ##TODO Carefull: beta and pa must never change
 zero = jax.jit(lambda x: 0.0)
 
@@ -108,7 +107,7 @@ bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
 
 
 
-nb_iter = 1
+nb_iter = 20
 all_u = []
 all_v = []
 all_vel = []
@@ -177,6 +176,6 @@ for i in tqdm(range(nb_iter)):
 
 
 filename = 'demos/temp/video.mp4'
-cloud_vel.animate_fields([all_u, all_v, all_vel, all_p], filename=filename, cmaps=["jet", "jet", "jet", "magma"], titles=[r"$u$", r"$v$", "Velocity amplitude", "Pressure"], duration=10, figsize=(9.5,1.4*4));
+cloud_vel.animate_fields([all_u, all_v, all_vel, all_p], filename=filename, cmaps=["jet", "jet", "jet", "magma"], titles=[r"$u$", r"$v$", "Velocity amplitude", "Pressure"], duration=5, figsize=(9.5,1.4*4));
 
 plt.show()

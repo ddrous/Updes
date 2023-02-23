@@ -58,16 +58,6 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             neighboorhs = neighboorhs[0][1:]                    ## Result is a 2d list, with the first el itself
             self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighboorhs]
 
-        #### BRUTE FORCE METHOD
-        # for i in range(self.N):
-        #     distances = jnp.zeros((self.N))
-        #     for j in range(self.N):
-        #             distances = distances.at[j].set(distance(self.nodes[i], self.nodes[j]))
-
-        #     closest_neighbours = jnp.argsort(distances)
-        #     self.local_supports[i] = closest_neighbours[1:n+1].tolist()      ## node i is closest to itself
-
-
     def renumber_nodes(self):
         """ Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards """
 
@@ -117,24 +107,8 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             fig = plt.figure(figsize=figsize)
             ax = fig.add_subplot(1, 1, 1)
 
-        # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
-        # coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
         coords = self.sorted_nodes
 
-
-        # colours = []
-        # for i in range(self.N):
-        #     if self.node_boundary_types[i] == "i":
-        #         colours.append("k")
-        #     elif self.node_boundary_types[i] == "d":
-        #         colours.append("r")
-        #     elif self.node_boundary_types[i] == "n":
-        #         colours.append("g")
-
-        # ax.scatter(x=coords[:, 0], y=coords[:, 1], c=colours, **kwargs)
-
-        # groups = [0, 1, 2]
-        # cdict = dict(zip(["i", "d", "n"], ["k", "r", "g"]))
         Ni, Nd, Nn = self.Ni, self.Nd, self.Nn
         if Ni > 0:
             ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="w", label="internal", **kwargs)
@@ -207,11 +181,13 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         ## Setup animation and colorbars
         imgs = []
         boundaries = []
+        minmaxs = []
         for i in range(nb_signals):
             minmax = jnp.min(signals[i]), jnp.max(signals[i])
+            minmaxs.append(minmax)
             boundaries = jnp.linspace(minmax[0], minmax[1], cbarsplit)
 
-            imgs.append(ax[i].tricontourf(x, y, signals[i][0], levels=levels, cmap=cmaps[i], **kwargs))
+            imgs.append(ax[i].tricontourf(x, y, signals[i][0], levels=levels, vmin=minmax[0], vmax=minmax[1], cmap=cmaps[i], **kwargs))
 
             m = plt.cm.ScalarMappable(cmap=cmaps[i])
             m.set_array(signals[i])
@@ -230,7 +206,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
         ## ANimation function
         def animate(frame):
-            imgs = [ax[i].tricontourf(x, y, signals[i][frame], levels=levels, cmap=cmaps[i], extend='min', **kwargs) for i in range(nb_signals)]
+            imgs = [ax[i].tricontourf(x, y, signals[i][frame], levels=levels, vmin=minmaxs[i][0], vmax=minmaxs[i][1], cmap=cmaps[i], extend='min', **kwargs) for i in range(nb_signals)]
             # plt.suptitle("iter = "+str(i), size="large", y=0.95)      ## TODO doesn't work well with tight layout
             return imgs
 
@@ -407,8 +383,7 @@ class GmshCloud(Cloud):
         if extension == "msh":   ## Gmsh Geo file
             self.filename = filename
         elif extension == "py":  ## Gmsh Python API
-            print(filename)
-            os.system("python -m "+filename)
+            os.system("python "+filename+" -nopopup")
             self.filename = name+".msh"
 
 
@@ -449,7 +424,7 @@ class GmshCloud(Cloud):
         self.nodes = {}
         self.facet_nodes = {v:[] for v in self.facet_names.values()}
         self.node_boundary_types = {}
-        corner_nodes = []
+        corner_membership = {}
 
         line = f.readline()
         while line.find("$EndNodes") < 0:
@@ -469,7 +444,7 @@ class GmshCloud(Cloud):
                 self.nodes[node_id] = jnp.array([x, y])
 
                 if dim==0: ## A corner point
-                    corner_nodes.append(node_id)
+                    corner_membership[node_id] = []
 
                 elif dim==1:  ## A curve
                     self.node_boundary_types[node_id] = self.facet_types[self.facet_names[entity_id]]
@@ -483,8 +458,6 @@ class GmshCloud(Cloud):
 
             line = f.readline()
 
-        corner_membership = {c_id:[] for c_id in corner_nodes}
-
         # --- Read mesh elements for corner nodes ---#
         while line.find("$Elements") < 0: line = f.readline()
         f.readline()
@@ -496,21 +469,16 @@ class GmshCloud(Cloud):
             dim = int(splitline[1])
             nb = int(splitline[-1])
 
-            if dim == 1:                ## Only condiering elements of dim=DIM-1
+            if dim == 1:                ## Only considering elements of dim=DIM-1
                 for i in range(nb):
                     splitline = [int(n_id)-1 for n_id in f.readline().split()]
 
-                    for c_node_id in corner_nodes:
-
+                    for c_node_id in corner_membership.keys():
                         if c_node_id in splitline:
                             for neighboor in splitline:
                                 if neighboor != c_node_id:
-                                    # self.node_boundary_types[c_node_id] = self.facet_types[self.facet_names[entity_id]]
-                                    # self.facet_nodes[self.facet_names[entity_id]].append(c_node_id)
                                     corner_membership[c_node_id].append(entity_id)
                                     break
-
-                            # corner_nodes.remove(c_node_id)
 
             else:
                 for i in range(nb): f.readline()
