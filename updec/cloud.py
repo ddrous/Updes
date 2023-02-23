@@ -4,6 +4,7 @@ import jax.numpy as jnp
 from sklearn.neighbors import BallTree
 from updec.utils import distance
 
+import os
 from functools import cache
 
 class Cloud(object):        ## TODO: implemtn len, get_item, etc.
@@ -388,7 +389,7 @@ class GmshCloud(Cloud):
 
         super().__init__(**kwargs)
 
-        self.filename = filename
+        self.get_meshfile(filename)
         # self.facet_types = facet_types
 
         self.extract_nodes_and_boundary_type()
@@ -398,6 +399,15 @@ class GmshCloud(Cloud):
 
         self.sorted_nodes = self.get_sorted_nodes()
 
+
+    def get_meshfile(self, filename):
+        name, extension = filename.rsplit('.', maxsplit=1)
+        if extension == "msh":   ## Gmsh Geo file
+            self.filename = filename
+        elif extension == "py":  ## Gmsh Python API
+            print(filename)
+            os.system("python -m "+filename)
+            self.filename = name+".msh"
 
 
     def extract_nodes_and_boundary_type(self):

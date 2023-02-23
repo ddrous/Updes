@@ -13,9 +13,8 @@ from updec import *
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
 
-cloud_vel = GmshCloud(filename="./demos/meshes/channel.msh", facet_types=facet_types_vel, support_size="max")       ## TODO do not hardcode this path
-cloud_phi = GmshCloud(filename="./demos/meshes/channel.msh", facet_types=facet_types_phi, support_size="max")       ## TODO do not hardcode this path
-
+cloud_vel = GmshCloud(filename="./demos/meshes/channel.py", facet_types=facet_types_vel, support_size="max")
+cloud_phi = GmshCloud(filename="./demos/meshes/channel.msh", facet_types=facet_types_phi, support_size="max")
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
 cloud_vel.visualize_cloud(ax=ax1, s=12, title="Cloud for velocity", xlabel=False);
@@ -108,7 +107,7 @@ bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
 
 
 
-nb_iter = 25
+nb_iter = 1
 all_u = []
 all_v = []
 all_vel = []
@@ -178,3 +177,5 @@ for i in tqdm(range(nb_iter)):
 
 filename = 'demos/temp/video.mp4'
 cloud_vel.animate_fields([all_u, all_v, all_vel, all_p], filename=filename, cmaps=["jet", "jet", "jet", "magma"], titles=[r"$u$", r"$v$", "Velocity amplitude", "Pressure"], duration=10, figsize=(9.5,1.4*4));
+
+plt.show()

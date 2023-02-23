@@ -18,3 +18,4 @@ demos/temp/*
 !demos/temp/README.md
 *msh
 *vtk
+quadqs_statistics.json
