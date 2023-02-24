@@ -257,7 +257,9 @@ dependencies:
     - equinox==0.9.2
     - etils==0.9.0
     - exceptiongroup==1.1.0
+    - gmsh==4.11.1
     - googleapis-common-protos==1.57.0
+    - gviz-api==1.10.0
     - importlib-resources==5.10.0
     - iniconfig==2.0.0
     - jax==0.4.1
@@ -274,6 +276,7 @@ dependencies:
     - pytest==7.2.1
     - pyyaml==6.0
     - scikit-learn==1.2.1
+    - tensorboard-plugin-profile==2.11.1
     - tensorflow-datasets==4.7.0
     - tensorflow-metadata==1.11.0
     - tensorstore==0.1.28

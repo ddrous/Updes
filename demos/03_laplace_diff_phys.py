@@ -19,7 +19,7 @@ writer = SummaryWriter("runs/"+run_name)
 
 
 facet_types={"West":"d", "East":"d", "North":"d", "South":"n"}  ## North is lowest priority (we enforce 0 on boundaries)
-cloud = GmshCloud(filename="./demos/meshes/unit_square.msh", facet_types=facet_types)
+cloud = GmshCloud(filename="./demos/meshes/unit_square.py", facet_types=facet_types)
 cloud.visualize_cloud(s=6, title=r"Unit square")
 
 
