@@ -383,7 +383,7 @@ class GmshCloud(Cloud):
         if extension == "msh":   ## Gmsh Geo file
             self.filename = filename
         elif extension == "py":  ## Gmsh Python API
-            os.system("python "+filename+" -nopopup")
+            os.system("python "+filename+" --nopopup")
             self.filename = name+".msh"
 
 

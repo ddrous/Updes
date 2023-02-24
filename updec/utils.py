@@ -11,6 +11,7 @@ sns.set(context='notebook', style='ticks',
 plt.style.use("dark_background")
 
 import math
+import random
 
 ## Euclidian distance
 def distance(node1, node2):
@@ -114,6 +115,14 @@ def compute_nb_monomials(max_degree, problem_dimension):
 
 SteadySol = namedtuple('PDESolution', ['vals', 'coeffs'])
 
+
+
+def random_name(length=5):
+    "Make random names to identify runs"
+    name = ""
+    for _ in range(length):
+        name += str(random.randint(0, 10))
+    return name
 
 
 # plt.style.use('bmh')

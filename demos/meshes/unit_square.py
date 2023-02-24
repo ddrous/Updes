@@ -5,17 +5,16 @@ import os
 
 gmsh.initialize()
 
-gmsh.model.add("channel")
+gmsh.model.add("unit_square")
 
 
-lc = 0.2
-L = 1.0
+lc = 0.1
 DIM = 2
 
-gmsh.model.geo.addPoint(-3*L, -1/2, 0, lc, 1)
-gmsh.model.geo.addPoint(8*L, -1/2, 0, lc/2, 2)
-gmsh.model.geo.addPoint(8*L, 1/2, 0, lc/2, 3)
-gmsh.model.geo.addPoint(-3*L, 1/2, 0, lc, 4)
+gmsh.model.geo.addPoint(0, 0, 0, lc, 1)
+gmsh.model.geo.addPoint(1, 0, 0, lc, 2)
+gmsh.model.geo.addPoint(1, 1, 0, lc, 3)
+gmsh.model.geo.addPoint(0, 1, 0, lc, 4)
 
 
 gmsh.model.geo.addLine(1, 2, 1)
@@ -31,10 +30,11 @@ gmsh.model.geo.addPlaneSurface([1], 1)
 gmsh.model.geo.synchronize()
 
 
-gmsh.model.addPhysicalGroup(1, [4], name="Inflow")
-gmsh.model.addPhysicalGroup(1, [2], name="Outflow")
-gmsh.model.addPhysicalGroup(1, [1,3], name="Wall")
-gmsh.model.addPhysicalGroup(2, [1], name="Fluid")
+gmsh.model.addPhysicalGroup(1, [4], name="West")
+gmsh.model.addPhysicalGroup(1, [2], name="East")
+gmsh.model.addPhysicalGroup(1, [1], name="South")
+gmsh.model.addPhysicalGroup(1, [3], name="North")
+gmsh.model.addPhysicalGroup(2, [1], name="Domain")
 
 
 ## Meshing paremeters for quadrangles

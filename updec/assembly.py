@@ -50,8 +50,7 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     return P
 
 
-## Cache the results for future calls to this function
-@cache
+# @cache        ## TODO Make caching work with jax.jit
 def assemble_A(cloud, rbf, nb_monomials=2):
     """ Assemble matrix A, see (4) from Shanane """
 
@@ -67,7 +66,7 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 
     return A
 
-@cache          ## Turn this into assemble and LU decompose
+# @cache          ## Turn this into assemble and LU decompose
 def assemble_invert_A(cloud, rbf, nb_monomials):
     A = assemble_A(cloud, rbf, nb_monomials)
     return jnp.linalg.inv(A)
@@ -162,17 +161,20 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
 
 
     ### Fill Matrix P with vectorisation from axis=0 ###
-    node_ids_d = jnp.array([k for k,v in cloud.node_boundary_types.items() if v == "d"])
-    node_ids_n = jnp.array([k for k,v in cloud.node_boundary_types.items() if v == "n"])
+    node_ids_d = [k for k,v in cloud.node_boundary_types.items() if v == "d"]
+    node_ids_n = [k for k,v in cloud.node_boundary_types.items() if v == "n"]
 
     monomials = make_all_monomials(M)
-    if node_ids_d.shape[0] > 0:
+    if len(node_ids_d) > 0:
+        node_ids_d = jnp.array(node_ids_d)
         for j in range(M):
             monomial_vec = jax.vmap(monomials[j], in_axes=(0,), out_axes=0)
             bdP = bdP.at[node_ids_d-Ni, j].set(monomial_vec(nodes[node_ids_d]))
 
-    if node_ids_n.shape[0] > 0:
-        normals_n = jnp.stack([cloud.outward_normals[i] for i in node_ids_n.tolist()], axis=0)
+    if len(node_ids_n) > 0:
+        normals_n = jnp.stack([cloud.outward_normals[i] for i in node_ids_n], axis=0)
+        node_ids_n = jnp.array(node_ids_n)
+
         dot_vec = jax.vmap(jnp.dot, in_axes=(0,0), out_axes=0)
         for j in range(M):
             grad_monomial = jax.grad(monomials[j])
@@ -229,7 +231,7 @@ def new_compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, n
 
 
 
-def assemble_q(operator:callable, boundary_functions:dict, cloud:Cloud, rbf:callable, nb_monomials:int, rhs_args:list):
+def assemble_q(operator:callable, boundary_conditions:dict, cloud:Cloud, rbf:callable, nb_monomials:int, rhs_args:list):
     """ Assemble the right hand side q using the operator """
     ### Boundary conditions should match all the types of boundaries
 
@@ -254,11 +256,15 @@ def assemble_q(operator:callable, boundary_functions:dict, cloud:Cloud, rbf:call
 
     ## Facet nodes
     for f_id in cloud.facet_types.keys():
-        assert f_id in boundary_functions.keys(), "facets and boundary functions don't match ids"
+        assert f_id in boundary_conditions.keys(), "facets and boundary functions don't match ids"
 
-        bd_op = boundary_functions[f_id]
-        bd_op_vec = jax.vmap(bd_op, in_axes=(0,), out_axes=0)
+        bd_op = boundary_conditions[f_id]
         bd_node_ids = jnp.array(cloud.facet_nodes[f_id])
-        q = q.at[bd_node_ids].set(bd_op_vec(nodes[bd_node_ids]))
+
+        if callable(bd_op):      ## Is a (jitted) function 
+            bd_op_vec = jax.vmap(bd_op, in_axes=(0,), out_axes=0)
+            q = q.at[bd_node_ids].set(bd_op_vec(nodes[bd_node_ids]))
+        else:                   ## Must be a jax array then
+            q = q.at[bd_node_ids].set(bd_op)
 
     return q
