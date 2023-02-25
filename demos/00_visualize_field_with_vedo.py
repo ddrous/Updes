@@ -1,9 +1,9 @@
-import jax
+import sys
 import jax.numpy as jnp
+from vedo import Plotter, Grid, Text2D
+
 
 def vedo_animation(filename, duration=5):
-
-    from vedo import Plotter, Grid, Text2D
 
     loaded_arrays = jnp.load(filename)
     filenames = loaded_arrays.files
@@ -15,7 +15,7 @@ def vedo_animation(filename, duration=5):
     field = jnp.stack(field, axis=0)
 
 
-    grid = Grid(s=(coords[:,0], coords[:,1]), c="red5", alpha=0.5).lw(0)    ## Linwidth to 0 for interpolation
+    grid = Grid(s=(coords[:,0], coords[:,1]), c="red5", alpha=0.5).lw(0)    ## Linewidth to 0 for interpolation
     txt = Text2D(font='Brachium', pos='bottom-left', bg='yellow5')
 
     plt = Plotter(N=1, axes=1, interactive=False)
@@ -35,3 +35,8 @@ def vedo_animation(filename, duration=5):
         plt.render()
 
     plt.interactive().close()
+
+
+
+if __name__ == '__main__':
+    vedo_animation(sys.argv[1])     ## ./demos/temp/79049/u.npz

@@ -251,6 +251,7 @@ dependencies:
     - cmasher==1.6.3
     - colorspacious==1.1.2
     - contextlib2==21.6.0
+    - deprecated==1.2.13
     - diffrax==0.2.2
     - dill==0.3.6
     - e13tools==0.9.6
@@ -284,5 +285,7 @@ dependencies:
     - tqdm==4.64.1
     - tree-math==0.1.0
     - typeguard==2.13.3
+    - vedo==2023.4.3
+    - vtk==9.2.6
     - xarray==2022.12.0
 prefix: /Users/roussel/miniforge3/envs/jaxenv

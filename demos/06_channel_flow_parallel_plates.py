@@ -1,5 +1,6 @@
 
 from tqdm import tqdm
+import os
 
 import jax
 import jax.numpy as jnp
@@ -174,4 +175,5 @@ jnp.savez(datafolder+'p.npz', cloud_phi.sorted_nodes, jnp.stack(all_p, axis=0))
 
 # plt.show()
 
-vedo_animation(datafolder+'u.npz')
+visualisation_script = os.path.dirname(os.path.abspath(__file__)) + '/00_visualize_field_with_vedo.py'
+os.system("python " + visualisation_script + " " + datafolder+'u.npz')
