@@ -121,6 +121,7 @@ dependencies:
     - debugpy==1.6.4
     - decorator==5.1.1
     - defusedxml==0.7.1
+    - deprecated==1.2.13
     - dm-tree==0.1.7
     - e13tools==0.9.6
     - entrypoints==0.4
@@ -207,6 +208,8 @@ dependencies:
     - tqdm==4.64.1
     - traitlets==5.6.0
     - typing-extensions==4.4.0
+    - vedo==2023.4.3
+    - vtk==9.2.6
     - wcwidth==0.2.5
     - webencodings==0.5.1
     - websocket-client==1.4.2

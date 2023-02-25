@@ -1,8 +1,10 @@
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
+
 from collections import namedtuple
 from functools import cache, partial
+import os
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -123,6 +125,13 @@ def random_name(length=5):
     for _ in range(length):
         name += str(random.randint(0, 10))
     return name
+
+
+def make_dir(path):
+    "Make a directory if it doesn't exist"
+    if os.path.exists(path):
+        os.system("rm -rf " + path)
+    os.mkdir(path)
 
 
 # plt.style.use('bmh')

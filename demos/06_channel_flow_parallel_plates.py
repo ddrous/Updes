@@ -7,6 +7,10 @@ from jax.tree_util import Partial
 
 from updec import *
 
+experiment_name = random_name()
+datafolder = "demos/temp/" + experiment_name +"/"
+make_dir(datafolder)
+
 
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
@@ -21,23 +25,22 @@ cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
 print("Total number of nodes:", cloud_vel.N)
 
 
+
 RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 4
 
 
 Re = 200
 RHO = 1          ## Water
-# RHO = 1           ## air
-# NU = 1e-3           ## water
 NU = 1           ## water
-# NU = 1e-5         ## air
-# sigma = 0.07
 DT = 1e-6
 
 
-pa = 101325.0
-# pa = 0.0
-beta = 0.
+Pa = 101325.0
+BETA = 0.
+
+NB_ITER = 2
+
 
 @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_u(x, center=None, rbf=None, monomial=None, fields=None):
@@ -51,7 +54,7 @@ def diff_operator_u(x, center=None, rbf=None, monomial=None, fields=None):
 def rhs_operator_u(x, centers=None, rbf=None, fields=None):
     u_prev = value(x, fields[:, 0], centers, rbf)
     grad_px = gradient(x, fields[:, 1], centers, rbf)[0]
-    return  u_prev - beta*(DT*grad_px/RHO)
+    return  u_prev - BETA*(DT*grad_px/RHO)
 
 
 
@@ -67,7 +70,7 @@ def diff_operator_v(x, center=None, rbf=None, monomial=None, fields=None):
 def rhs_operator_v(x, centers=None, rbf=None, fields=None):
     v_prev = value(x, fields[:, 0], centers, rbf)
     grad_py = gradient(x, fields[:, 1], centers, rbf)[1]
-    return  v_prev - beta*(DT *grad_py/RHO)
+    return  v_prev - BETA*(DT *grad_py/RHO)
 
 
 
@@ -87,14 +90,13 @@ v = jnp.zeros((cloud_vel.N,))
 
 p_ = jnp.zeros((cloud_phi.N,))       ## on cloud_phi        ##TODO set this to p_a on Outlet
 out_nodes = jnp.array(cloud_phi.facet_nodes["Outflow"])
-p_ = p_.at[out_nodes].set(pa)
+p_ = p_.at[out_nodes].set(Pa)
 
 
 
 
 parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
-# parabolic = jax.jit(lambda x: 1.)
-atmospheric = jax.jit(lambda x: pa*(1. - beta))     ##TODO Carefull: beta and pa must never change
+atmospheric = jax.jit(lambda x: Pa*(1. - BETA))     ##TODO Carefull: beta and pa must never change
 zero = jax.jit(lambda x: 0.0)
 
 bc_u = {"Wall":zero, "Inflow":parabolic, "Outflow":zero}
@@ -103,13 +105,13 @@ bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
 
 
 
-nb_iter = 20
+
 all_u = []
 all_v = []
 all_vel = []
 all_p = []
 
-for i in tqdm(range(nb_iter)):
+for i in tqdm(range(NB_ITER)):
     # print("Starting iteration %d" % i)
 
     ## TODO Interpolate p and gradphi onto cloud_vel
@@ -136,7 +138,7 @@ for i in tqdm(range(nb_iter)):
     ustar , vstar = usol.vals, vsol.vals     ## Star
     Ustar = jnp.stack([ustar,vstar], axis=-1)
 
-    ## TODO Interpolaate Ustar onto cloud_phi
+    ## TODO Interpolate Ustar onto cloud_phi
     u_ = interpolate_field(ustar, cloud_vel, cloud_phi)
     v_ = interpolate_field(vstar, cloud_vel, cloud_phi)
 
@@ -148,7 +150,7 @@ for i in tqdm(range(nb_iter)):
                     rbf=RBF,
                     max_degree=MAX_DEGREE)
 
-    p_ = beta*p_ + phisol_.vals
+    p_ = BETA*p_ + phisol_.vals
     gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
 
     ## TODO Interpolate p and gradphi onto cloud_vel
@@ -158,20 +160,18 @@ for i in tqdm(range(nb_iter)):
     u, v = U[:,0], U[:,1]
     vel = jnp.linalg.norm(U, axis=-1)
 
-    # fig, ax = plt.subplots(4, 1, figsize=(9.5,1.4*4), sharex=True)
-    # iter_str = " at iteration " + str(i+1)
-    # cloud_vel.visualize_field(u, cmap="jet", title="Velocity along x"+iter_str, ax=ax[0], xlabel=False);
-    # cloud_vel.visualize_field(v, cmap="jet", title="Velocity along y"+iter_str, ax=ax[1], xlabel=False);
-    # cloud_vel.visualize_field(vel, cmap="jet", title="Velocity norm"+iter_str, ax=ax[2], xlabel=False);
-    # cloud_phi.visualize_field(p_, cmap="jet", title="Pressure"+iter_str, ax=ax[3]);
-    # plt.savefig('demos/temp/solutions_iter_'+str(i)+'.png')
     all_u.append(u)
     all_v.append(v)
     all_vel.append(vel)
     all_p.append(p_)
 
 
-filename = 'demos/temp/video.mp4'
-cloud_vel.animate_fields([all_u, all_v, all_vel, all_p], filename=filename, cmaps=["jet", "jet", "jet", "magma"], titles=[r"$u$", r"$v$", "Velocity amplitude", "Pressure"], duration=5, figsize=(9.5,1.4*4));
+jnp.savez(datafolder+'u.npz', cloud_vel.sorted_nodes, jnp.stack(all_u, axis=0))
+jnp.savez(datafolder+'v.npz', cloud_vel.sorted_nodes, jnp.stack(all_v, axis=0))
+jnp.savez(datafolder+'vel.npz', cloud_vel.sorted_nodes, jnp.stack(all_vel, axis=0))
+jnp.savez(datafolder+'p.npz', cloud_phi.sorted_nodes, jnp.stack(all_p, axis=0))
 
-plt.show()
+
+# plt.show()
+
+vedo_animation(datafolder+'u.npz')
