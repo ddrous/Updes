@@ -3,7 +3,8 @@ import gmsh
 import sys
 
 
-lc = 0.6
+lc = 0.2
+lc_factor = 2   ## Refinement factor to account to Neuman
 L = 1.0
 DIM = 2
 
@@ -13,8 +14,8 @@ gmsh.initialize()
 gmsh.model.add("channel")
 
 gmsh.model.geo.addPoint(-3*L, -1/2, 0, lc, 1)
-gmsh.model.geo.addPoint(8*L, -1/2, 0, lc/2, 2)
-gmsh.model.geo.addPoint(8*L, 1/2, 0, lc/2, 3)
+gmsh.model.geo.addPoint(8*L, -1/2, 0, lc/lc_factor, 2)
+gmsh.model.geo.addPoint(8*L, 1/2, 0, lc/lc_factor, 3)
 gmsh.model.geo.addPoint(-3*L, 1/2, 0, lc, 4)
 
 

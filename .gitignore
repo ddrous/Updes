@@ -14,6 +14,7 @@ scripts/reports/*
 !scripts/reports/README.md
 runs/*
 !runs/README.md
+demos/temp/*
 demos/data/*
 !demos/data/README.md
 *msh

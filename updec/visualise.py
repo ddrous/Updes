@@ -5,7 +5,9 @@ import jax.numpy as jnp
 ######
 
 
-def pyvista_animation(folderpath, fieldnames, duration=5):  ## TODO use duration
+def pyvista_animation(folderpath, fieldname, duration=5):  
+    ## TODO use duration
+    ## TODO Make another function for many different fields
     """ Make a PyVista animation from save it to video """
 
 
@@ -13,7 +15,7 @@ def pyvista_animation(folderpath, fieldnames, duration=5):  ## TODO use duration
     pv.global_theme.cmap = 'jet'
 
 
-    fieldpath = folderpath  + fieldnames + ".npz"    ## TODO Make fieldnames a list / assumption that saved in npz
+    fieldpath = folderpath  + fieldname + ".npz"    ## TODO Make fieldnames a list / assumption that saved in npz
 
     loaded_arrays = jnp.load(fieldpath)
     arraynames = loaded_arrays.files
@@ -26,15 +28,15 @@ def pyvista_animation(folderpath, fieldnames, duration=5):  ## TODO use duration
     reader = pv.get_reader(meshname)
     mesh = reader.read()
 
-    mesh.point_data["data"] = field[0]  ## Just create the data field
-    mesh.point_data["data"][renumb_map] = field[0]
+    mesh.point_data[fieldname] = field[0]  ## Just create the data field
+    mesh.point_data[fieldname][renumb_map] = field[0]
 
     plt = pv.Plotter()
     # Open a movie file
     plt.open_movie(videoname)
 
     # Add initial mesh
-    plt.add_mesh(mesh, scalars="data", clim=[0, 1])     ##TODO colorbar
+    plt.add_mesh(mesh, scalars=fieldname, clim=[jnp.min(field), jnp.max(field)])     ##TODO colorbar
 
     plt.view_xy()
     plt.show(auto_close=False)  # only necessary for an off-screen movie
@@ -44,10 +46,11 @@ def pyvista_animation(folderpath, fieldnames, duration=5):  ## TODO use duration
 
 
     # Update scalars on each frame
-    for i in range(field.shape[0]):
+    nbframes = field.shape[0]
+    for i in range(nbframes):
         ### Make sure field[i] is properly orderd first
-        mesh.point_data["data"][renumb_map] = field[i]
-        plt.add_text(f"Iteration: {i}", name='time-label')
+        mesh.point_data[fieldname][renumb_map] = field[i]
+        plt.add_text(f"Frame: {i+1} / {nbframes}", name='time-label')
         plt.write_frame()  # Write this frame
 
     # Be sure to close the plotter when finished

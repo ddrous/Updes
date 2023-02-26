@@ -1,10 +1,9 @@
 
-from tqdm import tqdm
-import os
-
+# %%
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
+from tqdm import tqdm
 
 from updec import *
 
@@ -22,29 +21,32 @@ DT = 1e-6
 Pa = 101325.0
 BETA = 0.
 
-NB_ITER = 20
+NB_ITER = 150
 
-EXPT_NAME = random_name()
-DATAFOLDER = "demos/data/" + EXPT_NAME +"/"
+EXPERIMENET_ID = random_name()
+DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
 
 
 
+# %%
 
 
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
 
-cloud_vel = GmshCloud(filename="./demos/meshes/channel.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+cloud_vel = GmshCloud(filename="./meshes/channel.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
 cloud_vel.visualize_cloud(ax=ax1, s=6, title="Cloud for velocity", xlabel=False);
 cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
 
-print("\nTotal number of nodes for RBF:", cloud_vel.N)
 
 
+# %%
+
+print(f"\nStarting RBF simulation with {cloud_vel.N} nodes\n")
 
 
 @Partial(jax.jit, static_argnums=[2,3])
@@ -99,7 +101,6 @@ p_ = p_.at[out_nodes].set(Pa)
 
 
 
-
 parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
 atmospheric = jax.jit(lambda x: Pa*(1. - BETA))     ##TODO Carefull: beta and pa must never change
 zero = jax.jit(lambda x: 0.0)
@@ -107,7 +108,6 @@ zero = jax.jit(lambda x: 0.0)
 bc_u = {"Wall":zero, "Inflow":parabolic, "Outflow":zero}
 bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
 bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
-
 
 
 
@@ -171,6 +171,9 @@ for i in tqdm(range(NB_ITER)):
     all_p.append(p_)
 
 
+
+# %%
+
 print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
 
 
@@ -182,9 +185,15 @@ jnp.savez(DATAFOLDER+'v.npz', renum_map_vel, jnp.stack(all_v, axis=0))
 jnp.savez(DATAFOLDER+'vel.npz', renum_map_vel, jnp.stack(all_vel, axis=0))
 jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(all_p, axis=0))
 
+# plt.show()
 
+
+
+# %%
 
 print("\nSaving complete. Now running visualisation ...")
-pyvista_animation(DATAFOLDER, "u")
 
-# plt.show()
+pyvista_animation(DATAFOLDER, "vel")
+
+
+# %%
