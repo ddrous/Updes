@@ -50,7 +50,7 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     return P
 
 
-# @cache        ## TODO Make caching work with jax.jit
+@cache        ## TODO Make caching work with jax.jit
 def assemble_A(cloud, rbf, nb_monomials=2):
     """ Assemble matrix A, see (4) from Shanane """
 
@@ -66,7 +66,7 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 
     return A
 
-# @cache          ## Turn this into assemble and LU decompose
+@cache          ## Turn this into assemble and LU decompose
 def assemble_invert_A(cloud, rbf, nb_monomials):
     A = assemble_A(cloud, rbf, nb_monomials)
     return jnp.linalg.inv(A)

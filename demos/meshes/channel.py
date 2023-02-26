@@ -1,16 +1,16 @@
 
 import gmsh
 import sys
-import os
+
+
+lc = 0.6
+L = 1.0
+DIM = 2
+
 
 gmsh.initialize()
 
 gmsh.model.add("channel")
-
-
-lc = 0.4
-L = 1.0
-DIM = 2
 
 gmsh.model.geo.addPoint(-3*L, -1/2, 0, lc, 1)
 gmsh.model.geo.addPoint(8*L, -1/2, 0, lc/2, 2)
@@ -52,8 +52,10 @@ gmsh.model.mesh.generate(DIM)
 
 
 #Save the mesh to disk
-corename = os.path.realpath(__file__)[:-2]
-gmsh.write(corename+"msh")
+if len(sys.argv) >= 2: ## User defined a location for save
+    gmsh.write(sys.argv[1]+"mesh.msh")
+    gmsh.write(sys.argv[1]+"mesh.vtk")      ## For visualisation with PyVista
+
 
 if '--nopopup' not in sys.argv:
     gmsh.fltk.run()

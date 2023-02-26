@@ -8,39 +8,43 @@ from jax.tree_util import Partial
 
 from updec import *
 
-experiment_name = random_name()
-datafolder = "demos/temp/" + experiment_name +"/"
-make_dir(datafolder)
 
-
-facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
-facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
-
-cloud_vel = GmshCloud(filename="./demos/meshes/channel.py", facet_types=facet_types_vel, support_size="max")
-cloud_phi = GmshCloud(filename="./demos/meshes/channel.msh", facet_types=facet_types_phi, support_size="max")
-
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
-cloud_vel.visualize_cloud(ax=ax1, s=6, title="Cloud for velocity", xlabel=False);
-cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
-
-print("Total number of nodes:", cloud_vel.N)
-
-
+### Constants for the problem
 
 RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 4
-
 
 Re = 200
 RHO = 1          ## Water
 NU = 1           ## water
 DT = 1e-6
 
-
 Pa = 101325.0
 BETA = 0.
 
-NB_ITER = 2
+NB_ITER = 20
+
+EXPT_NAME = random_name()
+DATAFOLDER = "demos/data/" + EXPT_NAME +"/"
+make_dir(DATAFOLDER)
+
+
+
+
+
+facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
+facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
+
+cloud_vel = GmshCloud(filename="./demos/meshes/channel.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
+cloud_vel.visualize_cloud(ax=ax1, s=6, title="Cloud for velocity", xlabel=False);
+cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
+
+print("\nTotal number of nodes for RBF:", cloud_vel.N)
+
+
 
 
 @Partial(jax.jit, static_argnums=[2,3])
@@ -167,13 +171,20 @@ for i in tqdm(range(NB_ITER)):
     all_p.append(p_)
 
 
-jnp.savez(datafolder+'u.npz', cloud_vel.sorted_nodes, jnp.stack(all_u, axis=0))
-jnp.savez(datafolder+'v.npz', cloud_vel.sorted_nodes, jnp.stack(all_v, axis=0))
-jnp.savez(datafolder+'vel.npz', cloud_vel.sorted_nodes, jnp.stack(all_vel, axis=0))
-jnp.savez(datafolder+'p.npz', cloud_phi.sorted_nodes, jnp.stack(all_p, axis=0))
+print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
 
+
+renum_map_vel = jnp.array(list(cloud_vel.renumbering_map.keys()))
+renum_map_p = jnp.array(list(cloud_phi.renumbering_map.keys()))
+
+jnp.savez(DATAFOLDER+'u.npz', renum_map_vel, jnp.stack(all_u, axis=0))
+jnp.savez(DATAFOLDER+'v.npz', renum_map_vel, jnp.stack(all_v, axis=0))
+jnp.savez(DATAFOLDER+'vel.npz', renum_map_vel, jnp.stack(all_vel, axis=0))
+jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(all_p, axis=0))
+
+
+
+print("\nSaving complete. Now running visualisation ...")
+pyvista_animation(DATAFOLDER, "u")
 
 # plt.show()
-
-visualisation_script = os.path.dirname(os.path.abspath(__file__)) + '/00_visualize_field_with_vedo.py'
-os.system("python " + visualisation_script + " " + datafolder+'u.npz')

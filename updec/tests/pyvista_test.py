@@ -207,79 +207,85 @@ import seaborn as sns
 
 
 
-from vedo import Plotter, Grid, Text2D, Points, settings, Mesh, Spline, Video
-import numpy as np
-
-settings.default_font = "Theemim"
-
-# xcoords = np.arange(0, 2, 0.2)
-# ycoords = np.arange(0, 1, 0.2)
-# # xcoords = sqrt(xcoords)
-# grid = Grid(s=(xcoords, ycoords), c="red5", alpha=0.5).lw(0)    ## Linwidth to 0 for interpolation
 
 
 
-# xcoords = np.random.uniform(0,2,100)
-xcoords = [0]*3 + [0.25]*3  + [0.5]*3  + [0.75]*3  + [1]*3
-# ycoords = np.random.uniform(0,1,100)
-ycoords = [0, 0.25, 0.5, 0.75, 1]*3
-zcoords = np.zeros_like(xcoords)
-
-# shape = Spline((xcoords, ycoords), closed=True).color('red4').linewidth(5)
-
-grid = Points((xcoords, ycoords, zcoords)).c("red")
-# grid = Mesh(grid, c="red5", alpha=0.5).lw(0).wireframe(True)
-# msh = shape.generate_mesh(grid=grid, quads=True)
-
-### TODO OPTIONS
-reco = grid.reconstruct_surface(dims=100, radius=0.2, bounds=(0,2,0,1,0,0)).c("gold")
-# grid = grid.tomesh(quads=True)
-
-# print(grid)
-
-# print(grid.cell_centers())
-# print(grid.points())
-
-plt = Plotter(shape=(1,2))
-plt.at(0).show(grid, axes=7, zoom=1.2)
-plt.at(1).show(reco, axes=7, zoom=1.2)
-plt.interactive().close()
-
-exit()
-
-txt = Text2D(font='Brachium', pos='bottom-left', bg='yellow5')
-# grid = grid.compute_normals().add_scalarbar(c='black')
-
-# grid.show(axes=8)
-# mesh.show(axes=8)
 
 
-# nv = mesh.ncells                           # nr. of cells
-scals = grid.points()[:, 0]                          # coloring by the index of cell
 
-# grid.cmap("hot", scals)
-plt = Plotter(N=1, axes=2, interactive=False)
-plt.show(grid, txt, __doc__)
 
-# Open a video file and force it to last 3 seconds in total
-# video = Video("demos/temp/vedovid.mp4", duration=10, backend='ffmpeg')
 
-nbframes=750
-for i in range(nbframes):
-    scals += 2
-    grid.cmap("jet", scals, vmin=0, vmax=2*nbframes)
-    txt.text(f"frame: {i}/{nbframes}")
 
-    grid.add_scalarbar(horizontal=True)
-    plt.show(grid, txt, __doc__)        ## Show again for colorbar
+# from vedo import Plotter, Grid, Text2D, Points, settings, Mesh, Spline, Video
+# import numpy as np
+
+# settings.default_font = "Theemim"
+
+
+# xcoords = np.random.uniform(0,2,10)
+# # xcoords = [0]*3 + [0.25]*3  + [0.5]*3  + [0.75]*3  + [1]*3
+# ycoords = np.random.uniform(0,1,10)
+# # ycoords = [0, 0.25, 0.5, 0.75, 1]*3
+# zcoords = np.zeros_like(xcoords)
+
+# # shape = Spline((xcoords, ycoords), closed=True).color('red4').linewidth(5)
+
+# grid_ = Points((xcoords, ycoords, zcoords))
+# # grid = Mesh(grid, c="red5", alpha=0.5).lw(0).wireframe(True)
+# # msh = shape.generate_mesh(grid=grid, quads=True)
+
+# ### TODO OPTIONS
+# # reco = grid.reconstruct_surface(dims=100, radius=0.2, bounds=(0,1,0,1,0,0)).c("gold")
+
+# grid = grid_.tomesh(quads=False).lw(0)
+
+# # print(grid)
+
+# # print(grid.cell_centers())
+# # print(grid.points())
+
+# # plt = Plotter(shape=(1,2))
+# # plt.at(0).show(grid, axes=7, zoom=1.2)
+# # plt.at(1).show(reco, axes=7, zoom=1.2)
+# # plt.interactive().close()
+# # exit()
+
+# txt = Text2D(font='Brachium', pos='bottom-left', bg='yellow5')
+# # grid = grid.compute_normals().add_scalarbar(c='black')
+
+# # grid.show(axes=8)
+# # mesh.show(axes=8)
+
+
+# # nv = mesh.ncells                           # nr. of cells
+# scals = grid.points()[:, 0]                          # coloring by the index of cell
+
+# # grid.cmap("hot", scals)
+# plt = Plotter(N=1, axes=1, interactive=False)
+# plt.show(grid, txt, __doc__)
+
+# # Open a video file and force it to last 3 seconds in total
+# # video = Video("demos/temp/vedovid.mp4", duration=10, backend='ffmpeg')
+
+# nbframes=750
+# for i in range(nbframes):
+#     scals += 2
+#     grid.cmap("jet", scals, vmin=0, vmax=2*nbframes)
+#     txt.text(f"frame: {i}/{nbframes}")
+
+#     grid.add_scalarbar(horizontal=True)
+#     plt.show(grid, txt, __doc__)        ## Show again for colorbar
     
-    # plt.render()
-    # video.add_frame()
+#     # plt.render()
+#     # video.add_frame()
 
-# video.close()
+# # video.close()
 
-plt.interactive()
-plt.close()
+# plt.interactive()
+# plt.close()
+
+
+
 
 
 
@@ -302,28 +308,87 @@ plt.close()
 
 
 
+# from vedo import Plotter, Grid, Text2D, Points, settings, Mesh, Spline, Video, load
+# import numpy as np
 
-# """Boolean operations with Meshes"""
-# from vedo import *
+# settings.default_font = "Theemim"
 
-# settings.use_depth_peeling = True
+# mesh = load("./updec/test/channel.msh")
 
-# # declare the instance of the class
-# plt = Plotter(shape=(2, 2), interactive=False, axes=3)
-
-# # build to sphere meshes
-# s1 = Sphere(pos=[-0.7, 0, 0], c="red5", alpha=0.5)
-# s2 = Sphere(pos=[0.7, 0, 0], c="green5", alpha=0.5)
-# plt.at(0).show(s1, s2, __doc__)
-
-# # make 3 different possible operations:
-# b1 = s1.boolean("intersect", s2).c('magenta')
-# plt.at(1).show(b1, "intersect", resetcam=False)
-
-# b2 = s1.boolean("plus", s2).c("blue").wireframe(True)
-# plt.at(2).show(b2, "plus", resetcam=False)
-
-# b3 = s1.boolean("minus", s2).compute_normals().add_scalarbar(c='white')
-# plt.at(3).show(b3, "minus", resetcam=False)
+# plt = Plotter(N=1, axes=1, interactive=False)
+# plt.show(mesh, "Loaded msh file")
 
 # plt.interactive().close()
+
+
+
+########################## pyvisat
+
+# import pyvista
+# from pyvista import examples
+# filename = examples.download_human(load=False)
+# print(filename.split("/")[-1])
+
+# reader = pyvista.get_reader(filename)
+# print(reader)  
+
+# mesh = reader.read()
+# print(mesh)
+
+# mesh.plot(color='tan')
+
+
+
+
+# import pyvista
+# from pyvista import examples
+# filename = "./updec/test/channel.vtk"
+# print(filename.split("/")[-1])
+
+# reader = pyvista.get_reader(filename)
+# print(reader)  
+
+# mesh = reader.read()
+# print(mesh)
+
+# mesh.plot(color='tan')
+
+
+
+
+
+import numpy as np
+
+import pyvista as pv
+
+filename = "sphere-shrinking.mp4"
+
+mesh = pv.Sphere()
+print(mesh.n_points)
+mesh.cell_data["data"] = np.random.random(mesh.n_cells)
+
+plotter = pv.Plotter()
+# Open a movie file
+plotter.open_movie(filename)
+
+# Add initial mesh
+plotter.add_mesh(mesh, scalars="data", clim=[0, 1])
+# Add outline for shrinking reference
+plotter.add_mesh(mesh.outline_corners())
+
+plotter.show(auto_close=False)  # only necessary for an off-screen movie
+
+# Run through each frame
+plotter.write_frame()  # write initial data
+
+# Update scalars on each frame
+for i in range(100):
+    random_points = np.random.random(mesh.points.shape)
+    mesh.points = random_points * 0.01 + mesh.points * 0.99
+    mesh.points -= mesh.points.mean(0)
+    mesh.cell_data["data"] = np.random.random(mesh.n_cells)
+    plotter.add_text(f"Iteration: {i}", name='time-label')
+    plotter.write_frame()  # Write this frame
+
+# Be sure to close the plotter when finished
+plotter.close()

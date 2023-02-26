@@ -363,11 +363,11 @@ class SquareCloud(Cloud):
 class GmshCloud(Cloud):
     """ Parses gmsh format 4.0.8, not the newer version """
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename, mesh_save_location=None, **kwargs):
 
         super().__init__(**kwargs)
 
-        self.get_meshfile(filename)
+        self.get_meshfile(filename, mesh_save_location)
         # self.facet_types = facet_types
 
         self.extract_nodes_and_boundary_type()
@@ -378,13 +378,13 @@ class GmshCloud(Cloud):
         self.sorted_nodes = self.get_sorted_nodes()
 
 
-    def get_meshfile(self, filename):
-        name, extension = filename.rsplit('.', maxsplit=1)
+    def get_meshfile(self, filename, mesh_save_location):
+        _, extension = filename.rsplit('.', maxsplit=1)
         if extension == "msh":   ## Gmsh Geo file
             self.filename = filename
         elif extension == "py":  ## Gmsh Python API
-            os.system("python "+filename+" --nopopup")
-            self.filename = name+".msh"
+            os.system("python "+filename + " " + mesh_save_location +" --nopopup")
+            self.filename = mesh_save_location+"mesh.msh"
 
 
     def extract_nodes_and_boundary_type(self):

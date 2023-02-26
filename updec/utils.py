@@ -123,7 +123,7 @@ def random_name(length=5):
     "Make random names to identify runs"
     name = ""
     for _ in range(length):
-        name += str(random.randint(0, 10))
+        name += str(random.randint(0, 9))
     return name
 
 
