@@ -16,12 +16,12 @@ MAX_DEGREE = 4
 Re = 200
 RHO = 1          ## Water
 NU = 1           ## water
-DT = 1e-6
+DT = 1e-7
 
 Pa = 101325.0
-BETA = 0.
+BETA = 0.0
 
-NB_ITER = 150
+NB_ITER = 300
 
 EXPERIMENET_ID = random_name()
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
@@ -88,7 +88,6 @@ def diff_operator_phi(x, center=None, rbf=None, monomial=None, fields=None):
 @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_phi(x, centers=None, rbf=None, fields=None):
     return RHO * divergence(x, fields[:, :2], centers, rbf) / DT
-    # return RHO * jnp.min(jnp.array([divergence(x, fields[:, :2], centers, rbf), 0.001])) / DT
 
 
 ## Initial states, all defined on cloud_vel
@@ -102,7 +101,7 @@ p_ = p_.at[out_nodes].set(Pa)
 
 
 parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
-atmospheric = jax.jit(lambda x: Pa*(1. - BETA))     ##TODO Carefull: beta and pa must never change
+atmospheric = jax.jit(lambda x: Pa*(1.0 - BETA))     ##TODO Carefull: beta and pa must never change
 zero = jax.jit(lambda x: 0.0)
 
 bc_u = {"Wall":zero, "Inflow":parabolic, "Outflow":zero}
@@ -111,10 +110,10 @@ bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
 
 
 
-all_u = []
-all_v = []
-all_vel = []
-all_p = []
+u_list = []
+v_list = []
+vel_list = []
+p_list = []
 
 for i in tqdm(range(NB_ITER)):
     # print("Starting iteration %d" % i)
@@ -154,6 +153,8 @@ for i in tqdm(range(NB_ITER)):
                     boundary_conditions = bc_phi,
                     rbf=RBF,
                     max_degree=MAX_DEGREE)
+    # cloud_phi.visualize_field(phisol_.vals)
+    # print(phisol_.vals[out_nodes])
 
     p_ = BETA*p_ + phisol_.vals
     gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
@@ -165,10 +166,10 @@ for i in tqdm(range(NB_ITER)):
     u, v = U[:,0], U[:,1]
     vel = jnp.linalg.norm(U, axis=-1)
 
-    all_u.append(u)
-    all_v.append(v)
-    all_vel.append(vel)
-    all_p.append(p_)
+    u_list.append(u)
+    v_list.append(v)
+    vel_list.append(vel)
+    p_list.append(p_)
 
 
 
@@ -180,20 +181,19 @@ print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
 renum_map_vel = jnp.array(list(cloud_vel.renumbering_map.keys()))
 renum_map_p = jnp.array(list(cloud_phi.renumbering_map.keys()))
 
-jnp.savez(DATAFOLDER+'u.npz', renum_map_vel, jnp.stack(all_u, axis=0))
-jnp.savez(DATAFOLDER+'v.npz', renum_map_vel, jnp.stack(all_v, axis=0))
-jnp.savez(DATAFOLDER+'vel.npz', renum_map_vel, jnp.stack(all_vel, axis=0))
-jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(all_p, axis=0))
+jnp.savez(DATAFOLDER+'u.npz', renum_map_vel, jnp.stack(u_list, axis=0))
+jnp.savez(DATAFOLDER+'v.npz', renum_map_vel, jnp.stack(v_list, axis=0))
+jnp.savez(DATAFOLDER+'vel.npz', renum_map_vel, jnp.stack(vel_list, axis=0))
+jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 # plt.show()
-
 
 
 # %%
 
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "vel")
+pyvista_animation(DATAFOLDER, "u", duration=5)
 
 
 # %%

@@ -5,7 +5,7 @@ import jax.numpy as jnp
 ######
 
 
-def pyvista_animation(folderpath, fieldname, duration=5):  
+def pyvista_animation(folderpath, fieldname, duration=10):
     ## TODO use duration
     ## TODO Make another function for many different fields
     """ Make a PyVista animation from save it to video """
@@ -33,7 +33,8 @@ def pyvista_animation(folderpath, fieldname, duration=5):
 
     plt = pv.Plotter()
     # Open a movie file
-    plt.open_movie(videoname)
+    nbframes = field.shape[0]
+    plt.open_movie(videoname, framerate=nbframes/duration)
 
     # Add initial mesh
     plt.add_mesh(mesh, scalars=fieldname, clim=[jnp.min(field), jnp.max(field)])     ##TODO colorbar
@@ -46,7 +47,6 @@ def pyvista_animation(folderpath, fieldname, duration=5):
 
 
     # Update scalars on each frame
-    nbframes = field.shape[0]
     for i in range(nbframes):
         ### Make sure field[i] is properly orderd first
         mesh.point_data[fieldname][renumb_map] = field[i]

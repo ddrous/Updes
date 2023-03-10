@@ -209,10 +209,16 @@ def laplacian(x, field, centers, rbf=None):
 
 def interpolate_field(field, cloud1, cloud2):
     """ Interpolates field from cloud1 to cloud2 """
-    # print("In the function interpolate, we have the same ordering ... (for now)")
-    # print(cloud1.nodes.keys())
-    # print(cloud2.nodes.keys())
-    return field            ## TODO Think of a way to do this
+
+    assert cloud1.N == cloud2.N, "the two clouds do not contain the same number of nodes"   ## TODO: Make sure only the renumbering differs
+
+    sorted_map1 = sorted(cloud1.renumbering_map.items(), key=lambda x:x[0])
+    indexer1 = jnp.array(list(dict(sorted_map1).values()))
+    field_orig = field[indexer1]
+
+    indexer2 = jnp.array(list(cloud2.renumbering_map.keys()))
+
+    return field_orig[indexer2]            ## TODO Think of a way to do this
 
 
 ## Devise different LU, LDL decomposition strategies make functions here

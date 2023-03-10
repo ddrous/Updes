@@ -75,7 +75,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             elif self.node_boundary_types[i] == "r":
                 r_nodes.append(i)
 
-        new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes+r_nodes)}       ## Reads as: node k is now node v
+        new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes+r_nodes)}       ## Reads as: node v is now node k
 
         if hasattr(self, "global_indices_rev"):
             self.global_indices_rev = {new_numb[k]: v for k, v in self.global_indices_rev.items()}
@@ -268,11 +268,12 @@ class SquareCloud(Cloud):
         y = jnp.linspace(0, 1., self.Ny)
         xx, yy = jnp.meshgrid(x, y)
 
-        if noise_key is None:
-            noise_key = jax.random.PRNGKey(42)
+        # if noise_key is None:
+        #     noise_key = jax.random.PRNGKey(42)
  
-        key = jax.random.split(noise_key, self.N)
-        delta_noise = min((x[1]-x[0], y[1]-y[0])) / 2.   ## To make sure nodes don't go into each other
+        if noise_key is not None:
+            key = jax.random.split(noise_key, self.N)
+            delta_noise = min((x[1]-x[0], y[1]-y[0])) / 2.   ## To make sure nodes don't go into each other
 
         self.nodes = {}
 
@@ -297,17 +298,17 @@ class SquareCloud(Cloud):
         for i in range(self.N):
             [k, l] = list(self.global_indices_rev[i])
             if k == 0:
-                self.facet_nodes["west"].append(i)
-                self.node_boundary_types[i] = self.facet_types["west"]
+                self.facet_nodes["West"].append(i)
+                self.node_boundary_types[i] = self.facet_types["West"]
             elif l == self.Ny-1:
-                self.facet_nodes["north"].append(i)
-                self.node_boundary_types[i] = self.facet_types["north"]
+                self.facet_nodes["North"].append(i)
+                self.node_boundary_types[i] = self.facet_types["North"]
             elif k == self.Nx-1:
-                self.facet_nodes["east"].append(i)
-                self.node_boundary_types[i] = self.facet_types["east"]
+                self.facet_nodes["East"].append(i)
+                self.node_boundary_types[i] = self.facet_types["East"]
             elif l == 0:
-                self.facet_nodes["south"].append(i)
-                self.node_boundary_types[i] = self.facet_types["south"]
+                self.facet_nodes["South"].append(i)
+                self.node_boundary_types[i] = self.facet_types["South"]
             else:
                 self.node_boundary_types[i] = "i"       ## Internal node (not a boundary). But very very important!
 
