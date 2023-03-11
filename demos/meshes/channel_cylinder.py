@@ -3,7 +3,7 @@ import gmsh
 import sys
 
 
-lc = 0.08
+lc = 0.5
 nm_factor = 1           ## Refinement factor to account for Neumann
 cy_factor = 4         ## Refinement factor to account for cylinder
 L = 1.0
