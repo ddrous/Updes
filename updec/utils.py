@@ -28,15 +28,12 @@ def print_line_by_line(dictionary):
 
 
 @jax.jit
-def multiquadric(r):
-    eps = 1
+def multiquadric_func(r, eps=1):
     return jnp.sqrt(1 + (eps*r)**2)
 
-
 @jax.jit
-def polyharmonic_func(r):
-    a = 1
-    return r**(2*a+1)
+def multiquadric(x, center):
+    return multiquadric_func(distance(x, center))
 
 @jax.jit
 def gaussian_func(r, eps=1.):
@@ -50,6 +47,11 @@ def gaussian_func(r, eps=1.):
 def gaussian(x, center):
     return gaussian_func(distance(x, center))
 
+
+@jax.jit
+def polyharmonic_func(r):
+    a = 1
+    return r**(2*a+1)
 
 @jax.jit
 def polyharmonic(x, center):

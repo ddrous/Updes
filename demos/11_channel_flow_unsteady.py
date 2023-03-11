@@ -11,17 +11,17 @@ from updec import *
 ### Constants for the problem
 
 RBF = polyharmonic      ## Can define which rbf to use
-MAX_DEGREE = 4
+MAX_DEGREE = 2
 
 Re = 200
 RHO = 1          ## Water
-NU = 1           ## water
-DT = 1e-7
+NU = 1/Re           ## water
+DT = 1e-8
 
 Pa = 101325.0
 BETA = 0.0
 
-NB_ITER = 300
+NB_ITER = 50
 
 EXPERIMENET_ID = random_name()
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
@@ -34,18 +34,22 @@ make_dir(DATAFOLDER)
 
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
+# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
+# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
 
 cloud_vel = GmshCloud(filename="./meshes/channel.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+# cloud_vel = GmshCloud(filename="./meshes/channel_cylinder.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
 cloud_vel.visualize_cloud(ax=ax1, s=6, title="Cloud for velocity", xlabel=False);
 cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
 
+print(jnp.stack(list(cloud_phi.outward_normals.values())).shape)
+
 
 
 # %%
-
 print(f"\nStarting RBF simulation with {cloud_vel.N} nodes\n")
 
 
@@ -100,14 +104,18 @@ p_ = p_.at[out_nodes].set(Pa)
 
 
 
-parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
-atmospheric = jax.jit(lambda x: Pa*(1.0 - BETA))     ##TODO Carefull: beta and pa must never change
-zero = jax.jit(lambda x: 0.0)
+# parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
+ones = jax.jit(lambda x: 1.)
+atmospheric = jax.jit(lambda x: Pa*(1. - BETA))     ##TODO Carefull: beta and pa must never change
+zero = jax.jit(lambda x: 0.)
 
-bc_u = {"Wall":zero, "Inflow":parabolic, "Outflow":zero}
+bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
 bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
 bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
 
+# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
+# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
+# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Cylinder":zero}
 
 
 u_list = []
@@ -153,8 +161,6 @@ for i in tqdm(range(NB_ITER)):
                     boundary_conditions = bc_phi,
                     rbf=RBF,
                     max_degree=MAX_DEGREE)
-    # cloud_phi.visualize_field(phisol_.vals)
-    # print(phisol_.vals[out_nodes])
 
     p_ = BETA*p_ + phisol_.vals
     gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
@@ -193,7 +199,7 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "u", duration=5)
+pyvista_animation(DATAFOLDER, "vel", duration=5)
 
 
 # %%

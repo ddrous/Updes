@@ -3,8 +3,9 @@ import gmsh
 import sys
 
 
-lc = 0.15
-nm_factor = 1   ## Refinement factor to account to Neuman
+lc = 0.08
+nm_factor = 1           ## Refinement factor to account for Neumann
+cy_factor = 4         ## Refinement factor to account for cylinder
 L = 1.0
 DIM = 2
 
@@ -13,20 +14,28 @@ gmsh.initialize()
 
 gmsh.model.add("channel")
 
+## Mak e the square
 gmsh.model.geo.addPoint(-3*L, -1/2, 0, lc, 1)
 gmsh.model.geo.addPoint(8*L, -1/2, 0, lc/nm_factor, 2)
 gmsh.model.geo.addPoint(8*L, 1/2, 0, lc/nm_factor, 3)
 gmsh.model.geo.addPoint(-3*L, 1/2, 0, lc, 4)
-
 
 gmsh.model.geo.addLine(1, 2, 1)
 gmsh.model.geo.addLine(2, 3, 2)
 gmsh.model.geo.addLine(3, 4, 3)
 gmsh.model.geo.addLine(4, 1, 4)
 
-
 gmsh.model.geo.addCurveLoop([4, 1, 2, 3], 1)
-gmsh.model.geo.addPlaneSurface([1], 1)
+
+## Ad the hole
+gmsh.model.geo.addPoint(-L/10, 0, 0, lc/cy_factor, 5)
+gmsh.model.geo.addPoint(0, 0, 0, lc/cy_factor, 6)
+gmsh.model.geo.addPoint(L/10, 0, 0, lc/cy_factor, 7)
+gmsh.model.geo.addCircleArc(5, 6, 7, 5)
+gmsh.model.geo.addCircleArc(7, 6, 5, 6)
+gmsh.model.geo.addCurveLoop([5, 6], 2)
+
+gmsh.model.geo.addPlaneSurface([1, 2], 1)
 
 ## Geometry done. Synchornize here
 gmsh.model.geo.synchronize()
@@ -35,6 +44,7 @@ gmsh.model.geo.synchronize()
 gmsh.model.addPhysicalGroup(1, [4], name="Inflow")
 gmsh.model.addPhysicalGroup(1, [2], name="Outflow")
 gmsh.model.addPhysicalGroup(1, [1,3], name="Wall")
+gmsh.model.addPhysicalGroup(1, [5,6], name="Cylinder")
 gmsh.model.addPhysicalGroup(2, [1], name="Fluid")
 
 

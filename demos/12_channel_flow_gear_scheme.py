@@ -13,17 +13,15 @@ from updec import *
 RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 4
 
-RHO = 1          ## Water
-NU = 1           ## water
 Re = 200
 Du = Re
-DT = 0.025
+DT = 1e-5
 
 Pa = 101325.0
-BETA = 0.
+# Pa = 0.
 
-NB_ITER = 50
-NB_REFINEMENTS = 2
+NB_ITER = 5
+NB_REFINEMENTS = 6
 
 EXPERIMENET_ID = random_name()
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
@@ -47,7 +45,6 @@ cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
 
 
 # %%
-
 print(f"\nStarting RBF simulations with {cloud_vel.N} nodes\n")
 
 
@@ -103,10 +100,11 @@ p_now_ = p_now_.at[atmospheric_nodes].set(Pa)
 
 
 
-parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
-zero = jax.jit(lambda x: 0.0)
+# parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
+ones = jax.jit(lambda x: 1.)
+zero = jax.jit(lambda x: 0.)
 
-bc_u = {"Wall":zero, "Inflow":parabolic, "Outflow":zero}
+bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
 bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
 bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero}
 
@@ -179,14 +177,15 @@ for i in tqdm(range(NB_ITER)):
 
         u_next_prev = u_next_now 
         v_next_prev = v_next_now 
+        p_next_prev_ = p_next_now_
 
-    u_prev = u_now
-    v_pref = v_now
-    p_prev_ = p_now_
+    u_prev = u_now.copy()
+    v_pref = v_now.copy()
+    p_prev_ = p_now_.copy()
 
-    u_now = u_next_now
-    v_now = v_next_now
-    p_now_ = p_next_now_
+    u_now = u_next_now.copy()
+    v_now = v_next_now.copy()
+    p_now_ = p_next_now_.copy()
 
     u_list.append(u_next_now)
     v_list.append(v_next_now)
@@ -216,7 +215,7 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "p")
+pyvista_animation(DATAFOLDER, "vel", duration=5)
 
 
 # %%
