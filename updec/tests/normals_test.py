@@ -4,13 +4,19 @@ import jax.numpy as jnp
 from updec import *
 
 
-facet_types = {"Wall":"n", "Inflow":"d", "Outflow":"d", "Cylinder":"n"}
-cloud = GmshCloud(filename="./demos/meshes/channel_cylinder.py", facet_types=facet_types, mesh_save_location="./demos/meshes/")    ## TODO Pass the savelocation here
+facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n", "Cylinder":"n"}
+cloud = GmshCloud(filename="../../demos/meshes/channel_cylinder.py", facet_types=facet_types, mesh_save_location="../../demos/meshes/")    ## TODO Pass the savelocation here
 
+cloud.visualize_cloud(figsize=(10,2), s=4)
+# cloud.visualize_normals(figsize=(10,10))
+cloud.visualize_normals(figsize=(10,10), zoom_region=(-0.25,0.25,-0.25,0.25))
+# plt.show()
 
-print(cloud.outward_normals)
+print(cloud.facet_names)
+print(cloud.facet_types)
+print(cloud.facet_tag_nodes[3])
 
-cloud.visualize_cloud(figsize=(10,2))
-plt.show()
+test_node = cloud.renumbering_map[55]
+print(cloud.nodes[test_node])
+print(cloud.outward_normals[test_node])
 
-# %%

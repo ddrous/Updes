@@ -107,7 +107,7 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, rbf:callable, nb_monomials
     internal_ids = jnp.arange(Ni)
 
     for i in range(Ni):
-        assert cloud.node_boundary_types[i] == "i", "not an internal node"    ## Internal node
+        assert cloud.node_types[i] == "i", "not an internal node"    ## Internal node
 
         support_ids = jnp.array(cloud.local_supports[i])
         opPhi = opPhi.at[i, support_ids].set(operator_rbf_vec(nodes[i], nodes[support_ids], fields[i]))
@@ -147,13 +147,13 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
 
     for i in range(Ni, N):
         ii = i-Ni        ## Actual index in the matrices
-        assert cloud.node_boundary_types[i] in ["d", "n"], "not a boundary node"    ## Internal node
+        assert cloud.node_types[i] in ["d", "n"], "not a boundary node"    ## Internal node
 
-        if cloud.node_boundary_types[i] == "d":
+        if cloud.node_types[i] == "d":
             support_d = jnp.array(cloud.local_supports[i])
             bdPhi = bdPhi.at[ii, support_d].set(rbf_vec(nodes[i], nodes[support_d]))
 
-        elif cloud.node_boundary_types[i] == "n":    ## Neumann node
+        elif cloud.node_types[i] == "n":    ## Neumann node
             support_n = jnp.array(cloud.local_supports[i])
             grads = grad_rbf_vec(nodes[i], nodes[support_n])
             # norm = cloud.outward_normals[i]     ### Remove this line
@@ -161,8 +161,8 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
 
 
     ### Fill Matrix P with vectorisation from axis=0 ###
-    node_ids_d = [k for k,v in cloud.node_boundary_types.items() if v == "d"]
-    node_ids_n = [k for k,v in cloud.node_boundary_types.items() if v == "n"]
+    node_ids_d = [k for k,v in cloud.node_types.items() if v == "d"]
+    node_ids_n = [k for k,v in cloud.node_types.items() if v == "n"]
 
     monomials = make_all_monomials(M)
     if len(node_ids_d) > 0:

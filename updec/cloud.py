@@ -1,7 +1,7 @@
 import warnings
 import jax
 import jax.numpy as jnp
-from sklearn.neighbors import BallTree
+from sklearn.neighbors import BallTree, KDTree
 from updec.utils import distance
 
 import os
@@ -16,7 +16,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         self.Nn = 0
         self.nodes = {}
         self.outward_normals = {}
-        self.node_boundary_types = {}
+        self.node_types = {}
         self.facet_nodes = {}
         self.facet_types = facet_types
         self.support_size = support_size
@@ -54,9 +54,9 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         # ball_tree = KDTree(coords, leaf_size=40, metric='euclidean')
         ball_tree = BallTree(coords, leaf_size=40, metric='euclidean')
         for i in range(self.N):
-            _, neighboorhs = ball_tree.query(coords[i:i+1], k=self.support_size+1)
-            neighboorhs = neighboorhs[0][1:]                    ## Result is a 2d list, with the first el itself
-            self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighboorhs]
+            _, neighbours = ball_tree.query(coords[i:i+1], k=self.support_size+1)
+            neighbours = neighbours[0][1:]                    ## Result is a 2d list, with the first el itself
+            self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighbours]
 
     def renumber_nodes(self):
         """ Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards """
@@ -66,13 +66,13 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         n_nodes = []
         r_nodes = []
         for i in range(self.N):         
-            if self.node_boundary_types[i] == "i":
+            if self.node_types[i] == "i":
                 i_nodes.append(i)
-            elif self.node_boundary_types[i] == "d":
+            elif self.node_types[i] == "d":
                 d_nodes.append(i)
-            elif self.node_boundary_types[i] == "n":
+            elif self.node_types[i] == "n":
                 n_nodes.append(i)
-            elif self.node_boundary_types[i] == "r":
+            elif self.node_types[i] == "r":
                 r_nodes.append(i)
 
         new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes+r_nodes)}       ## Reads as: node v is now node k
@@ -83,7 +83,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             for i, (k, l) in self.global_indices_rev.items():
                 self.global_indices = self.global_indices.at[k, l].set(i)
 
-        self.node_boundary_types = {new_numb[k]:v for k,v in self.node_boundary_types.items()}
+        self.node_types = {new_numb[k]:v for k,v in self.node_types.items()}
         self.nodes = {new_numb[k]:v for k,v in self.nodes.items()}
 
         if hasattr(self, 'local_supports'):
@@ -91,6 +91,8 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             self.local_supports = {new_numb[k]:v for k,v in self.local_supports.items()}
 
         self.facet_nodes = jax.tree_util.tree_map(lambda i:new_numb[i], self.facet_nodes)
+        if hasattr(self, 'facet_tag_nodes'):
+            self.facet_tag_nodes = jax.tree_util.tree_map(lambda i:new_numb[i], self.facet_tag_nodes)
 
         if hasattr(self, 'outward_normals'):
             self.outward_normals = {new_numb[k]:v for k,v in self.outward_normals.items()}
@@ -99,7 +101,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
 
 
-    def visualize_cloud(self, ax=None, title="Cloud", xlabel=r'$x$', ylabel=r'$y$', legend_size=8, figsize=(6,5), **kwargs):
+    def visualize_cloud(self, ax=None, title="Cloud", xlabel=r'$x$', ylabel=r'$y$', legend_size=8, figsize=(5.5,5), **kwargs):
         import matplotlib.pyplot as plt
         ## TODO Color and print important stuff appropriately
 
@@ -125,6 +127,38 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             ax.set_ylabel(ylabel)
         ax.set_title(title)
         ax.legend(bbox_to_anchor=(1.0, 0.5), loc='center left', prop={'size': legend_size})
+        plt.tight_layout()
+
+        return ax
+
+
+    def visualize_normals(self, ax=None, title="Normal vectors", xlabel=r'$x$', ylabel=r'$y$', figsize=(5.5,5), zoom_region=None, **kwargs):
+        import matplotlib.pyplot as plt
+        """ Displays the outward normal vectors on Neumann and Robin boundaries"""
+
+        if ax is None:
+            fig = plt.figure(figsize=figsize)
+            ax = fig.add_subplot(1, 1, 1)
+
+        concerned_nodes = [i for i in range(self.N) if self.node_types[i] in ["n", "r"]]
+        if len(concerned_nodes)==0:  ## Nothing to plot 
+            return ax
+
+        coords = jnp.stack([self.nodes[node_id] for node_id in concerned_nodes], axis=0)
+        normals = jnp.stack([self.outward_normals[node_id] for node_id in concerned_nodes], axis=0)/100     ## Devide by 100 for better visualization
+
+        q = ax.quiver(coords[:,0], coords[:,1], normals[:,0], normals[:,1], color="w",label="normals", **kwargs)
+        ax.quiverkey(q, X=0.5, Y=1.1, U=1, label='Normals', labelpos='E')
+        ax.scatter(x=coords[:, 0], y=coords[:, 1], c="m", **kwargs)
+
+        if xlabel:
+            ax.set_xlabel(xlabel)
+        if ylabel:
+            ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        if zoom_region:     ## To zoom on a specific region
+            ax.set_xlim((zoom_region[0], zoom_region[1]))
+            ax.set_ylim((zoom_region[2], zoom_region[3]))
         plt.tight_layout()
 
         return ax
@@ -237,7 +271,7 @@ class SquareCloud(Cloud):
         # self.facet_types = facet_types
 
         self.define_global_indices()
-        self.define_node_boundary_types()
+        self.define_node_types()
         self.define_node_coordinates(noise_key)
         self.define_local_supports()
         self.define_outward_normals()
@@ -281,7 +315,7 @@ class SquareCloud(Cloud):
             for j in range(self.Ny):
                 global_id = int(self.global_indices[i,j])
 
-                if (self.node_boundary_types[global_id] not in ["d", "n"]) and (noise_key is not None):
+                if (self.node_types[global_id] not in ["d", "n"]) and (noise_key is not None):
                     noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)         ## Just add some noisy noise !!
                 else:
                     noise = jnp.zeros((2,))
@@ -289,28 +323,28 @@ class SquareCloud(Cloud):
                 self.nodes[global_id] = jnp.array([xx[j,i], yy[j,i]]) + noise
 
 
-    def define_node_boundary_types(self):
+    def define_node_types(self):
         """ Makes the boundaries for the square domain """
 
         self.facet_nodes = {k:[] for k in self.facet_types.keys()}     ## List of nodes belonging to each facet
-        self.node_boundary_types = {}                              ## Coding structure: internal="i", dirichlet="d", neumann="n", external="e" (not supported yet)
+        self.node_types = {}                              ## Coding structure: internal="i", dirichlet="d", neumann="n", external="e" (not supported yet)
 
         for i in range(self.N):
             [k, l] = list(self.global_indices_rev[i])
             if k == 0:
                 self.facet_nodes["West"].append(i)
-                self.node_boundary_types[i] = self.facet_types["West"]
+                self.node_types[i] = self.facet_types["West"]
             elif l == self.Ny-1:
                 self.facet_nodes["North"].append(i)
-                self.node_boundary_types[i] = self.facet_types["North"]
+                self.node_types[i] = self.facet_types["North"]
             elif k == self.Nx-1:
                 self.facet_nodes["East"].append(i)
-                self.node_boundary_types[i] = self.facet_types["East"]
+                self.node_types[i] = self.facet_types["East"]
             elif l == 0:
                 self.facet_nodes["South"].append(i)
-                self.node_boundary_types[i] = self.facet_types["South"]
+                self.node_types[i] = self.facet_types["South"]
             else:
-                self.node_boundary_types[i] = "i"       ## Internal node (not a boundary). But very very important!
+                self.node_types[i] = "i"       ## Internal node (not a boundary). But very very important!
 
         self.Nd = 0
         self.Nn = 0
@@ -324,7 +358,7 @@ class SquareCloud(Cloud):
 
     def define_outward_normals(self):
         ## Makes the outward normal vectors to boundaries
-        bd_nodes = [k for k,v in self.node_boundary_types.items() if v in ["n", "r"]]   ## Neumann or Robin nodes
+        bd_nodes = [k for k,v in self.node_types.items() if v in ["n", "r"]]   ## Neumann or Robin nodes
         self.outward_normals = {}
 
         for i in bd_nodes:
@@ -337,17 +371,6 @@ class SquareCloud(Cloud):
                 n = jnp.array([0., -1.])
             elif l==self.Ny-1:
                 n = jnp.array([0., 1.])
-
-            ## How to enfore zeros normals at corners nodes
-            # nx, ny = 1., 1.
-            # if k==0:
-            #     nx, ny = -nx, 0. 
-            # elif k==self.Nx-1:
-            #     nx, ny = nx, 0. 
-            # elif l==0:
-            #     nx, ny = 0., -ny 
-            # elif l==self.Ny-1:
-            #     nx, ny = 0., ny
 
             # self.outward_normals[int(self.global_indices[k,l])] = jnp.array([nx, ny])
             self.outward_normals[int(self.global_indices[k,l])] = n
@@ -424,7 +447,8 @@ class GmshCloud(Cloud):
         self.N = int(splitline[1])
         self.nodes = {}
         self.facet_nodes = {v:[] for v in self.facet_names.values()}
-        self.node_boundary_types = {}
+        self.facet_tag_nodes = {k:[] for k in self.facet_names.keys()}        ## Useful for normals
+        self.node_types = {}
         corner_membership = {}
 
         line = f.readline()
@@ -448,14 +472,15 @@ class GmshCloud(Cloud):
                     corner_membership[node_id] = []
 
                 elif dim==1:  ## A curve
-                    self.node_boundary_types[node_id] = self.facet_types[self.facet_names[entity_id]]
+                    self.node_types[node_id] = self.facet_types[self.facet_names[entity_id]]
                     facet_nodes.append(node_id)
 
                 elif dim==2:  ## A surface
-                    self.node_boundary_types[node_id] = "i"
+                    self.node_types[node_id] = "i"
 
             if dim==1:
                 self.facet_nodes[self.facet_names[entity_id]] += facet_nodes
+                self.facet_tag_nodes[entity_id] += facet_nodes
 
             line = f.readline()
 
@@ -472,7 +497,7 @@ class GmshCloud(Cloud):
 
             if dim == 1:                ## Only considering elements of dim=DIM-1
                 for i in range(nb):
-                    splitline = [int(n_id)-1 for n_id in f.readline().split()]
+                    splitline = [int(n_id)-1 for n_id in f.readline().split()[1:]]
 
                     for c_node_id in corner_membership.keys():
                         if c_node_id in splitline:
@@ -490,41 +515,52 @@ class GmshCloud(Cloud):
 
         ## Sort the entity ids by precedence
         for c_id, f_ids in corner_membership.items():
-            f_names = [self.facet_names[f_id] for f_id in f_ids]
-            sorted_f = sorted(f_names, key=lambda f_name:self.facet_precedence[f_name])
-            choosen_facet = sorted_f[0]   ## The corner node belongs to this facet exclusively
+            sorted_f_ids = sorted(f_ids, key=lambda f_id:self.facet_precedence[self.facet_names[f_id]])
+            choosen_facet_id = sorted_f_ids[0]   ## The corner node belongs to this facet exclusively
+            choosen_facet_name = self.facet_names[choosen_facet_id]
 
-            self.node_boundary_types[c_id] = self.facet_types[choosen_facet]
-            self.facet_nodes[choosen_facet].append(c_id)
+            self.node_types[c_id] = self.facet_types[choosen_facet_name]
+            self.facet_nodes[choosen_facet_name].append(c_id)
+            self.facet_tag_nodes[choosen_facet_id].append(c_id)
 
 
-        self.Ni = len({k:v for k,v in self.node_boundary_types.items() if v=="i"})
-        self.Nd = len({k:v for k,v in self.node_boundary_types.items() if v=="d"})
-        self.Nr = len({k:v for k,v in self.node_boundary_types.items() if v=="r"})
-        self.Nn = len({k:v for k,v in self.node_boundary_types.items() if v=="n"})
+        self.Ni = len({k:v for k,v in self.node_types.items() if v=="i"})
+        self.Nd = len({k:v for k,v in self.node_types.items() if v=="d"})
+        self.Nr = len({k:v for k,v in self.node_types.items() if v=="r"})
+        self.Nn = len({k:v for k,v in self.node_types.items() if v=="n"})
 
 
 
     def define_outward_normals(self):
         ## Use the Gmesh API        https://stackoverflow.com/a/59279502/8140182
 
-        for i in range(self.N):
-            if self.node_boundary_types[i] == "i":
-                i_point = self.nodes[i]     ## An interior poitn for testing
-                break
+        ## To get the closes internal point
+        in_coords = jnp.stack([self.nodes[node_id] for node_id in range(self.N) if self.node_types[node_id] == "i"], axis=0)
+        in_ball_tree = BallTree(in_coords, leaf_size=40, metric='euclidean')
+        # in_ball_tree = KDTree(in_coords, leaf_size=40, metric='euclidean')
 
-        for f_name, f_nodes in self.facet_nodes.items():
+        for f_tag, f_nodes in self.facet_tag_nodes.items():
 
-            if self.facet_types[f_name] in ["n", "r"]:      ### Only Neuman and Robin need normals !
+            if self.facet_types[self.facet_names[f_tag]] in ["n", "r"]:      ### Only Neuman and Robin need normals !
+                assert len(f_nodes) >= 2, " Mesh not fine enough for normal computation "
 
-                in_vector = i_point - self.nodes[f_nodes[0]]        ## An inward pointing vector
-                assert len(f_nodes)>1, " Mesh not fine enough for normal computation "
-                tangent = self.nodes[f_nodes[1]] - self.nodes[f_nodes[0]]       ## A tangent vector
+                ## Sort the nodes in this facet
+                f_coords = jnp.stack([self.nodes[node_id] for node_id in f_nodes], axis=0)
+                f_ball_tree = BallTree(f_coords, leaf_size=40, metric='euclidean')
 
-                normal = jnp.array([-tangent[1], tangent[0]])
-                if jnp.dot(normal, in_vector) > 0:      ## The normal is pointing inward
-                    for j in f_nodes:
-                        self.outward_normals[j] = -normal / jnp.linalg.norm(normal)
-                else:                                   ## The normal is pointing outward
-                    for j in f_nodes:
-                        self.outward_normals[j] = normal / jnp.linalg.norm(normal)
+                for node_id in f_nodes:
+                    current = self.nodes[node_id]
+                    _, neighbours = f_ball_tree.query(current[jnp.newaxis], k=2)
+                    closest_f = f_coords[neighbours[0][1]]      ## The closest point on the same facet
+
+                    _, neighbours = in_ball_tree.query(current[jnp.newaxis], k=2)
+                    closest_in = in_coords[neighbours[0][1]]    ## The closest point in the domain
+
+                    invector = closest_in - current         ## An inward pointing vector
+                    tangent = closest_f - current           ## A tangent vector
+
+                    normal = jnp.array([-tangent[1], tangent[0]])
+                    if jnp.dot(normal, invector) > 0:       ## The normal is pointing inward
+                        self.outward_normals[node_id] = -normal / jnp.linalg.norm(normal)
+                    else:                                   ## The normal is pointing outward
+                        self.outward_normals[node_id] = normal / jnp.linalg.norm(normal)
