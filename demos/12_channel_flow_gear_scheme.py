@@ -9,8 +9,9 @@ from updec import *
 
 
 ### Constants for the problem
-
-RBF = polyharmonic      ## Can define which rbf to use
+EPS = 10.0
+RBF = partial(gaussian, eps=EPS)
+# RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 4
 
 Re = 200
@@ -21,7 +22,7 @@ Pa = 101325.0
 # Pa = 0.
 
 NB_ITER = 5
-NB_REFINEMENTS = 6
+NB_REFINEMENTS = 3
 
 EXPERIMENET_ID = random_name()
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
@@ -215,7 +216,7 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "vel", duration=5)
+pyvista_animation(DATAFOLDER, "u", duration=5)
 
 
 # %%

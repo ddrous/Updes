@@ -5,7 +5,7 @@ setup(
    version='0.1.0',
    author='desmond-rn',
    author_email='desmond.ngueguin@gmail.com',
-   packages=['updec', 'updec.test'],
+   packages=['updec', 'updec.tests'],
 #    scripts=['bin/script1','bin/script2'],
    url='http://pypi.python.org/pypi/Updec/',
    license='LICENSE.md',

@@ -1,12 +1,18 @@
 # %%
 import random
+from functools import partial
 from updec import *
 "A unit test that checks if the gradient of a constant field is zero"
 
 seed = random.randint(0,100)
-print("Runnin experiments with seed: %s" % seed)
-print()
+# seed = 0
 
+EXPERIMENET_ID = random_name()
+DATAFOLDER = "../../demos/data/" + EXPERIMENET_ID +"/"
+make_dir(DATAFOLDER)
+
+
+# %%
 # facet_types = {"North":"d", "South":"d", "East":"d", "West":"d"}
 
 # size = 22
@@ -15,32 +21,41 @@ print()
 # cloud.visualize_cloud(figsize=(6,5), s=12, title="Cloud for testing");
 
 
-EXPERIMENET_ID = random_name()
-DATAFOLDER = "../../demos/data/" + EXPERIMENET_ID +"/"
-make_dir(DATAFOLDER)
-
-facet_types = {"Wall":"d", "Inflow":"d", "Outflow":"d", "Cylinder":"n"}
+# facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n"}
+facet_types = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
 cloud = GmshCloud(filename="../../demos/meshes/channel_cylinder.py", facet_types=facet_types, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 
 cloud.visualize_cloud(figsize=(8.5,2.5), s=6, title=r"Cloud for $\phi$");
-cloud.visualize_normals(title="Normals for phi", zoom_region=(-0.25,0.25,-0.25,0.25))
+fig, ax = plt.subplots(1, 2, figsize=(5.5*2,5))
+cloud.visualize_normals(ax=ax[0], title="Normals for phi", zoom_region=(-0.25,0.25,-0.25,0.25))
+cloud.visualize_normals(ax=ax[1], title="Normals for phi", zoom_region=(7.75,8.25,-0.25,0.25))
 
 
 
 # %%
 
-RBF = polyharmonic      ## Can define which rbf to use
+EPS = 10.0
+RBF = partial(gaussian, eps=EPS)      ## Can define which rbf to use
 MAX_DEGREE = 4
 
+r = jnp.linspace(-10,10,1000)
+plt.plot(r, gaussian_func(r, eps=EPS))
+
 const = lambda x: seed
+zero = lambda x: 0.
 # bc = {"North":const, "South":const, "East":const, "West":const}
+# bc = {"Wall":const, "Inflow":const, "Outflow":const}
 bc = {"Wall":const, "Inflow":const, "Outflow":const, "Cylinder":const}
+for k in bc.keys():
+    if facet_types[k] == "n":
+        bc[k] = zero
 
 
 
 @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
     return nodal_value(x, center, rbf, monomial)
+    # return nodal_laplacian(x, center, rbf, monomial)
 
 @Partial(jax.jit, static_argnums=[2])
 def rhs_operator(x, centers=None, rbf=None, fields=None):
@@ -54,17 +69,23 @@ sol = pde_solver(diff_operator=diff_operator,
                 max_degree=MAX_DEGREE)
 
 # %%
+
+print("Runnin experiments with seed: %s" % seed)
+print()
+
 # p_ = p_ + phisol_.vals
 # grad = gradient(cloud.sorted_nodes[0], sol.coeffs, cloud.sorted_nodes, RBF)
 grads = gradient_vec(cloud.sorted_nodes, sol.coeffs, cloud.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
 grads_norm = jnp.linalg.norm(grads, axis=-1)
 print("Grads close to 0 ?", jnp.allclose(grads_norm, 0, atol=1e-05))
+print("Maximum of grad norm:", jnp.max(grads_norm))
 
 field_vec = jnp.stack([sol.coeffs, sol.coeffs], axis=-1)
 divs = divergence_vec(cloud.sorted_nodes, field_vec, cloud.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
 print("Divs close to 0 ?", jnp.allclose(divs, 0, atol=1e-05))
+print("Maximum of div norm:", jnp.max(divs))
 
-cloud.visualize_field(sol.vals, figsize=(8.5,2.5), title="Constant field");
+cloud.visualize_field(sol.vals, projection="2d", figsize=(8.5,2.5), title="Constant field");
 # cloud.visualize_field(grads[:,0], figsize=(6,4.5), title="Partial along x");
 # cloud.visualize_field(grads[:,1], figsize=(6,4.5), title="Partial along y");
 cloud.visualize_field(grads_norm, figsize=(8.5,2.5), title="Norm of gradient of const field");

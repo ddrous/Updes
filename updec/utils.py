@@ -28,12 +28,12 @@ def print_line_by_line(dictionary):
 
 
 @jax.jit
-def multiquadric_func(r, eps=1):
+def multiquadric_func(r, eps=1.):
     return jnp.sqrt(1 + (eps*r)**2)
 
 @jax.jit
-def multiquadric(x, center):
-    return multiquadric_func(distance(x, center))
+def multiquadric(x, center, eps=1.):
+    return multiquadric_func(distance(x, center), eps)
 
 @jax.jit
 def gaussian_func(r, eps=1.):
@@ -44,8 +44,8 @@ def gaussian_func(r, eps=1.):
 #     return jnp.exp(-(alpha * r / h)**2)
 
 @jax.jit
-def gaussian(x, center):
-    return gaussian_func(distance(x, center))
+def gaussian(x, center, eps=1.):
+    return gaussian_func(distance(x, center), eps)
 
 
 @jax.jit
