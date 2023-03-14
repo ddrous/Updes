@@ -24,7 +24,7 @@ DT = 1e-7
 Pa = 101325.0
 # Pa = 0.
 
-NB_ITER = 3
+NB_ITER = 30
 NB_REFINEMENTS = 2
 
 EXPERIMENET_ID = random_name()
@@ -98,11 +98,14 @@ def rhs_operator_phi(x, centers=None, rbf=None, fields=None):
 ## Initial states, all defined on cloud_vel
 u_now = u_prev = jnp.zeros((cloud_vel.N,))
 v_now = v_prev = jnp.zeros((cloud_vel.N,))
+in_nodes = jnp.array(cloud_vel.facet_nodes["Inflow"])
+u_prev = u_prev.at[in_nodes].set(1.)
+u_now = u_now.at[in_nodes].set(1.)
 
-p_now_ = p_prev_ = jnp.zeros((cloud_phi.N,))       ## on cloud_phi        ##TODO set this to p_a on Outlet
-atmospheric_nodes = jnp.array(cloud_phi.facet_nodes["Outflow"])
-p_prev_ = p_prev_.at[atmospheric_nodes].set(Pa)
-p_now_ = p_now_.at[atmospheric_nodes].set(Pa)
+p_now_ = p_prev_ = jnp.zeros((cloud_phi.N,))
+out_nodes = jnp.array(cloud_phi.facet_nodes["Outflow"])
+p_prev_ = p_prev_.at[out_nodes].set(Pa)
+p_now_ = p_now_.at[out_nodes].set(Pa)
 
 
 
@@ -178,13 +181,16 @@ for i in tqdm(range(NB_ITER)):
         # print("phi Max:", jnp.max(phisol_.vals))
 
         p_next_now_ = p_next_prev_ + 3*phisol_.vals/(2*DT)
-        gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
 
+        p_next_now_ = p_next_now_.at[out_nodes].set(Pa)
+        ## Also set the pressure at every other boundary point before correcting velocity
+
+        gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
         ## TODO Interpolate p and gradphi onto cloud_vel
         gradphi = interpolate_field(gradphi_, cloud_phi, cloud_vel)
-
         U_next_now = U_star_now - gradphi
         u_next_now, v_next_now = U_next_now[:,0], U_next_now[:,1]
+
         vel_next_now = jnp.linalg.norm(U_next_now, axis=-1)
 
         u_next_prev = u_next_now 
