@@ -27,35 +27,35 @@ def print_line_by_line(dictionary):
         print("\t", k,":",v)
 
 
-@jax.jit
-def multiquadric_func(r, eps=1.):
+def multiquadric_func(r, eps):
     return jnp.sqrt(1 + (eps*r)**2)
-
 @jax.jit
 def multiquadric(x, center, eps=1.):
     return multiquadric_func(distance(x, center), eps)
 
+def inv_multiquadric_func(r, eps):
+    return 1./ jnp.sqrt(1 + (eps*r)**2)
 @jax.jit
-def gaussian_func(r, eps=1.):
+def inverse_multiquadric(x, center, eps=1.):
+    return inv_multiquadric_func(distance(x, center), eps)
+
+def gaussian_func(r, eps):
     return jnp.exp(-(eps * r)**2)
-
-# @jax.jit
-# def gaussian(r, alpha, h):
-#     return jnp.exp(-(alpha * r / h)**2)
-
-@jax.jit
 def gaussian(x, center, eps=1.):
     return gaussian_func(distance(x, center), eps)
 
-
-@jax.jit
-def polyharmonic_func(r):
-    a = 1
+def polyharmonic_func(r, a):
     return r**(2*a+1)
-
 @jax.jit
-def polyharmonic(x, center):
-    return polyharmonic_func(distance(x, center))
+def polyharmonic(x, center, a=1):
+    return polyharmonic_func(distance(x, center), a)
+
+def thin_plate_func(r, a):
+    return jnp.log(r) * r**(2*a)
+@jax.jit
+def thin_plate(x, center, a=1):
+    return thin_plate_func(distance(x, center), a)
+
 
 # @jax.jit
 @Partial(jax.jit, static_argnums=2)

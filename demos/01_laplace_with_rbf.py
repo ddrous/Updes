@@ -1,3 +1,4 @@
+# %%
 import os
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
 import time
@@ -21,15 +22,18 @@ key = jax.random.PRNGKey(42)
 # import datetime
 
 
-RBF = polyharmonic
+# RBF = polyharmonic
+# RBF = partial(inverse_multiquadric, eps=0.001)
+RBF = partial(thin_plate, a=3)
 MAX_DEGREE = 4
 Nx = 30
 Ny = Nx
 SUPPORT_SIZE = Nx*Ny-1
+# SUPPORT_SIZE = 55
 
 # print(run_name)
 
-facet_types={"south":"n", "west":"d", "north":"d", "east":"d"}
+facet_types={"South":"n", "West":"d", "North":"d", "East":"d"}
 # facet_types={"south":"n", "west":"n", "north":"n", "east":"n"}
 # facet_types={"south":"d", "west":"d", "north":"d", "east":"d"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
@@ -49,7 +53,7 @@ def my_rhs_operator(x, centers=None, rbf=None, fields=None):
 
 d_north = lambda node: jnp.sin(jnp.pi * node[0])
 d_zero = lambda node: 0.0
-boundary_conditions = {"south":d_zero, "west":d_zero, "north":d_north, "east":d_zero}
+boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_north, "East":d_zero}
 
 start = time.time()
 # solution_field = pde_solver(my_diff_operator, my_rhs_operator, cloud, boundary_conditions, RBF, MAX_DEGREE)
@@ -103,3 +107,5 @@ plt.show()
 # writer.add_figure("plots", fig)
 # writer.flush()
 # writer.close()
+
+# %%

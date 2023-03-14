@@ -9,20 +9,23 @@ from updec import *
 
 
 ### Constants for the problem
-EPS = 10.0
-RBF = partial(gaussian, eps=EPS)
-# RBF = polyharmonic      ## Can define which rbf to use
-MAX_DEGREE = 4
+# EPS = 10.0
+# RBF = partial(gaussian, eps=EPS)
+# # RBF = polyharmonic      ## Can define which rbf to use
+# MAX_DEGREE = 4
 
-Re = 200
+RBF = partial(thin_plate, a=3)
+MAX_DEGREE = 2
+
+Re = 20
 Du = Re
-DT = 1e-5
+DT = 1e-7
 
 Pa = 101325.0
 # Pa = 0.
 
-NB_ITER = 5
-NB_REFINEMENTS = 3
+NB_ITER = 3
+NB_REFINEMENTS = 2
 
 EXPERIMENET_ID = random_name()
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
@@ -35,8 +38,10 @@ make_dir(DATAFOLDER)
 
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
+# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
+# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
 
-cloud_vel = GmshCloud(filename="./meshes/channel.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+cloud_vel = GmshCloud(filename="./meshes/channel_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
@@ -108,6 +113,9 @@ zero = jax.jit(lambda x: 0.)
 bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
 bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
 bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero}
+# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
+# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
+# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
 
 
 
@@ -141,6 +149,8 @@ for i in tqdm(range(NB_ITER)):
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
         u_star_now = usol.vals
+        print("u max:", jnp.max(u_star_now))
+        print("u max loc:", cloud_vel.sorted_nodes[jnp.argmax(u_star_now)])
 
         vsol = pde_solver(diff_operator=diff_operator_v,
                         diff_args=[u_next_prev, v_next_prev],
@@ -150,8 +160,8 @@ for i in tqdm(range(NB_ITER)):
                         boundary_conditions = bc_v,
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
-
         v_star_now = vsol.vals
+        # print("v Max:", jnp.max(v_star_now))
 
         U_star_now = jnp.stack([u_star_now, v_star_now], axis=-1)
         ## TODO Interpolate Ustar onto cloud_phi
@@ -165,6 +175,7 @@ for i in tqdm(range(NB_ITER)):
                         boundary_conditions = bc_phi,
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
+        # print("phi Max:", jnp.max(phisol_.vals))
 
         p_next_now_ = p_next_prev_ + 3*phisol_.vals/(2*DT)
         gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?

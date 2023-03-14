@@ -11,15 +11,18 @@ from updec import *
 
 ### Constants for the problem
 
-RBF = polyharmonic      ## Can define which rbf to use
-RBF2 = partial(gaussian, eps=0.1)
+# EPS=1e-2
+# RBF = polyharmonic      ## Can define which rbf to use
+# RBF = partial(inverse_multiquadric, eps=10.0)
+# RBF = partial(gaussian, eps=1e-7)
+RBF = partial(thin_plate, a=3)
 
-MAX_DEGREE = 4
+MAX_DEGREE = 2
 
 Re = 200
 RHO = 1.          ## Water
 NU = 1./Re           ## water
-DT = 1e-8
+DT = 1e-10
 
 Pa = 101325.0
 # Pa = 0.0
@@ -36,13 +39,13 @@ make_dir(DATAFOLDER)
 # %%
 
 
-facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
-facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
-# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
-# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
+# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
+# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
+facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
+facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
 
-cloud_vel = GmshCloud(filename="./meshes/channel.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
-# cloud_vel = GmshCloud(filename="./meshes/channel_cylinder.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+# cloud_vel = GmshCloud(filename="./meshes/channel.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+cloud_vel = GmshCloud(filename="./meshes/channel_cylinder.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
@@ -117,13 +120,13 @@ ones = jax.jit(lambda x: 1.)
 atmospheric = jax.jit(lambda x: Pa*(1. - BETA))     ##TODO Carefull: beta and pa must never change
 zero = jax.jit(lambda x: 0.)
 
-bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
-bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
-bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
+# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
+# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
+# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
 
-# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
-# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
-# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Cylinder":zero}
+bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
+bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
+bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Cylinder":zero}
 
 
 u_list = []

@@ -22,7 +22,7 @@ make_dir(DATAFOLDER)
 
 
 # facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n"}
-facet_types = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
+facet_types = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"n"}
 cloud = GmshCloud(filename="../../demos/meshes/channel_cylinder.py", facet_types=facet_types, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 
 cloud.visualize_cloud(figsize=(8.5,2.5), s=6, title=r"Cloud for $\phi$");
@@ -35,11 +35,13 @@ cloud.visualize_normals(ax=ax[1], title="Normals for phi", zoom_region=(7.75,8.2
 # %%
 
 EPS = 10.0
-RBF = partial(gaussian, eps=EPS)      ## Can define which rbf to use
+# RBF = partial(gaussian, eps=EPS)      ## Can define which rbf to use
+# RBF = partial(polyharmonic, a=1)
+RBF = partial(thin_plate, a=4)
 MAX_DEGREE = 4
 
-r = jnp.linspace(-10,10,1000)
-plt.plot(r, gaussian_func(r, eps=EPS))
+# r = jnp.linspace(-10,10,1000)
+# plt.plot(r, gaussian_func(r, eps=EPS))
 
 const = lambda x: seed
 zero = lambda x: 0.

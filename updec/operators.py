@@ -119,7 +119,7 @@ def value(x, field, centers, rbf=None):
     final_val = jnp.array([0.])
     for j in range(lambdas.shape[0]):                                           ## TODO: Awwfull !! Vectorize this please !
         rbf_val = nodal_value(x, center=centers[j], rbf=rbf)       ## TODO To account for non-differentiable case
-        final_val = final_val.at[:].add(lambdas[j] * rbf_val)
+        final_val = final_val.at[:].add(jnp.nan_to_num(lambdas[j] * rbf_val, posinf=0., neginf=0.))
 
     for j in range(gammas.shape[0]):                                                   ### TODO: Use VMAP to vectorise this too !!
         monomial = Partial(make_monomial, id=j)
@@ -151,13 +151,15 @@ def gradient(x, field, centers, rbf=None):
     lambdas, gammas = field[:N], field[N:]
 
     grads_rbf = _nodal_gradient_rbf_vec(x, centers, rbf, None)              ## TODO remove all NaNs
+    # print(grads_rbf)
     lambdas = jnp.stack([lambdas, lambdas], axis=-1)                        ## TODO Why is Jax unable to broadcast below ?
-    final_grad = jnp.sum(jnp.nan_to_num(lambdas*grads_rbf), axis=0)
+    final_grad = jnp.sum(jnp.nan_to_num(lambdas*grads_rbf, posinf=0., neginf=0.), axis=0)
 
     all_monomials = make_all_monomials(gammas.shape[0])
     for j in range(gammas.shape[0]):                                                   ### TODO: Use VMAP to vectorise this too !!
         polynomial_grad = nodal_gradient(x, monomial=all_monomials[j])
-        final_grad = final_grad.at[:].add(gammas[j] * polynomial_grad)
+        # print(polynomial_grad)
+        final_grad = final_grad.at[:].add(jnp.nan_to_num(gammas[j] * polynomial_grad, posinf=0., neginf=0.))
 
     return final_grad
 
@@ -194,7 +196,7 @@ def laplacian(x, field, centers, rbf=None):
     #     final_lap = final_lap.at[:].add(lambdas[j] * rbf_lap)
 
     laps_rbf = _nodal_laplacian_rbf_vec(x, centers, rbf, None)              ## TODO remove all NaNs
-    rbf_lap = jnp.sum(jnp.nan_to_num(lambdas*laps_rbf), axis=0)
+    rbf_lap = jnp.sum(jnp.nan_to_num(lambdas*laps_rbf, posinf=0., neginf=0.), axis=0)
 
 
     all_monomials = make_all_monomials(gammas.shape[0])
