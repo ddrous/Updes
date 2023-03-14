@@ -20,7 +20,7 @@ def nodal_value(x, center=None, rbf=None, monomial=None):
         monomial: the id of the monomial (if for a monomial)
     """
     ## Only one of node_j or monomial_j can be given
-    if center != None:
+    if center != None:          ## TODO if else can be handled with grace in Jax
         # rbf = Partial(make_rbf, rbf=rbf)
         return rbf(x, center)
     elif monomial != None:
@@ -49,7 +49,7 @@ def nodal_gradient(x, center=None, rbf=None, monomial=None):
     """
     # cfg.RBFtest = gaussian
     ## Only one of node_j or monomial_j can be given
-    if center != None:
+    if center != None:  ## TODO if alse can be handled with grace in Jax
         # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         # return jax.grad(nodal_rbf)(x, node)
         # return jnp.where(jnp.all(x==node), jax.grad(nodal_rbf)(x, node), jnp.array([0., 0.]))
@@ -106,7 +106,7 @@ def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_d
 
     return lambdas[:, jnp.newaxis], gammas[:, jnp.newaxis]
 
-
+_nodal_value_rbf_vec = jax.vmap(nodal_value, in_axes=(None, 0, None, None), out_axes=0)
 
 def value(x, field, centers, rbf=None):
     """ Computes the gradient of field quantity s at position x """
@@ -116,17 +116,15 @@ def value(x, field, centers, rbf=None):
     N = centers.shape[0]
     lambdas, gammas = field[:N], field[N:]
 
-    final_val = jnp.array([0.])
-    for j in range(lambdas.shape[0]):                                           ## TODO: Awwfull !! Vectorize this please !
-        rbf_val = nodal_value(x, center=centers[j], rbf=rbf)       ## TODO To account for non-differentiable case
-        final_val = final_val.at[:].add(jnp.nan_to_num(lambdas[j] * rbf_val, posinf=0., neginf=0.))
+    val_rbf = _nodal_value_rbf_vec(x, centers, rbf, None)
+    final_val = jnp.sum(jnp.nan_to_num(lambdas*val_rbf, posinf=0., neginf=0.), axis=0)
 
-    for j in range(gammas.shape[0]):                                                   ### TODO: Use VMAP to vectorise this too !!
-        monomial = Partial(make_monomial, id=j)
-        polynomial_val = nodal_value(x, monomial=monomial)
-        final_val = final_val.at[:].add(gammas[j] * polynomial_val)
+    all_monomials = make_all_monomials(gammas.shape[0])
+    for j in range(gammas.shape[0]):    ### TODO: Use VMAP to vectorise this too !!
+        polynomial_val = nodal_value(x, monomial=all_monomials[j])
+        final_val = final_val + jnp.nan_to_num(gammas[j] * polynomial_val, posinf=0., neginf=0.)
 
-    return final_val[0]
+    return final_val
 
 
 
@@ -188,12 +186,6 @@ def laplacian(x, field, centers, rbf=None):
 
     N = centers.shape[0]
     lambdas, gammas = field[:N], field[N:]
-
-    # final_lap = jnp.array([0.])
-    # for j in range(lambdas.shape[0]):
-    #     # rbf_lap = nodal_laplacian(x, node=node_j, rbf=rbf)
-    #     rbf_lap = jnp.where(jnp.all(x==centers[j]), 0., nodal_laplacian(x, center=centers[j], rbf=rbf))
-    #     final_lap = final_lap.at[:].add(lambdas[j] * rbf_lap)
 
     laps_rbf = _nodal_laplacian_rbf_vec(x, centers, rbf, None)              ## TODO remove all NaNs
     rbf_lap = jnp.sum(jnp.nan_to_num(lambdas*laps_rbf, posinf=0., neginf=0.), axis=0)
