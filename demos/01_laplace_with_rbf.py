@@ -6,6 +6,7 @@ import time
 import numpy as np
 import jax
 import jax.numpy as jnp
+
 jax.config.update('jax_platform_name', 'cpu')           ## CPU is faster here !
 jax.config.update("jax_enable_x64", True)
 
@@ -16,28 +17,38 @@ sns.set(context='notebook', style='ticks',
 plt.style.use("dark_background")
 
 from updec import *
-key = jax.random.PRNGKey(42)
+key = jax.random.PRNGKey(12)
 
 # from torch.utils.tensorboard import SummaryWriter
 # import datetime
 
 
-# RBF = polyharmonic
-# RBF = partial(inverse_multiquadric, eps=0.001)
+# RBF = partial(polyharmonic, a=3)
+# MAX_DEGREE = 3
+
+# RBF = partial(multiquadric, eps=10.0)
+# MAX_DEGREE = 0
+
 RBF = partial(thin_plate, a=3)
-MAX_DEGREE = 4
+MAX_DEGREE = 3
+
 Nx = 30
 Ny = Nx
-SUPPORT_SIZE = Nx*Ny-1
-# SUPPORT_SIZE = 55
+SUPPORT_SIZE = "max"
+# SUPPORT_SIZE = 800
 
 # print(run_name)
+r = jnp.linspace(0,1.2,1001)
+plt.plot(r, partial(thin_plate_func,a=3)(r), label="thin_plate") 
+plt.legend()
 
 facet_types={"South":"n", "West":"d", "North":"d", "East":"d"}
 # facet_types={"south":"n", "west":"n", "north":"n", "east":"n"}
 # facet_types={"south":"d", "west":"d", "north":"d", "east":"d"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
 
+print(distance(cloud.nodes[2], cloud.nodes[6]))
+print(cloud.global_indices)
 
 
 ## Diffeerential operator
@@ -49,7 +60,7 @@ def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
 # Right-hand side operator
 # @Partial(jax.jit, static_argnums=[2])
 def my_rhs_operator(x, centers=None, rbf=None, fields=None):
-    return 0.0
+    return -0.0
 
 d_north = lambda node: jnp.sin(jnp.pi * node[0])
 d_zero = lambda node: 0.0
@@ -68,7 +79,9 @@ walltime = time.time() - start
 minutes = walltime // 60 % 60
 seconds = walltime % 60
 print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
-
+lap = laplacian_vec(cloud.sorted_nodes, sol.coeffs, cloud.sorted_nodes, RBF)
+# print("Norm of laplacian inside the domain:", jnp.linalg.norm(lap[:cloud.Ni]))
+# print("Laplacian inside the domain:", lap[:cloud.Ni])            ## Should be equal to RHS of PDE
 
 ## Exact solution
 def laplace_exact_sol(coord):
@@ -77,7 +90,7 @@ laplace_exact_sol = jax.vmap(laplace_exact_sol, in_axes=(0,), out_axes=0)
 
 exact_sol = laplace_exact_sol(cloud.sorted_nodes)
 error = jnp.mean((exact_sol-sol.vals)**2)
-
+print("MSE error:", error)
 
 
 ## JNP SAVE solutions
@@ -94,6 +107,7 @@ ax2 = fig.add_subplot(1, 3, 2, projection='3d')
 ax3 = fig.add_subplot(1, 3, 3, projection='3d')
 cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution", ax=ax1);
 cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", ax=ax2);
+# cloud.visualize_field(exact_sol, cmap="jet", projection="2d", title="Analytical solution", ax=ax2);
 cloud.visualize_field(jnp.abs(sol.vals-exact_sol), cmap="magma", projection="3d", title="MSE error", ax=ax3);
 plt.show()
 

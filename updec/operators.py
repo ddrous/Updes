@@ -79,7 +79,8 @@ def nodal_laplacian(x, center=None, rbf=None, monomial=None):     ## TODO Jitt t
     if center != None:
         # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         # nodal_rbf = rbf
-        return jnp.trace(core_laplacian_rbf(rbf)(x, center))      ## TODO: try reverse mode
+        # return jnp.trace(core_laplacian_rbf(rbf)(x, center))      ## TODO: try reverse mode
+        return jnp.nan_to_num(jnp.trace(core_laplacian_rbf(rbf)(x, center)), neginf=0., posinf=0.)      ## TODO: try reverse mode
     elif monomial != None:
         # monomial = Partial(make_monomial, id=monomial)
         # monomial = monomial
@@ -199,6 +200,8 @@ def laplacian(x, field, centers, rbf=None):
         mon_lap = mon_lap.at[:].add(gammas[j] * poly_lap)
 
     return rbf_lap + mon_lap[0]
+
+laplacian_vec = jax.vmap(laplacian, in_axes=(0, None, None, None), out_axes=0)
 
 
 def interpolate_field(field, cloud1, cloud2):

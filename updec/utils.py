@@ -51,7 +51,8 @@ def polyharmonic(x, center, a=1):
     return polyharmonic_func(distance(x, center), a)
 
 def thin_plate_func(r, a):
-    return jnp.log(r) * r**(2*a)
+    # return jnp.log(r) * r**(2*a)
+    return jnp.nan_to_num(jnp.log(r) * r**(2*a), neginf=0., posinf=0.)
 @jax.jit
 def thin_plate(x, center, a=1):
     return thin_plate_func(distance(x, center), a)

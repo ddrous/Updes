@@ -1,5 +1,6 @@
 import os
 import jax
+import jax.numpy as jnp
 
 RBF = None          ## Default radial basis function
 MAX_DEGREE = None              ## Max degree for monomials
@@ -13,3 +14,5 @@ if not PREALLOCATE:
 
 FLOAT64 = True
 jax.config.update("jax_enable_x64", FLOAT64)   ## Use double precision by default
+
+jnp.set_printoptions(linewidth=jnp.inf)         ## Print arrays on the same line

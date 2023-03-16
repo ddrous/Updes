@@ -41,22 +41,39 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
     def define_local_supports(self):
         ## finds the 'support_size' nearest neighbords of each node
         self.local_supports = {}
-        # if self.support_size < 0 or self.support_size==None or self.support_size>self.N-1:
+
+        renumb_map = {i:k for i,k in enumerate(self.nodes.keys())}      ## TODO use the sorted nodes for this
+        coords = jnp.stack(list(self.nodes.values()), axis=-1).T
+
+        # coords = jnp.stack([v for k,v in self.nodes.items() if self.node_types[k]=="i"], axis=-1).T
+        # print("This is coords", coords)
+
+
         if self.support_size == "max":
             # warnings.warn("Support size is too big. Setting it to maximum")
-            self.support_size = self.N-1
+            # self.support_size = self.N-1
+            self.support_size = coords.shape[0]
         assert self.support_size > 0, "Support size must be strictly greater than 0"
-        assert self.support_size < self.N, "Support size must be strictly less than the number of nodes"
+        assert self.support_size <= self.N, "Support size must be strictly less than or equal the number of nodes"
 
-        #### BALL TREE METHOD
-        renumb_map = {i:k for i,k in enumerate(self.nodes.keys())}
-        coords = jnp.stack(list(self.nodes.values()), axis=-1).T
+        #### BALL TREE METHOD       
         # ball_tree = KDTree(coords, leaf_size=40, metric='euclidean')
         ball_tree = BallTree(coords, leaf_size=40, metric='euclidean')
-        for i in range(self.N):
-            _, neighbours = ball_tree.query(coords[i:i+1], k=self.support_size+1)
-            neighbours = neighbours[0][1:]                    ## Result is a 2d list, with the first el itself
+        for i in range(self.N): 
+            # _, neighbours = ball_tree.query(coords[i:i+1], k=self.support_size+1)
+            _, neighbours = ball_tree.query(self.nodes[i][jnp.newaxis], k=self.support_size)
+            neighbours = neighbours[0][0:]                    ## Result is a 2d list, with the first el itself
+            # neighbours = neighbours[0][:]                    ## Result is a 2d list, with the first el itself
             self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighbours]
+            # self.local_supports[i] = [j for j in neighbours]        ## TODO THIS IS THE WAY !! unlike what is up above
+
+            # in_nodes = [k for k in self.nodes.keys() if self.node_types[k]=="i"]
+            # self.local_supports[i] = in_nodes
+        print("Local support of node 0:", self.nodes[renumb_map[0]], self.local_supports[0])
+        # for ii in self.local_supports[0]:
+        #     print(self.nodes[ii])
+        print("Support size used:", len(self.local_supports[0]))
+
 
     def renumber_nodes(self):
         """ Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards """
