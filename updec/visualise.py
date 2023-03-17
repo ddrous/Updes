@@ -12,6 +12,7 @@ def pyvista_animation(folderpath, fieldname, duration=10, vmin=None, vmax=None):
 
 
     import pyvista as pv
+    pv.start_xvfb()    ## To avoid seg fault in X-server
     pv.global_theme.cmap = 'jet'
 
 

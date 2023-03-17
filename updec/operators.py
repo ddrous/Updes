@@ -215,11 +215,37 @@ def cartesian_gradient_vec(node_ids, field, cloud:Cloud):       ## TODO beacause
     return grad
 
 
-def enforce_cartesian_gradient_neumann(grads, cloud):
+def enforce_cartesian_gradient_neumann(field, grads, boundary_conditions, cloud):
     """ Set the gradient at every neumann node using catesian grid """
 
-    pass
+    for facet_id, facet_type in cloud.facet_types.items():
+        if facet_type == "n":
+            nm_nodes = cloud.facet_nodes[facet_id]
 
+            for i in nm_nodes:
+                normal = cloud.outward_normals[i]
+
+                opposite_neighbours = []
+                closest_neighbour = None
+                closest_distance = 1e20
+
+                for j in cloud.local_supports[i]:
+                    vec = cloud.nodes[j] - cloud.nodes[i]
+                    vec_norm = jnp.linalg.norm(vec)
+                    vec_scaled = vec / vec_norm
+                    if jnp.dot(normal, vec_scaled) + 1. <= 1e-1:    ##TODO Keep reducing the tolerance untile you find one
+                        opposite_neighbours.append(j)
+                        if vec_norm <= closest_distance:
+                            closest_neighbour = j
+                            closest_distance = vec_norm
+
+                # print("Current Neumann node:", i)
+                # print("Opposite neighbours:", opposite_neighbours)
+                # print("Closest neighbour:", closest_neighbour)
+
+                grads = grads.at[i].set((field[i] - field[closest_neighbour]) / closest_distance)
+
+    return grads
 
 def divergence(x, field, centers, rbf=None):
     """ Computes the divergence of vector quantity s at position x """

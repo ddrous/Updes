@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from jax.tree_util import Partial
 from functools import partial
 from tqdm import tqdm
-# jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on Daffy Duck !
+jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on Daffy Duck !
 
 from updec import *
 
@@ -29,13 +29,13 @@ MAX_DEGREE = 4
 Re = 200
 RHO = 1.          ## Water
 NU = 1./Re           ## water
-DT = 1e-1
+DT = 1e-2
 
 Pa = 101325.0
 # Pa = 0.0
 BETA = 0.0
 
-NB_ITER = 100
+NB_ITER = 850
 
 
 
@@ -132,10 +132,10 @@ bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
 bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Cylinder":zero}
 
 
-u_list = []
-v_list = []
+u_list = [u]
+v_list = [v]
 vel_list = []
-p_list = []
+p_list = [p_]
 
 for i in tqdm(range(NB_ITER)):
     # print("Starting iteration %d" % i)
@@ -164,10 +164,10 @@ for i in tqdm(range(NB_ITER)):
     ustar , vstar = usol.vals, vsol.vals     ## Star
     Ustar = jnp.stack([ustar,vstar], axis=-1)
 
-    print("u max:", jnp.max(ustar))
-    print("u max loc:", cloud_vel.sorted_nodes[jnp.argmax(ustar)])
-    print("v max:", jnp.max(vstar))
-    print("v max loc:", cloud_vel.sorted_nodes[jnp.argmax(vstar)])
+    print("u star max:", jnp.max(ustar))
+    print("u star max loc:", cloud_vel.sorted_nodes[jnp.argmax(ustar)])
+    print("v star max:", jnp.max(vstar))
+    print("v star max loc:", cloud_vel.sorted_nodes[jnp.argmax(vstar)])
 
     ## TODO Interpolate Ustar onto cloud_phi
     u_ = interpolate_field(ustar, cloud_vel, cloud_phi)
@@ -183,8 +183,8 @@ for i in tqdm(range(NB_ITER)):
 
     p_ = BETA*p_ + phisol_.vals
     # gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
-    x_locations = range(cloud_phi.N)
-    gradphi_ = cartesian_gradient_vec(x_locations, phisol_.vals, cloud_phi)
+    # gradphi_ = enforce_cartesian_gradient_neumann(phisol_.vals, gradphi_, bc_phi, cloud_phi)
+    gradphi_ = cartesian_gradient_vec(range(cloud_phi.N), phisol_.vals, cloud_phi)
 
     ## TODO Interpolate p and gradphi onto cloud_vel
     gradphi = interpolate_field(gradphi_, cloud_phi, cloud_vel)
@@ -192,6 +192,11 @@ for i in tqdm(range(NB_ITER)):
     U = Ustar - (gradphi*DT/RHO)
     u, v = U[:,0], U[:,1]
     vel = jnp.linalg.norm(U, axis=-1)
+
+    print("u max:", jnp.max(u))
+    print("u max loc:", cloud_vel.sorted_nodes[jnp.argmax(u)])
+    print("v max:", jnp.max(v))
+    print("v max loc:", cloud_vel.sorted_nodes[jnp.argmax(v)])
 
     u_list.append(u)
     v_list.append(v)
@@ -217,9 +222,10 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 # %%
 
+
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "p", duration=5)
+# pyvista_animation(DATAFOLDER, "vel", duration=5)
 
 
 # %%
