@@ -9,6 +9,12 @@ from tqdm import tqdm
 from updec import *
 
 
+EXPERIMENET_ID = random_name()
+DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
+make_dir(DATAFOLDER)
+
+
+# %%
 ### Constants for the problem
 
 # EPS=1e-2
@@ -28,24 +34,20 @@ Pa = 101325.0
 # Pa = 0.0
 BETA = 0.0
 
-NB_ITER = 300
-
-EXPERIMENET_ID = random_name()
-DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
-make_dir(DATAFOLDER)
+NB_ITER = 100
 
 
 
 # %%
 
 
-facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
-facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
-# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
-# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
+# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
+# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
+facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
+facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
 
-cloud_vel = GmshCloud(filename="./meshes/channel_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
-# cloud_vel = GmshCloud(filename="./meshes/channel_cylinder.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+# cloud_vel = GmshCloud(filename="./meshes/channel_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+cloud_vel = GmshCloud(filename="./meshes/channel_cylinder_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
@@ -120,13 +122,13 @@ ones = jax.jit(lambda x: 1.)
 atmospheric = jax.jit(lambda x: Pa*(1. - BETA))     ##TODO Carefull: beta and pa must never change
 zero = jax.jit(lambda x: 0.)
 
-bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
-bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
-bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
+# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
+# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
+# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
 
-# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
-# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
-# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Cylinder":zero}
+bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
+bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
+bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Cylinder":zero}
 
 
 u_list = []
@@ -216,7 +218,7 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "p", duration=10)
+pyvista_animation(DATAFOLDER, "p", duration=5)
 
 
 # %%

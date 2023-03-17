@@ -4,8 +4,8 @@ import sys
 
 
 lc = 0.2
-nm_factor = 4           ## Refinement factor to account for Neumann
-cy_factor = 4         ## Refinement factor to account for cylinder
+nm_factor = 1           ## Refinement factor to account for Neumann
+cy_factor = 5         ## Refinement factor to account for cylinder
 L = 1.0
 DIM = 2
 
