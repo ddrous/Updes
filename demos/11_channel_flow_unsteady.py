@@ -5,6 +5,7 @@ import jax.numpy as jnp
 from jax.tree_util import Partial
 from functools import partial
 from tqdm import tqdm
+# jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on Daffy Duck !
 
 from updec import *
 
