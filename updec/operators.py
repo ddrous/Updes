@@ -6,7 +6,7 @@ from functools import cache, lru_cache, partial
 
 # from updec.config import RBF, MAX_DEGREE, DIM
 import updec.config as UPDEC
-from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, SteadySol, polyharmonic, gaussian, make_all_monomials
+from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, SteadySol, polyharmonic, gaussian, make_all_monomials, distance
 from updec.cloud import Cloud
 from updec.assembly import assemble_A, assemble_invert_A, assemble_B, assemble_q, new_compute_coefficients
 
@@ -162,8 +162,52 @@ def gradient(x, field, centers, rbf=None):
 
     return final_grad
 
-
 gradient_vec = jax.vmap(gradient, in_axes=(0, None, None, None), out_axes=0)
+
+
+def cartesian_gradient(node_id, field, cloud:Cloud):
+    """ Computes the gradient of field quantity at position x """
+
+    N = field.shape[0]
+    # i = int(node_id)
+    i = node_id
+
+    final_grad = jnp.array([0.,0.])
+    for d, direction in [(0, [1., 0]), (1, [0., 1.])]:
+        direction = jnp.array(direction)
+
+        opposite_neighbours = []
+        closest_neighbour = None
+        closest_distance = 1e20
+
+        for j in cloud.local_supports[i]:
+            vec = cloud.nodes[j] - cloud.nodes[i]
+            vec_norm = jnp.linalg.norm(vec)
+            vec_scaled = vec / vec_norm
+            if jnp.dot(direction, vec_scaled) + 1. <= 1e-1:    ##TODO Keep reducing the tolerance untile you find one
+                opposite_neighbours.append(j)
+                if vec_norm <= closest_distance:
+                    closest_neighbour = j
+                    closest_distance = vec_norm
+        
+        if closest_neighbour == None:
+            # print("Warning: couldn't find good neighbor !")
+            # print("Current Neumann node:", i)
+            # print("Opposite neighbours:", opposite_neighbours)
+            # print("Closest neighbour:", closest_neighbour)
+            return final_grad
+
+        final_grad = final_grad.at[d].set((field[i] - field[closest_neighbour]) / vec_norm)
+
+    return final_grad
+
+# cartesian_gradient_vec = jax.vmap(cartesian_gradient, in_axes=(0, None, None), out_axes=0)
+def cartesian_gradient_vec(node_ids, field, cloud:Cloud):       ## TODO beacause JAX has issues with concretisation and tracing
+    # N = field.shape[0]
+    grad = jnp.ones((len(node_ids), 2))
+    for node_id in node_ids:
+        grad = grad.at[node_id, :].set(cartesian_gradient(node_id, field, cloud))
+    return grad
 
 
 def divergence(x, field, centers, rbf=None):
@@ -218,6 +262,46 @@ def interpolate_field(field, cloud1, cloud2):
     return field_orig[indexer2]            ## TODO Think of a way to do this
 
 
+def apply_neumann_conditions(field, boundary_conditions, cloud:Cloud):
+
+    # print("Reverse inndices", cloud.global_indices_rev)
+    # south_nodes = cloud.facet_nodes["South"]
+    # for nid in south_nodes:
+    #     i, j = cloud.global_indices_rev[nid]
+    #     ii, jj = i, j+1
+    #     neighbour_id = cloud.global_indices[ii, jj]
+    #     sol_vals = sol_vals.at[nid].set(sol_vals[neighbour_id])
+
+    for facet_id, facet_type in cloud.facet_types.items():
+        if facet_type == "n":
+            # nm_nodes = cloud.facet_nodes["Outflow"]
+            nm_nodes = cloud.facet_nodes[facet_id]
+
+            for i in nm_nodes:
+                normal = cloud.outward_normals[i]
+
+                opposite_neighbours = []
+                closest_neighbour = None
+                closest_distance = 1e20
+
+                for j in cloud.local_supports[i]:
+                    vec = cloud.nodes[j] - cloud.nodes[i]
+                    vec_norm = jnp.linalg.norm(vec)
+                    vec_scaled = vec / vec_norm
+                    if jnp.dot(normal, vec_scaled) + 1. <= 1e-1:    ##TODO Keep reducing the tolerance untile you find one
+                        opposite_neighbours.append(j)
+                        if vec_norm <= closest_distance:
+                            closest_neighbour = j
+                            closest_distance = vec_norm
+
+                # print("Current Neumann node:", i)
+                # print("Opposite neighbours:", opposite_neighbours)
+                # print("Closest neighbour:", closest_neighbour)
+
+                field = field.at[i].set(field[closest_neighbour])
+
+    return field
+
 ## Devise different LU, LDL decomposition strategies make functions here
 def pde_solver( diff_operator:callable,
                 rhs_operator:callable,
@@ -249,6 +333,8 @@ def pde_solver( diff_operator:callable,
     sol_vals = jnp.linalg.solve(B1, rhs)
     # sol_coeffs = compute_coefficients(sol_vals, cloud, rbf, max_degree)
     sol_coeffs = new_compute_coefficients(sol_vals, cloud, rbf, nb_monomials)
+
+    sol_vals = apply_neumann_conditions(sol_vals, boundary_conditions, cloud)
 
     # return sol_vals, jnp.concatenate(sol_coeffs)         ## TODO: return an object like solve_ivp
     return SteadySol(sol_vals, sol_coeffs)

@@ -24,19 +24,20 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
 
     nodes = cloud.sorted_nodes
 
-    for i in range(N):
+    # for i in range(N):      ## TODO only from 0 to Ni+Nd
+    for i in range(Ni+Nd):
         # for j in cloud.local_supports[i]:
         #     Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
 
         support_ids = jnp.array(cloud.local_supports[i])
         Phi = Phi.at[i, support_ids].set(rbf_vec(nodes[i], nodes[support_ids]))
 
-    # for i in range(Ni+Nd, N):
-    #     assert cloud.node_types[i] in ["n"], "not a neumann boundary node"    ## Internal nod
+    for i in range(Ni+Nd, N):
+        assert cloud.node_types[i] in ["n"], "not a neumann boundary node"    ## Internal nod
 
-    #     support_n = jnp.array(cloud.local_supports[i])
-    #     grads = jnp.nan_to_num(grad_rbf_vec(nodes[i], nodes[support_n]), neginf=0., posinf=0.)
-    #     Phi = Phi.at[i, support_n].set(jnp.dot(grads, cloud.outward_normals[i]))
+        support_n = jnp.array(cloud.local_supports[i])
+        grads = jnp.nan_to_num(grad_rbf_vec(nodes[i], nodes[support_n]), neginf=0., posinf=0.)
+        Phi = Phi.at[i, support_n].set(jnp.dot(grads, cloud.outward_normals[i]))
 
     print("Finiteness Phi:", jnp.all(jnp.isfinite(Phi)))
     print("Last column Phi all zero?", jnp.allclose(Phi[:,-1], 0.))
@@ -112,7 +113,7 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, rbf:callable, nb_monomials
 
     # operator_rbf = partial(operator, monomial=None)
     # @jax.jit
-    def operator_rbf(x, center=None, args=None): 
+    def operator_rbf(x, center=None, args=None):
         return operator(x, center, rbf, None, args)
     operator_rbf_vec = jax.jit(jax.vmap(operator_rbf, in_axes=(None, 0, None), out_axes=0))
 

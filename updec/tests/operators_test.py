@@ -5,7 +5,7 @@ from updec import *
 "A unit test that checks if the gradient of a constant field is zero"
 
 seed = random.randint(0,100)
-# seed = 0
+seed = 12
 
 EXPERIMENET_ID = random_name()
 DATAFOLDER = "../../demos/data/" + EXPERIMENET_ID +"/"
@@ -22,7 +22,7 @@ make_dir(DATAFOLDER)
 
 
 # facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n"}
-facet_types = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"n"}
+facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n", "Cylinder":"n"}
 cloud = GmshCloud(filename="../../demos/meshes/channel_cylinder.py", facet_types=facet_types, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 
 cloud.visualize_cloud(figsize=(8.5,2.5), s=6, title=r"Cloud for $\phi$");
@@ -36,8 +36,8 @@ cloud.visualize_normals(ax=ax[1], title="Normals for phi", zoom_region=(7.75,8.2
 
 EPS = 10.0
 # RBF = partial(gaussian, eps=EPS)      ## Can define which rbf to use
-# RBF = partial(polyharmonic, a=1)
-RBF = partial(thin_plate, a=4)
+RBF = partial(polyharmonic, a=1)
+# RBF = partial(thin_plate, a=3)
 MAX_DEGREE = 4
 
 # r = jnp.linspace(-10,10,1000)
@@ -62,6 +62,7 @@ def diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
 @Partial(jax.jit, static_argnums=[2])
 def rhs_operator(x, centers=None, rbf=None, fields=None):
     return seed
+    # return 0
 
 sol = pde_solver(diff_operator=diff_operator,
                 rhs_operator = rhs_operator,
@@ -77,7 +78,11 @@ print()
 
 # p_ = p_ + phisol_.vals
 # grad = gradient(cloud.sorted_nodes[0], sol.coeffs, cloud.sorted_nodes, RBF)
-grads = gradient_vec(cloud.sorted_nodes, sol.coeffs, cloud.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
+
+# grads = gradient_vec(cloud.sorted_nodes, sol.coeffs, cloud.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
+
+grads = cartesian_gradient_vec(range(cloud.N), sol.vals, cloud)        ## TODO use Pde_solver here instead ?
+
 grads_norm = jnp.linalg.norm(grads, axis=-1)
 print("Grads close to 0 ?", jnp.allclose(grads_norm, 0, atol=1e-05))
 print("Maximum of grad norm:", jnp.max(grads_norm))

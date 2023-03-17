@@ -15,11 +15,12 @@ make_dir(DATAFOLDER)
 ### Constants for the problem
 # EPS = 10.0
 # RBF = partial(gaussian, eps=EPS)
-# RBF = polyharmonic      ## Can define which rbf to use
-# MAX_DEGREE = 4
 
-RBF = partial(thin_plate, a=3)
-MAX_DEGREE = 2
+RBF = polyharmonic      ## Can define which rbf to use
+MAX_DEGREE = 3
+
+# RBF = partial(thin_plate, a=3)
+# MAX_DEGREE = 3
 
 a, b, c = 1.5, -2., 0.5
 Re = 10
@@ -30,8 +31,8 @@ Pa = 101325.
 
 DT = 1e-7
 
-NB_ITER = 3
-MAX_REFINEMENTS = 10
+NB_ITER = 10
+MAX_REFINEMENTS = 1
 TOL = 1e-3
 
 
@@ -114,13 +115,13 @@ p_now_ = p_now_.at[out_nodes].set(Pa)
 
 
 # parabolic = jax.jit(lambda x: 1.5 - 6*(x[1]**2))
-ones = jax.jit(lambda x: 1.)
+one = jax.jit(lambda x: 1.)
 zero = jax.jit(lambda x: 0.)
 
-bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
+bc_u = {"Wall":zero, "Inflow":one, "Outflow":zero}
 bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
 bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero}
-# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
+# bc_u = {"Wall":zero, "Inflow":one, "Outflow":zero, "Cylinder":zero}
 # bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
 # bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
 
@@ -188,6 +189,8 @@ for i in tqdm(range(NB_ITER)):
         ## Also set the pressure at every other boundary point before correcting velocity
 
         gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
+        # gradphi_ = cartesian_gradient_vec(range(cloud_phi.N), phisol_.vals, cloud_phi)
+
         gradphi = interpolate_field(gradphi_, cloud_phi, cloud_vel)
         U_next_now = U_star - DT*gradphi/(RHO*a)
         u_next_now, v_next_now = U_next_now[:,0], U_next_now[:,1]

@@ -17,7 +17,8 @@ sns.set(context='notebook', style='ticks',
 plt.style.use("dark_background")
 
 from updec import *
-key = jax.random.PRNGKey(12)
+# key = jax.random.PRNGKey(13)
+key = None
 
 # from torch.utils.tensorboard import SummaryWriter
 # import datetime
@@ -26,20 +27,21 @@ key = jax.random.PRNGKey(12)
 # RBF = partial(polyharmonic, a=3)
 # MAX_DEGREE = 3
 
-# RBF = partial(multiquadric, eps=10.0)
-# MAX_DEGREE = 0
+EPS=3.0
+RBF = partial(gaussian, eps=EPS)
+MAX_DEGREE = 0
 
-RBF = partial(thin_plate, a=3)
-MAX_DEGREE = 3
+# RBF = partial(thin_plate, a=3)
+# MAX_DEGREE = 3
 
-Nx = 30
+Nx = 8
 Ny = Nx
 SUPPORT_SIZE = "max"
-# SUPPORT_SIZE = 800
+# SUPPORT_SIZE = 20
 
 # print(run_name)
 r = jnp.linspace(0,1.2,1001)
-plt.plot(r, partial(thin_plate_func,a=3)(r), label="thin_plate") 
+plt.plot(r, partial(gaussian_func,eps=EPS)(r), label="thin_plate") 
 plt.legend()
 
 facet_types={"South":"n", "West":"d", "North":"d", "East":"d"}
@@ -47,8 +49,9 @@ facet_types={"South":"n", "West":"d", "North":"d", "East":"d"}
 # facet_types={"south":"d", "west":"d", "north":"d", "east":"d"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
 
-print(distance(cloud.nodes[2], cloud.nodes[6]))
+# print(distance(cloud.nodes[2], cloud.nodes[6]))
 print(cloud.global_indices)
+print("New local support of node 0:", cloud.nodes[0], cloud.local_supports[0])
 
 
 ## Diffeerential operator
@@ -79,6 +82,9 @@ walltime = time.time() - start
 minutes = walltime // 60 % 60
 seconds = walltime % 60
 print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
+
+## RBF solution
+rbf_sol = sol.vals
 lap = laplacian_vec(cloud.sorted_nodes, sol.coeffs, cloud.sorted_nodes, RBF)
 # print("Norm of laplacian inside the domain:", jnp.linalg.norm(lap[:cloud.Ni]))
 # print("Laplacian inside the domain:", lap[:cloud.Ni])            ## Should be equal to RHS of PDE
@@ -87,11 +93,23 @@ lap = laplacian_vec(cloud.sorted_nodes, sol.coeffs, cloud.sorted_nodes, RBF)
 def laplace_exact_sol(coord):
     return jnp.sin(jnp.pi*coord[0])*jnp.cosh(jnp.pi*coord[1]) / jnp.cosh(jnp.pi)
 laplace_exact_sol = jax.vmap(laplace_exact_sol, in_axes=(0,), out_axes=0)
-
 exact_sol = laplace_exact_sol(cloud.sorted_nodes)
-error = jnp.mean((exact_sol-sol.vals)**2)
-print("MSE error:", error)
 
+## Dangerous TODO think of removing this
+internal_nodes = jnp.array(range(cloud.Ni))
+south_nodes = jnp.array(cloud.facet_nodes["South"])
+print("South nodes:", south_nodes)
+# rbf_sol = rbf_sol.at[south_nodes].set(jnp.nan)
+# exact_sol = exact_sol.at[south_nodes].set(jnp.nan)
+
+error = jnp.nan_to_num(jnp.abs(exact_sol-rbf_sol))
+print("MSE total error:", jnp.mean(error**2))
+
+error_neumann = jnp.nan_to_num(jnp.abs(exact_sol[south_nodes]-rbf_sol[south_nodes]))
+print("MSE error on Neumann boundary:", jnp.mean(error_neumann**2))
+
+error_dirichlet = jnp.mean(error**2) - jnp.mean(error_neumann**2) - jnp.mean(jnp.nan_to_num(jnp.abs(exact_sol[internal_nodes]-rbf_sol[internal_nodes]))**2) ##TODO this formula is wrong, but informative
+print("MSE error on Dirichlet boundaries:", error_dirichlet)
 
 ## JNP SAVE solutions
 # cloud_shape = str(Nx)+"x"+str(Ny)
@@ -105,10 +123,10 @@ fig = plt.figure(figsize=(6*3,5))
 ax1= fig.add_subplot(1, 3, 1, projection='3d')
 ax2 = fig.add_subplot(1, 3, 2, projection='3d')
 ax3 = fig.add_subplot(1, 3, 3, projection='3d')
-cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution", ax=ax1);
+cloud.visualize_field(rbf_sol, cmap="jet", projection="3d", title="RBF solution", ax=ax1);
 cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", ax=ax2);
 # cloud.visualize_field(exact_sol, cmap="jet", projection="2d", title="Analytical solution", ax=ax2);
-cloud.visualize_field(jnp.abs(sol.vals-exact_sol), cmap="magma", projection="3d", title="MSE error", ax=ax3);
+cloud.visualize_field(error, cmap="magma", projection="3d", title="MSE error", ax=ax3);
 plt.show()
 
 

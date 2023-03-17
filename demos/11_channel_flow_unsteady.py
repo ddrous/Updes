@@ -12,23 +12,23 @@ from updec import *
 ### Constants for the problem
 
 # EPS=1e-2
-# RBF = polyharmonic      ## Can define which rbf to use
+RBF = polyharmonic      ## Can define which rbf to use
 # RBF = partial(inverse_multiquadric, eps=10.0)
 # RBF = partial(gaussian, eps=1e-7)
-RBF = partial(thin_plate, a=3)
+# RBF = partial(thin_plate, a=3)
 
-MAX_DEGREE = 2
+MAX_DEGREE = 4
 
 Re = 200
 RHO = 1.          ## Water
 NU = 1./Re           ## water
-DT = 1e-10
+DT = 1e-2
 
 Pa = 101325.0
 # Pa = 0.0
 BETA = 0.0
 
-NB_ITER = 20
+NB_ITER = 300
 
 EXPERIMENET_ID = random_name()
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
@@ -39,13 +39,13 @@ make_dir(DATAFOLDER)
 # %%
 
 
-# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
-# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
-facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
-facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
+facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
+facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
+# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
+# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
 
-# cloud_vel = GmshCloud(filename="./meshes/channel.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
-cloud_vel = GmshCloud(filename="./meshes/channel_cylinder.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+cloud_vel = GmshCloud(filename="./meshes/channel_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+# cloud_vel = GmshCloud(filename="./meshes/channel_cylinder.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
@@ -120,13 +120,13 @@ ones = jax.jit(lambda x: 1.)
 atmospheric = jax.jit(lambda x: Pa*(1. - BETA))     ##TODO Carefull: beta and pa must never change
 zero = jax.jit(lambda x: 0.)
 
-# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
-# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
-# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
+bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
+bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
+bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric}
 
-bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
-bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
-bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Cylinder":zero}
+# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
+# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
+# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Cylinder":zero}
 
 
 u_list = []
@@ -161,6 +161,11 @@ for i in tqdm(range(NB_ITER)):
     ustar , vstar = usol.vals, vsol.vals     ## Star
     Ustar = jnp.stack([ustar,vstar], axis=-1)
 
+    print("u max:", jnp.max(ustar))
+    print("u max loc:", cloud_vel.sorted_nodes[jnp.argmax(ustar)])
+    print("v max:", jnp.max(vstar))
+    print("v max loc:", cloud_vel.sorted_nodes[jnp.argmax(vstar)])
+
     ## TODO Interpolate Ustar onto cloud_phi
     u_ = interpolate_field(ustar, cloud_vel, cloud_phi)
     v_ = interpolate_field(vstar, cloud_vel, cloud_phi)
@@ -174,7 +179,8 @@ for i in tqdm(range(NB_ITER)):
                     max_degree=MAX_DEGREE)
 
     p_ = BETA*p_ + phisol_.vals
-    gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
+    # gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
+    gradphi_ = cartesian_gradient_vec(range(cloud_phi.N), phisol_.vals, cloud_phi)
 
     ## TODO Interpolate p and gradphi onto cloud_vel
     gradphi = interpolate_field(gradphi_, cloud_phi, cloud_vel)
@@ -210,7 +216,7 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "u", duration=5)
+pyvista_animation(DATAFOLDER, "p", duration=10)
 
 
 # %%

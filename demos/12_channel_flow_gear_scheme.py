@@ -11,20 +11,20 @@ from updec import *
 ### Constants for the problem
 # EPS = 10.0
 # RBF = partial(gaussian, eps=EPS)
-# # RBF = polyharmonic      ## Can define which rbf to use
-# MAX_DEGREE = 4
+RBF = polyharmonic      ## Can define which rbf to use
+MAX_DEGREE = 4
 
-RBF = partial(thin_plate, a=3)
-MAX_DEGREE = 2
+# RBF = partial(thin_plate, a=3)
+# MAX_DEGREE = 2
 
-Re = 20
+Re = 10
 Du = Re
 DT = 1e-7
 
 Pa = 101325.0
 # Pa = 0.
 
-NB_ITER = 30
+NB_ITER = 5
 NB_REFINEMENTS = 2
 
 EXPERIMENET_ID = random_name()
@@ -164,7 +164,8 @@ for i in tqdm(range(NB_ITER)):
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
         v_star_now = vsol.vals
-        # print("v Max:", jnp.max(v_star_now))
+        print("v max:", jnp.max(v_star_now))
+        print("v max loc:", cloud_vel.sorted_nodes[jnp.argmax(v_star_now)])
 
         U_star_now = jnp.stack([u_star_now, v_star_now], axis=-1)
         ## TODO Interpolate Ustar onto cloud_phi
@@ -187,6 +188,9 @@ for i in tqdm(range(NB_ITER)):
 
         gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
         ## TODO Interpolate p and gradphi onto cloud_vel
+        # gradphi_ = cartesian_gradient_vec(range(cloud_phi.N), phisol_.vals, cloud_phi)
+
+
         gradphi = interpolate_field(gradphi_, cloud_phi, cloud_vel)
         U_next_now = U_star_now - gradphi
         u_next_now, v_next_now = U_next_now[:,0], U_next_now[:,1]

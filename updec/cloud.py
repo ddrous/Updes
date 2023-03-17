@@ -62,7 +62,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         for i in range(self.N): 
             # _, neighbours = ball_tree.query(coords[i:i+1], k=self.support_size+1)
             _, neighbours = ball_tree.query(self.nodes[i][jnp.newaxis], k=self.support_size)
-            neighbours = neighbours[0][0:]                    ## Result is a 2d list, with the first el itself
+            neighbours = neighbours[0][1:]                    ## Result is a 2d list, with the first el itself
             # neighbours = neighbours[0][:]                    ## Result is a 2d list, with the first el itself
             self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighbours]
             # self.local_supports[i] = [j for j in neighbours]        ## TODO THIS IS THE WAY !! unlike what is up above
