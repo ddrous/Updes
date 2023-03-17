@@ -170,6 +170,7 @@ def cartesian_gradient(node_id, field, cloud:Cloud):
 
     N = field.shape[0]
     # i = int(node_id)
+    # i = node_id[0]
     i = node_id
 
     final_grad = jnp.array([0.,0.])
@@ -201,13 +202,23 @@ def cartesian_gradient(node_id, field, cloud:Cloud):
 
     return final_grad
 
+
+# cartesian_gradient_vec = jax.jit(jax.vmap(cartesian_gradient, in_axes=(0, None, None), out_axes=0), static_argnums=0)
 # cartesian_gradient_vec = jax.vmap(cartesian_gradient, in_axes=(0, None, None), out_axes=0)
+
 def cartesian_gradient_vec(node_ids, field, cloud:Cloud):       ## TODO beacause JAX has issues with concretisation and tracing
     # N = field.shape[0]
-    grad = jnp.ones((len(node_ids), 2))
+    # grad = jnp.ones((len(node_ids), 2))
+    grad = jnp.zeros((len(node_ids), 2))  ## TODO handle zero case
     for node_id in node_ids:
         grad = grad.at[node_id, :].set(cartesian_gradient(node_id, field, cloud))
     return grad
+
+
+def enforce_cartesian_gradient_neumann(grads, cloud):
+    """ Set the gradient at every neumann node using catesian grid """
+
+    pass
 
 
 def divergence(x, field, centers, rbf=None):

@@ -29,7 +29,7 @@ MAX_DEGREE = 4
 Re = 200
 RHO = 1.          ## Water
 NU = 1./Re           ## water
-DT = 1e-2
+DT = 1e-1
 
 Pa = 101325.0
 # Pa = 0.0
@@ -183,7 +183,8 @@ for i in tqdm(range(NB_ITER)):
 
     p_ = BETA*p_ + phisol_.vals
     # gradphi_ = gradient_vec(cloud_phi.sorted_nodes, phisol_.coeffs, cloud_phi.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
-    gradphi_ = cartesian_gradient_vec(range(cloud_phi.N), phisol_.vals, cloud_phi)
+    x_locations = range(cloud_phi.N)
+    gradphi_ = cartesian_gradient_vec(x_locations, phisol_.vals, cloud_phi)
 
     ## TODO Interpolate p and gradphi onto cloud_vel
     gradphi = interpolate_field(gradphi_, cloud_phi, cloud_vel)
@@ -196,7 +197,6 @@ for i in tqdm(range(NB_ITER)):
     v_list.append(v)
     vel_list.append(vel)
     p_list.append(p_)
-
 
 
 # %%
