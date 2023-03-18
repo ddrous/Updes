@@ -21,7 +21,7 @@ make_dir(DATAFOLDER)
 # EPS=1e-2
 RBF = polyharmonic      ## Can define which rbf to use
 # RBF = partial(inverse_multiquadric, eps=10.0)
-# RBF = partial(gaussian, eps=1e-7)
+# RBF = partial(gaussian, eps=1e2)
 # RBF = partial(thin_plate, a=3)
 
 MAX_DEGREE = 4
@@ -35,7 +35,7 @@ Pa = 101325.0
 # Pa = 0.0
 BETA = 0.0
 
-NB_ITER = 850
+NB_ITER = 12
 
 
 
@@ -225,7 +225,7 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "vel", duration=10, vmin=None, vmax=None)
+pyvista_animation(DATAFOLDER, "p", duration=10, vmin=None, vmax=None)
 
 
 # %%
