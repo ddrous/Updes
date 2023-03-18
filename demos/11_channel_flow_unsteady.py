@@ -225,7 +225,7 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 print("\nSaving complete. Now running visualisation ...")
 
-# pyvista_animation(DATAFOLDER, "vel", duration=5)
+pyvista_animation(DATAFOLDER, "vel", duration=10, vmin=None, vmax=None)
 
 
 # %%
