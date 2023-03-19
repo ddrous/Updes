@@ -33,7 +33,7 @@ NU = 1./Re           ## water
 # Pa = 101325.0
 Pa = 0.0
 
-NB_ITER = 100
+NB_ITER = 10
 
 
 
@@ -215,10 +215,11 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 # %%
 
+## Best results are stored in folder 06719
 
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "p", duration=10, vmin=None, vmax=None)
+pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=None, vmax=None)
 
 
 # %%
