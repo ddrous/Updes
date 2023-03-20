@@ -52,8 +52,10 @@ gmsh.model.mesh.generate(DIM)
 
 
 #Save the mesh to disk
-corename = os.path.realpath(__file__)[:-2]
-gmsh.write(corename+"msh")
+if len(sys.argv) >= 2: ## User defined a location for save
+    gmsh.write(sys.argv[1]+"mesh.msh")
+    # gmsh.write(sys.argv[1]+"mesh.vtk")      ## For visualisation with PyVista
+
 
 if '--nopopup' not in sys.argv:
     gmsh.fltk.run()

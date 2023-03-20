@@ -371,7 +371,7 @@ def pde_solver( diff_operator:callable,
     # sol_coeffs = compute_coefficients(sol_vals, cloud, rbf, max_degree)
     sol_coeffs = new_compute_coefficients(sol_vals, cloud, rbf, nb_monomials)
 
-    sol_vals = apply_neumann_conditions(sol_vals, boundary_conditions, cloud)
+    # sol_vals = apply_neumann_conditions(sol_vals, boundary_conditions, cloud)
 
     # return sol_vals, jnp.concatenate(sol_coeffs)         ## TODO: return an object like solve_ivp
     return SteadySol(sol_vals, sol_coeffs)

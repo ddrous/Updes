@@ -24,20 +24,20 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
 
     nodes = cloud.sorted_nodes
 
-    # for i in range(N):      ## TODO only from 0 to Ni+Nd
-    for i in range(Ni+Nd):
+    for i in range(N):      ## TODO only from 0 to Ni+Nd
+    # for i in range(Ni+Nd):
         # for j in cloud.local_supports[i]:
         #     Phi = Phi.at[i, j].set(nodal_rbf(cloud.nodes[i], cloud.nodes[j]))
 
         support_ids = jnp.array(cloud.local_supports[i])
         Phi = Phi.at[i, support_ids].set(rbf_vec(nodes[i], nodes[support_ids]))
 
-    for i in range(Ni+Nd, N):
-        assert cloud.node_types[i] in ["n"], "not a neumann boundary node"    ## Internal nod
+    # for i in range(Ni+Nd, N):
+    #     assert cloud.node_types[i] in ["n"], "not a neumann boundary node"    ## Internal nod
 
-        support_n = jnp.array(cloud.local_supports[i])
-        grads = jnp.nan_to_num(grad_rbf_vec(nodes[i], nodes[support_n]), neginf=0., posinf=0.)
-        Phi = Phi.at[i, support_n].set(jnp.dot(grads, cloud.outward_normals[i]))
+    #     support_n = jnp.array(cloud.local_supports[i])
+    #     grads = jnp.nan_to_num(grad_rbf_vec(nodes[i], nodes[support_n]), neginf=0., posinf=0.)
+    #     Phi = Phi.at[i, support_n].set(jnp.dot(grads, cloud.outward_normals[i]))
 
     print("Finiteness Phi:", jnp.all(jnp.isfinite(Phi)))
     print("Last column Phi all zero?", jnp.allclose(Phi[:,-1], 0.))
@@ -67,7 +67,7 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
     return P
 
 
-@cache        ## TODO Make caching work with jax.jit
+# @cache        ## TODO Make caching work with jax.jit
 def assemble_A(cloud, rbf, nb_monomials=2):
     """ Assemble matrix A, see (4) from Shanane """
 
@@ -83,7 +83,7 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 
     return A
 
-@cache          ## Turn this into assemble and LU decompose
+# @cache          ## Turn this into assemble and LU decompose
 def assemble_invert_A(cloud, rbf, nb_monomials):
     A = assemble_A(cloud, rbf, nb_monomials)
     print("Determinant of matrix A:", jnp.linalg.det(A))     ## Indicates singularity
