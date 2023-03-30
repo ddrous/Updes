@@ -54,13 +54,12 @@ cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, suppor
 
 cloud.visualize_cloud()
 # create 4D tensor with batch dimension in addition to space, time, and channel
-grid_u = jnp.tile(pinn.apply(params, grid_x, grid_t), (1,1,1,1))
+u_pinn = pinn.apply(params, cloud.sorted_nodes)
 
-print("Size of grid_u: "+format(grid_u.shape))
+print("Size of u_pinn: "+format(u_pinn.shape))
 
 print("Randomly initialized network state:")
-show_state(grid_u,"Untrained NN")
-cloud.visualize_field(grid_u, cmap="jet", projection="3d", title="Untrained NN", figsize=(6,5));
+cloud.visualize_field(u_pinn, cmap="jet", projection="3d", title="Untrained NN", figsize=(6,5));
 
 
 #%%
