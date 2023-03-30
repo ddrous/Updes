@@ -69,7 +69,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
             # in_nodes = [k for k in self.nodes.keys() if self.node_types[k]=="i"]
             # self.local_supports[i] = in_nodes
-        print("Local support of node 0:", self.nodes[renumb_map[0]], self.local_supports[0])
+        # print("Local support of node 0:", self.nodes[renumb_map[0]], self.local_supports[0])
         # for ii in self.local_supports[0]:
         #     print(self.nodes[ii])
         print("Support size used:", len(self.local_supports[0]))
@@ -187,6 +187,8 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
         # coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
         x, y = self.sorted_nodes[:, 0], self.sorted_nodes[:, 1]
+        if len(field.shape) > 1:        ## If field is in tensorshpa, e.g. (N, 1)
+            field = field[:, 0, ...]
 
         if ax is None:
             fig = plt.figure(figsize=figsize)
