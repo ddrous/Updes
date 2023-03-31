@@ -20,10 +20,10 @@ DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
 KEY = jax.random.PRNGKey(42)     ## Use same random points for all iterations
 
-Nx = 100
+Nx = 110
 Ny = Nx
 BATCH_SIZE = Nx*Ny // 10
-EPOCHS = 100
+EPOCHS = 10000
 
 
 
@@ -34,8 +34,8 @@ class MLP(nn.Module):
     def __call__(self, x):
         # inputs = jnp.concatenate([x, t], axis=-1)
         y = nn.Dense(2)(x)
-        for _ in range(0, 8):
-            y = nn.Dense(20)(y)
+        for _ in range(0, 4):
+            y = nn.Dense(50)(y)
             y = nn.tanh(y)          ## Don't use ReLU !!!!
         return nn.Dense(1)(y)[...,0]
 
@@ -93,7 +93,10 @@ for f_id in cloud.facet_types.keys():
     u_bc.append(u_id)
 
 x_bc = jnp.concatenate(x_bc, axis=0)
-u_bc = jnp.concatenate(u_bc, axis=0)[:, jnp.newaxis]
+u_bc = jnp.concatenate(u_bc, axis=0)
+
+# print(x_bc[:,1])
+# print(u_bc[:,0])
 
 # dataloader_bc = dataloader(jnp.concatenate([x_bc, u_bc], axis=-1), BATCH_SIZE, KEY)     ## TODO For training Do we need this ?
 
@@ -104,16 +107,22 @@ for i, f_id in enumerate(cloud.facet_types.keys()):
     ax[i].set_ylim(0-1e-1,1+1e-1)
     ax[i].legend()
 
+# fig, ax = plt.subplots(2, 1, figsize=(4*4,3*2))
+# ax[0].scatter(x_bc[:,0], u_bc[:,0], label="all boundaries along x")
+# ax[1].scatter(x_bc[:,1], u_bc[:,0], label="all boundaries along y")
+# plt.legend()
+
 
 #%%
 
 
 ## Optimizer
-scheduler = optax.linear_schedule(init_value=1e-1, end_value=1e-5, transition_steps=EPOCHS)
+scheduler = optax.linear_schedule(init_value=1e-3, end_value=1e-3, transition_steps=EPOCHS)
 # scheduler = optax.exponential_decay(init_value=1e-1, 
 #                                     end_value=1e-6, 
 #                                     decay_rate=1e-1, transition_steps=EPOCHS, staircase=False)
-optimizer = optax.adabelief(learning_rate=scheduler)
+# optimizer = optax.adabelief(learning_rate=scheduler)
+optimizer = optax.sgd(learning_rate=scheduler)
 
 ## Flax training state
 state = train_state.TrainState.create(apply_fn=pinn.apply,
@@ -162,8 +171,9 @@ def loss_fn(params, x_in, x_bc, u_bc):
     res = residual(x_in, params)
     loss_in = optax.l2_loss(res)                    ## Residual loss
 
-    eps = 1.00          ## TODO Use Bayesian optimisation here !
-    return jnp.mean(loss_in) + eps*jnp.mean(loss_bc)
+    w_in = 1.00
+    w_bc = 1.00
+    return w_in*jnp.mean(loss_in) + w_bc*jnp.mean(loss_bc)
 
 
 #%%
@@ -206,8 +216,10 @@ print("Training done, saved network")
 #%%
 
 
-ax = plot(history_loss, label='Training', x_label='epochs', title='MSE loss', y_scale="linear", figsize=(6,3))
+ax = plot(history_loss[1:], label='Training', x_label='epochs', title='MSE loss', y_scale="log", figsize=(6,4))
 
+# ax.plot(jnp.log(jnp.array(history_loss)))
+# ax.loglog(history_loss[1:])
 
 #%%
 
