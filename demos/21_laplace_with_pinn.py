@@ -23,7 +23,7 @@ KEY = jax.random.PRNGKey(42)     ## Use same random points for all iterations
 Nx = 110
 Ny = Nx
 BATCH_SIZE = Nx*Ny // 10
-EPOCHS = 10000
+EPOCHS = 50000
 
 
 
@@ -117,7 +117,7 @@ for i, f_id in enumerate(cloud.facet_types.keys()):
 
 
 ## Optimizer
-scheduler = optax.linear_schedule(init_value=1e-3, end_value=1e-3, transition_steps=EPOCHS)
+scheduler = optax.linear_schedule(init_value=1e-2, end_value=1e-3, transition_steps=EPOCHS)
 # scheduler = optax.exponential_decay(init_value=1e-1, 
 #                                     end_value=1e-6, 
 #                                     decay_rate=1e-1, transition_steps=EPOCHS, staircase=False)
