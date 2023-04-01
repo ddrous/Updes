@@ -23,8 +23,8 @@ KEY = jax.random.PRNGKey(42)     ## Use same random points for all iterations
 Nx = 110
 Ny = Nx
 BATCH_SIZE = Nx*Ny // 10
-EPOCHS = 50000
-
+NB_LAYERS = 4
+EPOCHS = 100000
 
 
 #%%
@@ -34,9 +34,10 @@ class MLP(nn.Module):
     def __call__(self, x):
         # inputs = jnp.concatenate([x, t], axis=-1)
         y = nn.Dense(2)(x)
-        for _ in range(0, 4):
+        y = nn.Dense(50)(y)
+        for _ in range(0, NB_LAYERS-1):
+            y = nn.tanh(y)
             y = nn.Dense(50)(y)
-            y = nn.tanh(y)          ## Don't use ReLU !!!!
         return nn.Dense(1)(y)[...,0]
 
 def init_flax_params(net:nn.Module):
@@ -117,7 +118,7 @@ for i, f_id in enumerate(cloud.facet_types.keys()):
 
 
 ## Optimizer
-scheduler = optax.linear_schedule(init_value=1e-2, end_value=1e-3, transition_steps=EPOCHS)
+scheduler = optax.linear_schedule(init_value=1e-2, end_value=5e-3, transition_begin=EPOCHS//2, transition_steps=1)
 # scheduler = optax.exponential_decay(init_value=1e-1, 
 #                                     end_value=1e-6, 
 #                                     decay_rate=1e-1, transition_steps=EPOCHS, staircase=False)
