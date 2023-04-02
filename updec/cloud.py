@@ -351,10 +351,7 @@ class SquareCloud(Cloud):
 
         for i in range(self.N):
             [k, l] = list(self.global_indices_rev[i])
-            if k == 0:
-                self.facet_nodes["West"].append(i)
-                self.node_types[i] = self.facet_types["West"]
-            elif l == self.Ny-1:
+            if l == self.Ny-1:
                 self.facet_nodes["North"].append(i)
                 self.node_types[i] = self.facet_types["North"]
             elif k == self.Nx-1:
@@ -363,6 +360,9 @@ class SquareCloud(Cloud):
             elif l == 0:
                 self.facet_nodes["South"].append(i)
                 self.node_types[i] = self.facet_types["South"]
+            elif k == 0:
+                self.facet_nodes["West"].append(i)
+                self.node_types[i] = self.facet_types["West"]
             else:
                 self.node_types[i] = "i"       ## Internal node (not a boundary). But very very important!
 

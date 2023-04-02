@@ -17,7 +17,7 @@ import time
 #%%
 
 # EXPERIMENET_ID = random_name()
-EXPERIMENET_ID = "01652"
+EXPERIMENET_ID = "LaplaceForward"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
@@ -108,7 +108,8 @@ params = init_flax_params(pinn)
 
 ## Exact solution
 def laplace_exact_sol(coord):
-    return jnp.sin(jnp.pi*coord[0])*jnp.cosh(jnp.pi*coord[1]) / jnp.cosh(jnp.pi)
+    # return jnp.sin(jnp.pi*coord[0])*jnp.cosh(jnp.pi*coord[1]) / jnp.cosh(jnp.pi)
+    return jnp.sin(jnp.pi*coord[0])*jnp.sinh(jnp.pi*coord[1]) / jnp.sinh(jnp.pi)
 exact_sol = jax.vmap(laplace_exact_sol)(x_test)
 
 u_pinn = pinn.apply(params, x_test)
@@ -232,7 +233,7 @@ for epoch in range(1,EPOCHS+1):
     history_loss_test.append(loss_test)
 
     if epoch<=3 or epoch%100==0:
-        print("Epoch: %-5d      ResidualLoss: %.6f     BoundaryLoss: %.6f" % (epoch, loss_epch_in, loss_epch_bc))
+        print("Epoch: %-5d      ResidualLoss: %.6f     BoundaryLoss: %.6f   TestLoss: %.6f" % (epoch, loss_epch_in, loss_epch_bc, loss_test))
 
 checkpoints.save_checkpoint(DATAFOLDER, prefix="pinn_checkpoint_", target=state, step=state.step, overwrite=True)
 print("Training done, saved network")
