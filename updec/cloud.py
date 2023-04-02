@@ -8,7 +8,7 @@ import os
 from functools import cache
 
 class Cloud(object):        ## TODO: implemtn len, get_item, etc.
-    def __init__(self, facet_types, support_size="max"):
+    def __init__(self, facet_types, support_size=None):
         self.N = 0 
         self.Ni = 0
         self.Nd = 0
@@ -72,7 +72,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         # print("Local support of node 0:", self.nodes[renumb_map[0]], self.local_supports[0])
         # for ii in self.local_supports[0]:
         #     print(self.nodes[ii])
-        print("Support size used:", len(self.local_supports[0]))
+        # print("Support size used:", len(self.local_supports[0]))
 
 
     def renumber_nodes(self):
@@ -292,7 +292,8 @@ class SquareCloud(Cloud):
         self.define_global_indices()
         self.define_node_types()
         self.define_node_coordinates(noise_key)
-        self.define_local_supports()
+        if self.support_size:
+            self.define_local_supports()
         self.define_outward_normals()
         self.renumber_nodes()
 
@@ -415,7 +416,8 @@ class GmshCloud(Cloud):
 
         self.extract_nodes_and_boundary_type()
         self.define_outward_normals()
-        self.define_local_supports()
+        if self.support_size:
+            self.define_local_supports()
         self.renumber_nodes()
 
         self.sorted_nodes = self.get_sorted_nodes()
