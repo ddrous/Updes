@@ -26,7 +26,7 @@ KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 Nx = 100
 Ny = Nx
 BATCH_SIZE = Nx*Ny // 10
-EPOCHS = 20000
+EPOCHS = 10000
 
 W_in = 1.
 W_bc = 1.
@@ -81,7 +81,7 @@ u_bc = jnp.concatenate(u_bc, axis=0)
 
 ## For the cost function
 x_north = x_bc[north_ids, 0, jnp.newaxis]       ## New axis to maintain shape [BATCH, 1]
-q_cost = jax.vmap(lambda x: jnp.cos(jnp.pi * x))(x_north)
+q_cost = jax.vmap(lambda x: jnp.cos(2*jnp.pi * x))(x_north)
 print("North coordinates:", x_north.shape)
 
 fig, ax = plt.subplots(1, 4, figsize=(4*4,3))
@@ -282,7 +282,7 @@ min_costs_per_weight = []
 loader_keys = jax.random.split(key=KEY, num=EPOCHS)
 
 ### Step 1 Line search strategy
-for exp in range(2, 3):
+for exp in range(-3, 8):
 
     W_ct = 10**(exp)
 
