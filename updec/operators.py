@@ -149,7 +149,7 @@ def gradient(x, field, centers, rbf=None):
     N = centers.shape[0]
     lambdas, gammas = field[:N], field[N:]
 
-    grads_rbf = _nodal_gradient_rbf_vec(x, centers, rbf, None)              ## TODO remove all NaNs
+    grads_rbf = jnp.nan_to_num(_nodal_gradient_rbf_vec(x, centers, rbf, None), posinf=0., neginf=0.)              ## TODO remove all NaNs
     # print(grads_rbf)
     lambdas = jnp.stack([lambdas, lambdas], axis=-1)                        ## TODO Why is Jax unable to broadcast below ?
     final_grad = jnp.sum(jnp.nan_to_num(lambdas*grads_rbf, posinf=0., neginf=0.), axis=0)

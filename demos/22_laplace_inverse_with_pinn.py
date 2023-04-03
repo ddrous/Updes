@@ -227,7 +227,7 @@ def loss_fn_ct(params, north_ids, x_bc, q_cost):
     xy_north = x_bc[north_ids, :]
     grad_u_north_y = gradu(xy_north, params)[..., 1]
     loss_cost = (grad_u_north_y - q_cost[...,0])**2
-    return jnp.trapz(loss_cost, x=jnp.linspace(0., 1., loss_cost.shape[0]))
+    return jnp.trapz(loss_cost, x=xy_north[:, 0])
 
 def set_north_bc(c_params, u_bc, north_ids, x_bc):
     x_north = x_bc[north_ids, 0, jnp.newaxis]

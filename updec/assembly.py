@@ -39,10 +39,10 @@ def assemble_Phi(cloud:Cloud, rbf:callable=None):
     #     grads = jnp.nan_to_num(grad_rbf_vec(nodes[i], nodes[support_n]), neginf=0., posinf=0.)
     #     Phi = Phi.at[i, support_n].set(jnp.dot(grads, cloud.outward_normals[i]))
 
-    print("Finiteness Phi:", jnp.all(jnp.isfinite(Phi)))
-    print("Last column Phi all zero?", jnp.allclose(Phi[:,-1], 0.))
-    print("matrix Phi:\n", Phi)     ## Indicates singularity
-    print("Determinant of matrix Phi:", jnp.linalg.det(Phi))     ## Indicates singularity
+    # print("Finiteness Phi:", jnp.all(jnp.isfinite(Phi)))
+    # print("Last column Phi all zero?", jnp.allclose(Phi[:,-1], 0.))
+    # print("matrix Phi:\n", Phi)     ## Indicates singularity
+    # print("Determinant of matrix Phi:", jnp.linalg.det(Phi))     ## Indicates singularity
 
     return Phi
 
@@ -62,7 +62,7 @@ def assemble_P(cloud:Cloud, nb_monomials:int):
 
         # for i in range(N):
         #     P = P.at[i, j].set(monomial(cloud.nodes[i]))
-    print("Finiteness P:", jnp.all(jnp.isfinite(P)))
+    ###  print("Finiteness P:", jnp.all(jnp.isfinite(P)))
 
     return P
 
@@ -86,8 +86,8 @@ def assemble_A(cloud, rbf, nb_monomials=2):
 # @cache          ## Turn this into assemble and LU decompose
 def assemble_invert_A(cloud, rbf, nb_monomials):
     A = assemble_A(cloud, rbf, nb_monomials)
-    print("Determinant of matrix A:", jnp.linalg.det(A))     ## Indicates singularity
-    print("Invert:", jnp.linalg.inv(A))
+    ### print("Determinant of matrix A:", jnp.linalg.det(A))     ## Indicates singularity
+    ### print("Invert:", jnp.linalg.inv(A))
     return jnp.linalg.inv(A)
 
 
@@ -136,7 +136,7 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, rbf:callable, nb_monomials
         operator_mon_vec = jax.vmap(operator_mon_func, in_axes=(0, 0), out_axes=0)
         opP = opP.at[internal_ids, j].set(operator_mon_vec(nodes[internal_ids], fields[internal_ids]))
 
-    print("Finiteness op Phi and P:", jnp.all(jnp.isfinite(opPhi)), jnp.all(jnp.isfinite(opP)))
+    ### print("Finiteness op Phi and P:", jnp.all(jnp.isfinite(opPhi)), jnp.all(jnp.isfinite(opP)))
     return opPhi, opP
 
 
@@ -202,7 +202,7 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
             grads = grad_monomial_vec(nodes[node_ids_n])
             bdP = bdP.at[node_ids_n-Ni, j].set(dot_vec(grads, normals_n))
 
-    print("Finiteness bd Phi and P:", jnp.all(jnp.isfinite(bdPhi)), jnp.all(jnp.isfinite(bdP)))
+    ### print("Finiteness bd Phi and P:", jnp.all(jnp.isfinite(bdPhi)), jnp.all(jnp.isfinite(bdP)))
 
     return bdPhi, bdP
 

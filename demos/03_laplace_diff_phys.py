@@ -22,7 +22,7 @@ make_dir(DATAFOLDER)
 
 
 facet_types={"West":"d", "East":"d", "North":"d", "South":"n"}  ## North is lowest priority (we enforce 0 on boundaries)
-cloud = GmshCloud(filename="./meshes/unit_square.py", facet_types=facet_types, mesh_save_location=DATAFOLDER)
+cloud = GmshCloud(filename="./meshes/unit_square.py", facet_types=facet_types, mesh_save_location=DATAFOLDER, support_size="max")
 cloud.visualize_cloud(s=6, title=r"Unit square")
 
 

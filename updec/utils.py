@@ -142,7 +142,7 @@ def make_dir(path):
 #         font='sans-serif', font_scale=1, color_codes=True, rc={"lines.linewidth": 2})
 
 ## Wrapper function for matplotlib and seaborn
-def plot(*args, ax=None, figsize=(6,3.5), x_label=None, y_label=None, title=None, x_scale='linear', y_scale='linear', **kwargs):
+def plot(*args, ax=None, figsize=(6,3.5), x_label=None, y_label=None, title=None, x_scale='linear', y_scale='linear', xlim=None, ylim=None, **kwargs):
     if ax==None: 
         _, ax = plt.subplots(1, 1, figsize=figsize)
     # sns.despine(ax=ax)
@@ -157,6 +157,10 @@ def plot(*args, ax=None, figsize=(6,3.5), x_label=None, y_label=None, title=None
     ax.set_yscale(y_scale)
     if x_label:
         ax.legend()
+    if ylim:
+        ax.set_ylim(ylim)
+    if xlim:
+        ax.set_xlim(xlim)
     plt.tight_layout()
     return ax
 
