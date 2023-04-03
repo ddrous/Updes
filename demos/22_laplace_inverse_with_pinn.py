@@ -26,7 +26,7 @@ KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 Nx = 100
 Ny = Nx
 BATCH_SIZE = Nx*Ny // 10
-EPOCHS = 10000
+EPOCHS = 20000
 
 W_in = 1.
 W_bc = 1.
@@ -223,24 +223,24 @@ def loss_fn_bc(params, x_bc, u_bc):
     loss_bc = optax.l2_loss(u_bc_pred - u_bc)        ## Data loss
     return jnp.mean(loss_bc)
 
-def loss_fn_ct(params, north_ids, q_cost):
+def loss_fn_ct(params, north_ids, x_bc, q_cost):
     xy_north = x_bc[north_ids, :]
     grad_u_north_y = gradu(xy_north, params)[..., 1]
     loss_cost = (grad_u_north_y - q_cost[...,0])**2
     return jnp.trapz(loss_cost, x=jnp.linspace(0., 1., loss_cost.shape[0]))
 
-def set_north_bc(c_params, u_bc, north_ids):
+def set_north_bc(c_params, u_bc, north_ids, x_bc):
     x_north = x_bc[north_ids, 0, jnp.newaxis]
     u_north = c(x_north, c_params)
     return u_bc.at[north_ids].set(u_north)
 
 def loss_fn(u_params, c_params, x_in, x_bc, u_bc, north_ids, q_cost, W_ct):
 
-    u_bc = set_north_bc(c_params, u_bc, north_ids)
+    new_u_bc = set_north_bc(c_params, u_bc, north_ids, x_bc)
 
     return W_in*loss_fn_in(u_params, x_in) \
-            + W_bc*loss_fn_bc(u_params, x_bc, u_bc) \
-            + W_ct*loss_fn_ct(u_params, north_ids, q_cost)
+            + W_bc*loss_fn_bc(u_params, x_bc, new_u_bc) \
+            + W_ct*loss_fn_ct(u_params, north_ids, x_bc, q_cost)
 
 
 #%%
@@ -249,12 +249,12 @@ def loss_fn(u_params, c_params, x_in, x_bc, u_bc, north_ids, q_cost, W_ct):
 def train_step(u_state, c_state, x_in, x_bc, u_bc, north_ids, q_cost, W_ct):
     loss_in = loss_fn_in(u_state.params, x_in)
     loss_bc = loss_fn_bc(u_state.params, x_bc, u_bc)
-    loss_ct = loss_fn_ct(u_state.params, north_ids, q_cost)
+    loss_ct = loss_fn_ct(u_state.params, north_ids, x_bc, q_cost)
 
     u_grads = jax.grad(loss_fn, argnums=0)(u_state.params, c_state.params, x_in, x_bc, u_bc, north_ids, q_cost, W_ct)
-    c_grads = jax.grad(loss_fn, argnums=1)(u_state.params, c_state.params, x_in, x_bc, u_bc, north_ids, q_cost, W_ct)
-
     u_state = u_state.apply_gradients(grads=u_grads)
+
+    c_grads = jax.grad(loss_fn, argnums=1)(u_state.params, c_state.params, x_in, x_bc, u_bc, north_ids, q_cost, W_ct)
     c_state = c_state.apply_gradients(grads=c_grads)
 
     return u_state, c_state, loss_in, loss_bc, loss_ct
@@ -282,7 +282,7 @@ min_costs_per_weight = []
 loader_keys = jax.random.split(key=KEY, num=EPOCHS)
 
 ### Step 1 Line search strategy
-for exp in range(-3, 8):
+for exp in range(2, 3):
 
     W_ct = 10**(exp)
 
@@ -329,7 +329,7 @@ for exp in range(-3, 8):
         history_loss_ct.append(loss_epch_ct)
         # history_loss_test.append(loss_test)
 
-        if epoch<=3 or epoch%100==0:
+        if epoch<=3 or epoch%1000==0:
             print("Epoch: %-5d      ResidualLoss: %.6f     BoundaryLoss: %.6f   CostLoss: %.6f" % (epoch, loss_epch_in, loss_epch_bc, loss_epch_ct))
 
     checkpoints.save_checkpoint(DATAFOLDER, prefix="u_pinn_checkpoint_"+str(W_ct)+"_", target=u_state, step=u_state.step, overwrite=True)
@@ -369,7 +369,9 @@ for exp in range(-3, 8):
 
 ## %%
 
-    pinn_control = c_pinn.apply(c_state.params, x_north)
+    xy_north = x_bc[north_ids, :]
+    # pinn_control = c_pinn.apply(c_state.params, x_north)
+    pinn_control = u_pinn.apply(u_state.params, xy_north)
 
     ax = plot(x_north, pinn_control, label="PINN control", x_label=r"$x$", figsize=(6,3));
     ax = plot(x_north, exact_control, label="Exact control", title="Cost Weight: "+str(W_ct), x_label=r"$x$", ax=ax);
