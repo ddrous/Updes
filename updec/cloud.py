@@ -8,7 +8,7 @@ import os
 from functools import cache
 
 class Cloud(object):        ## TODO: implemtn len, get_item, etc.
-    def __init__(self, facet_types, support_size=None):
+    def __init__(self, facet_types, support_size="max"):
         self.N = 0 
         self.Ni = 0
         self.Nd = 0
