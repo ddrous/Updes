@@ -21,7 +21,7 @@ make_dir(DATAFOLDER)
 # writer = SummaryWriter("runs/"+RUN_NAME)
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
-Nx = 30
+Nx = 50
 Ny = Nx
 LR = 1e-2
 GAMMA = 1

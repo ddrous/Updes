@@ -155,7 +155,7 @@ def plot(*args, ax=None, figsize=(6,3.5), x_label=None, y_label=None, title=None
     ax.plot(*args, **kwargs)
     ax.set_xscale(x_scale)
     ax.set_yscale(y_scale)
-    if x_label:
+    if "label" in kwargs.keys():
         ax.legend()
     if ylim:
         ax.set_ylim(ylim)

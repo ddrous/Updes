@@ -22,7 +22,7 @@ DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
-Nx = 100
+Nx = 50
 Ny = Nx
 BATCH_SIZE = Nx*Ny // 10
 NB_LAYERS = 4
@@ -129,7 +129,7 @@ total_steps = EPOCHS*(x_in.shape[0]//BATCH_SIZE)
 
 ## Optimizer
 scheduler = optax.piecewise_constant_schedule(init_value=INIT_LR,
-                                            boundaries_and_scales={int(total_steps*0.5):0.1, int(total_steps*0.75):0.5})
+                                            boundaries_and_scales={int(total_steps*0.5):0.1, int(total_steps*0.75):0.1})
 
 optimizer = optax.adam(learning_rate=scheduler)
 # optimizer = optax.sgd(learning_rate=scheduler)
@@ -259,7 +259,7 @@ test_cloud.visualize_field(u_pinn, cmap="jet", projection="2d", title="PINN forw
 
 # test_cloud.visualize_field(exact_sol, cmap="jet", projection="2d", title="Exact solution", figsize=(6,5), ax=ax[0]);
 
-test_cloud.visualize_field(jnp.abs(exact_sol-u_pinn), cmap="inferno", projection="2d", title="PINN absolute error", figsize=(6,5), ax=ax[1]);
+test_cloud.visualize_field(jnp.abs(exact_sol-u_pinn), cmap="magma", projection="2d", title="PINN absolute error", figsize=(6,5), ax=ax[1]);
 
 
 # %%

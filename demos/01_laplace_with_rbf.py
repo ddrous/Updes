@@ -24,25 +24,26 @@ key = None
 # import datetime
 
 
-# RBF = partial(polyharmonic, a=3)
-# MAX_DEGREE = 3
+RBF = partial(polyharmonic, a=1)
+MAX_DEGREE = 4
 
-EPS=3.0
-RBF = partial(gaussian, eps=EPS)
-MAX_DEGREE = 0
+# EPS=3.0
+# RBF = partial(gaussian, eps=EPS)
+# MAX_DEGREE = 0
 
 # RBF = partial(thin_plate, a=3)
 # MAX_DEGREE = 3
 
-Nx = 8
+# Nx = 70     ## 19 minutes
+Nx = 50
 Ny = Nx
 SUPPORT_SIZE = "max"
 # SUPPORT_SIZE = 20
 
 # print(run_name)
-r = jnp.linspace(0,1.2,1001)
-plt.plot(r, partial(gaussian_func,eps=EPS)(r), label="thin_plate") 
-plt.legend()
+# r = jnp.linspace(0,1.2,1001)
+# plt.plot(r, partial(gaussian_func,eps=EPS)(r), label="thin_plate") 
+# plt.legend()
 
 facet_types={"South":"n", "West":"d", "North":"d", "East":"d"}
 # facet_types={"south":"n", "west":"n", "north":"n", "east":"n"}
@@ -50,8 +51,8 @@ facet_types={"South":"n", "West":"d", "North":"d", "East":"d"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
 
 # print(distance(cloud.nodes[2], cloud.nodes[6]))
-print(cloud.global_indices)
-print("New local support of node 0:", cloud.nodes[0], cloud.local_supports[0])
+# print(cloud.global_indices)
+# print("New local support of node 0:", cloud.nodes[0], cloud.local_supports[0])
 
 
 ## Diffeerential operator
@@ -98,7 +99,7 @@ exact_sol = laplace_exact_sol(cloud.sorted_nodes)
 ## Dangerous TODO think of removing this
 internal_nodes = jnp.array(range(cloud.Ni))
 south_nodes = jnp.array(cloud.facet_nodes["South"])
-print("South nodes:", south_nodes)
+# print("South nodes:", south_nodes)
 # rbf_sol = rbf_sol.at[south_nodes].set(jnp.nan)
 # exact_sol = exact_sol.at[south_nodes].set(jnp.nan)
 
