@@ -32,7 +32,7 @@ Re = 100
 Pa = 0.0
 
 # NB_ITER = 12
-NB_ITER = 4
+NB_ITER = 2
 
 
 

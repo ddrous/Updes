@@ -141,7 +141,7 @@ def assemble_op_Phi_P(operator:callable, cloud:Cloud, rbf:callable, nb_monomials
 
 
 
-def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
+def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, robin_coeffs:dict=None):
     """ Assembles upper op(Phi): the collocation matrix to which a differential operator is applied """
     ## Only the internal nodes (M, N)
 
@@ -167,22 +167,28 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
 
     for i in range(Ni, N):
         ii = i-Ni        ## Actual index in the matrices
-        assert cloud.node_types[i] in ["d", "n"], "not a boundary node"    ## Internal node
+        assert cloud.node_types[i] in ["d", "n", "r"], "not a boundary node"    ## Internal node
+
+        support = jnp.array(cloud.local_supports[i])
+        vals = rbf_vec(nodes[i], nodes[support])
+        grads = jnp.nan_to_num(grad_rbf_vec(nodes[i], nodes[support]), neginf=0., posinf=0.)
 
         if cloud.node_types[i] == "d":
-            support_d = jnp.array(cloud.local_supports[i])
-            bdPhi = bdPhi.at[ii, support_d].set(rbf_vec(nodes[i], nodes[support_d]))
+            bdPhi = bdPhi.at[ii, support].set(vals)
 
         elif cloud.node_types[i] == "n":    ## Neumann node
-            support_n = jnp.array(cloud.local_supports[i])
-            grads = jnp.nan_to_num(grad_rbf_vec(nodes[i], nodes[support_n]), neginf=0., posinf=0.)
-            # norm = cloud.outward_normals[i]     ### Remove this line
-            bdPhi = bdPhi.at[ii, support_n].set(jnp.dot(grads, cloud.outward_normals[i]))
+            bdPhi = bdPhi.at[ii, support].set(jnp.dot(grads, cloud.outward_normals[i]))
+
+        elif cloud.node_types[i] == "r":    ## Robin node
+            betas_js = robin_coeffs[i]*jnp.ones(support.shape[0])
+            bdPhi = bdPhi.at[ii, support].set(betas_js*vals + jnp.dot(grads, cloud.outward_normals[i]))
 
 
     ### Fill Matrix P with vectorisation from axis=0 ###
     node_ids_d = [k for k,v in cloud.node_types.items() if v == "d"]
     node_ids_n = [k for k,v in cloud.node_types.items() if v == "n"]
+    node_ids_r = [k for k,v in cloud.node_types.items() if v == "r"]
+    betas_is = [robin_coeffs[k] for k,v in cloud.node_types.items() if v == "r"]
 
     monomials = make_all_monomials(M)
     if len(node_ids_d) > 0:
@@ -202,13 +208,30 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int):
             grads = grad_monomial_vec(nodes[node_ids_n])
             bdP = bdP.at[node_ids_n-Ni, j].set(dot_vec(grads, normals_n))
 
+
+    if len(node_ids_r) > 0:
+        normals_r = jnp.stack([cloud.outward_normals[i] for i in node_ids_r], axis=0)
+        node_ids_r = jnp.array(node_ids_r)
+
+        dot_vec = jax.vmap(jnp.dot, in_axes=(0,0), out_axes=0)
+        for j in range(M):
+            monomial_vec = jax.vmap(monomials[j], in_axes=(0,), out_axes=0)
+            vals = monomial_vec(nodes[node_ids_r])
+
+            grad_monomial = jax.grad(monomials[j])
+            grad_monomial_vec = jax.vmap(grad_monomial, in_axes=(0,), out_axes=0)
+            grads = grad_monomial_vec(nodes[node_ids_r])
+
+            bdP = bdP.at[node_ids_r-Ni, j].set(jnp.array(betas_is)*vals + dot_vec(grads, normals_r))
+
+
     ### print("Finiteness bd Phi and P:", jnp.all(jnp.isfinite(bdPhi)), jnp.all(jnp.isfinite(bdP)))
 
     return bdPhi, bdP
 
 
 
-def assemble_B(operator:callable, cloud:Cloud, rbf:callable, nb_monomials:int, diff_args:list):
+def assemble_B(operator:callable, cloud:Cloud, rbf:callable, nb_monomials:int, diff_args:list, robin_coeffs:dict):
     """ Assemble B using opPhi, P, and A """
 
     N, Ni = cloud.N, cloud.Ni
@@ -221,7 +244,7 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, nb_monomials:int, d
     ## Compute coefficients here
 
     opPhi, opP = assemble_op_Phi_P(operator, cloud, rbf, M, diff_args)
-    bdPhi, bdP = assemble_bd_Phi_P(cloud, rbf, M)
+    bdPhi, bdP = assemble_bd_Phi_P(cloud, rbf, M, robin_coeffs)
 
     full_opPhi = jnp.zeros((N, N))
     full_opP = jnp.zeros((N, M))

@@ -3,7 +3,7 @@ import gmsh
 import sys
 
 
-lc = 0.05
+lc = 0.15
 ref = 2           ## Refinement factor to account for Neumann
 Lx = 1.5
 Ly = 1.0

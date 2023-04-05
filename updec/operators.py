@@ -339,6 +339,38 @@ def apply_neumann_conditions(field, boundary_conditions, cloud:Cloud):
 
     return field
 
+
+def duplicate_robin_coeffs(cloud, boundary_conditions):
+    robin_coeffs = {}
+    new_boundary_conditions = {}
+
+    for f_id, f_type in cloud.facet_types.items():
+
+        if f_type == "r":
+            node_ids = cloud.facet_nodes[f_id]
+
+            if type(boundary_conditions[f_id]) == tuple:
+                new_boundary_conditions[f_id] = boundary_conditions[f_id][0]
+                betas = boundary_conditions[f_id][1]
+                if callable(betas):
+                    nodes = cloud.sorted_nodes[jnp.array(node_ids)]
+                    betas = jax.vmap(betas)(nodes)
+            else:
+                print("WARNING:, did not provide beta coefficients for Robin BC. Using identity ...")
+                new_boundary_conditions[f_id] = boundary_conditions[f_id]
+                betas = jnp.ones((len(node_ids)))
+
+            for i in node_ids:
+                ii = i - node_ids[0]     ## TODO Assumes ordering. OMG fix this, as well as providing nodes as arrays.
+                robin_coeffs[i] = betas[ii]
+
+        else:
+            new_boundary_conditions[f_id] = boundary_conditions[f_id]
+
+    return robin_coeffs, new_boundary_conditions
+
+
+
 ## Devise different LU, LDL decomposition strategies make functions here
 def pde_solver( diff_operator:callable,
                 rhs_operator:callable,
@@ -360,11 +392,13 @@ def pde_solver( diff_operator:callable,
     UPDEC.DIM = cloud.dim
 
 
-    # 
+    ## Build robin coeffs
+    robin_coeffs, boundary_conditions = duplicate_robin_coeffs(cloud, boundary_conditions)
+
     # TODO Here
     nb_monomials = compute_nb_monomials(max_degree, cloud.dim)
 
-    B1 = assemble_B(diff_operator, cloud, rbf, nb_monomials, diff_args)
+    B1 = assemble_B(diff_operator, cloud, rbf, nb_monomials, diff_args, robin_coeffs)
     rhs = assemble_q(rhs_operator, boundary_conditions, cloud, rbf, nb_monomials, rhs_args)
 
     sol_vals = jnp.linalg.solve(B1, rhs)
