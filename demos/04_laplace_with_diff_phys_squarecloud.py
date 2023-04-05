@@ -21,11 +21,11 @@ make_dir(DATAFOLDER)
 # writer = SummaryWriter("runs/"+RUN_NAME)
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
-Nx = 50
+Nx = 35
 Ny = Nx
 LR = 1e-2
-GAMMA = 1
-EPOCHS = 5000
+GAMMA = 1       ### LR decay rate
+EPOCHS = 500
 
 
 
@@ -123,8 +123,8 @@ for step in range(1, EPOCHS+1):
 
 
 ### Visualisation at north
-ax = plot(x_north, exact_control, "x-", label="Ideal/Analytical", x_label=r"$x$", figsize=(5,3), ylim=(-.2,.2))
-plot(x_north, optimal_bcn, "o", label="Differentiable Physics", ax=ax, title=f"Optimised north solution / MSE = {north_error:.4f}");
+ax = plot(x_north, exact_control, "-", label="Ideal/Analytical", x_label=r"$x$", figsize=(5,3), ylim=(-.2,.2))
+plot(x_north, optimal_bcn, "--", label="Differentiable Physics", ax=ax, title=f"Optimised north solution / MSE = {north_error:.4f}");
 # plt.savefig(DATAFOLDER+"bcn_"+str(step)+".png", transparent=True)
 
 
