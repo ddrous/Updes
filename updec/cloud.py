@@ -335,7 +335,7 @@ class SquareCloud(Cloud):
             for j in range(self.Ny):
                 global_id = int(self.global_indices[i,j])
 
-                if (self.node_types[global_id] not in ["d", "n"]) and (noise_key is not None):
+                if (self.node_types[global_id] not in ["d", "n", "r"]) and (noise_key is not None):
                     noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)         ## Just add some noisy noise !!
                 else:
                     noise = jnp.zeros((2,))
@@ -357,24 +357,27 @@ class SquareCloud(Cloud):
             elif k == self.Nx-1:
                 self.facet_nodes["East"].append(i)
                 self.node_types[i] = self.facet_types["East"]
-            elif l == 0:
-                self.facet_nodes["South"].append(i)
-                self.node_types[i] = self.facet_types["South"]
             elif k == 0:
                 self.facet_nodes["West"].append(i)
                 self.node_types[i] = self.facet_types["West"]
+            elif l == 0:
+                self.facet_nodes["South"].append(i)
+                self.node_types[i] = self.facet_types["South"]
             else:
                 self.node_types[i] = "i"       ## Internal node (not a boundary). But very very important!
 
         self.Nd = 0
         self.Nn = 0
+        self.Nr = 0
         for f_id, f_type in self.facet_types.items():
             if f_type == "d":
                 self.Nd += len(self.facet_nodes[f_id])
             if f_type == "n":
                 self.Nn += len(self.facet_nodes[f_id])
+            if f_type == "r":
+                self.Nr += len(self.facet_nodes[f_id])
 
-        self.Ni = self.N - self.Nd - self.Nn
+        self.Ni = self.N - self.Nd - self.Nn - self.Nr
 
     def define_outward_normals(self):
         ## Makes the outward normal vectors to boundaries

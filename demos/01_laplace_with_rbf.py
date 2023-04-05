@@ -23,6 +23,9 @@ key = None
 # from torch.utils.tensorboard import SummaryWriter
 # import datetime
 
+RUN_NAME = "TempFolder"
+DATAFOLDER = "./data/" + RUN_NAME +"/"
+make_dir(DATAFOLDER)
 
 RBF = partial(polyharmonic, a=1)
 MAX_DEGREE = 4
@@ -35,7 +38,7 @@ MAX_DEGREE = 4
 # MAX_DEGREE = 3
 
 # Nx = 70     ## 19 minutes
-Nx = 50
+Nx = 30
 Ny = Nx
 SUPPORT_SIZE = "max"
 # SUPPORT_SIZE = 20
@@ -49,6 +52,9 @@ facet_types={"South":"n", "West":"d", "North":"d", "East":"d"}
 # facet_types={"south":"n", "west":"n", "north":"n", "east":"n"}
 # facet_types={"south":"d", "west":"d", "north":"d", "east":"d"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
+# cloud = GmshCloud(filename="./meshes/unit_square.py", facet_types=facet_types, mesh_save_location=DATAFOLDER, support_size="max")
+
+cloud.visualize_cloud()
 
 # print(distance(cloud.nodes[2], cloud.nodes[6]))
 # print(cloud.global_indices)
@@ -69,6 +75,10 @@ def my_rhs_operator(x, centers=None, rbf=None, fields=None):
 d_north = lambda node: jnp.sin(jnp.pi * node[0])
 d_zero = lambda node: 0.0
 boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_north, "East":d_zero}
+
+
+# betas = 100*jnp.ones((len(cloud.facet_nodes["South"]), ))
+# boundary_conditions = {"South":(d_zero, betas), "West":d_zero, "North":d_north, "East":d_zero}
 
 start = time.time()
 # solution_field = pde_solver(my_diff_operator, my_rhs_operator, cloud, boundary_conditions, RBF, MAX_DEGREE)

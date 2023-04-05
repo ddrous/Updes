@@ -144,7 +144,8 @@ _nodal_gradient_rbf_vec = jax.vmap(nodal_gradient, in_axes=(None, 0, None, None)
 
 # @Partial(jax.jit, static_argnums=3)
 def gradient(x, field, centers, rbf=None):
-    """ Computes the gradient of field quantity s at position x """
+    """ Computes the gradient of field quantity at position x 
+        The field is defined by its _coefficients_ in the RBF basis """
 
     N = centers.shape[0]
     lambdas, gammas = field[:N], field[N:]
@@ -162,7 +163,21 @@ def gradient(x, field, centers, rbf=None):
 
     return final_grad
 
-gradient_vec = jax.vmap(gradient, in_axes=(0, None, None, None), out_axes=0)
+gradient_vec_ = jax.vmap(gradient, in_axes=(0, None, None, None), out_axes=0)
+gradient_vec = jax.jit(gradient_vec_, static_argnums=[3])
+
+
+def gradient_vals(x, field, cloud, rbf, max_degree):
+    """ Computes the gradient of field quantity at position x 
+        The field is defined by its _values_ in the RBF basis """
+
+    nb_monomials = compute_nb_monomials(max_degree, cloud.dim)
+    coeffs = new_compute_coefficients(field, cloud, rbf, nb_monomials)
+
+    return gradient(x, coeffs, cloud.sorted_nodes, rbf)
+
+gradient_vals_vec_ = jax.vmap(gradient_vals, in_axes=(0, None, None, None, None), out_axes=0)
+gradient_vals_vec = jax.jit(gradient_vals_vec_, static_argnums=[2,3,4])
 
 
 def cartesian_gradient(node_id, field, cloud:Cloud):
@@ -356,7 +371,7 @@ def duplicate_robin_coeffs(cloud, boundary_conditions):
                     nodes = cloud.sorted_nodes[jnp.array(node_ids)]
                     betas = jax.vmap(betas)(nodes)
             else:
-                print("WARNING:, did not provide beta coefficients for Robin BC. Using identity ...")
+                print("WARNING: Did not provide beta coefficients for Robin BC. Using identity ...")
                 new_boundary_conditions[f_id] = boundary_conditions[f_id]
                 betas = jnp.ones((len(node_ids)))
 
@@ -409,3 +424,69 @@ def pde_solver( diff_operator:callable,
 
     # return sol_vals, jnp.concatenate(sol_coeffs)         ## TODO: return an object like solve_ivp
     return SteadySol(sol_vals, sol_coeffs)
+
+
+# pde_solver_jit_without_bc = jax.jit(pde_solver, static_argnames=["diff_operator",
+#                                                     "rhs_operator",
+#                                                     "cloud",
+#                                                     "boundary_conditions",           ## BCs are static here
+#                                                     "rbf",
+#                                                     "max_degree"])
+
+pde_solver_jit_with_bc = jax.jit(pde_solver, static_argnames=["diff_operator",
+                                                    "rhs_operator",
+                                                    "cloud",
+                                                    "rbf",
+                                                    "max_degree"])
+
+def pde_solver_jit( diff_operator:callable,
+                rhs_operator:callable,
+                cloud:Cloud, 
+                boundary_conditions:dict, 
+                rbf:callable,
+                max_degree:int,
+                diff_args = None,
+                rhs_args = None):
+    """ Jitted PDE solver """
+    boundary_conditions_arr = {}
+
+    for f_id, f_bc in boundary_conditions.items():
+        if callable(f_bc):
+            f_nodes = cloud.sorted_nodes[jnp.array(cloud.facet_nodes[f_id])]
+            boundary_conditions_arr[f_id] = jax.vmap(f_bc)(f_nodes)
+        elif type(f_bc) == tuple:
+            f_nodes = cloud.sorted_nodes[jnp.array(cloud.facet_nodes[f_id])]
+            boundary_conditions_arr[f_id] = f_bc
+            if callable(f_bc[0]):
+                boundary_conditions_arr[f_id] = (jax.vmap(f_bc[0])(f_nodes), f_bc[1])
+            if callable(f_bc[1]):
+                boundary_conditions_arr[f_id] = (f_bc[0], jax.vmap(f_bc[1])(f_nodes))
+        else:
+            boundary_conditions_arr[f_id] = f_bc
+
+
+    return pde_solver_jit_with_bc(diff_operator=diff_operator,
+                                    rhs_operator=rhs_operator,
+                                    cloud=cloud, 
+                                    boundary_conditions=boundary_conditions_arr, 
+                                    rbf=rbf,
+                                    max_degree=max_degree,
+                                    diff_args = diff_args,
+                                    rhs_args = rhs_args)
+
+
+
+
+
+
+    # @jax.jit
+    # def compiled_pde_solver_with_bc(u_inflow, diff_args, rhs_args):
+    #     bc_u = {"Wall":zero, "Inflow":u_inflow, "Outflow":zero, "Cylinder":zero, "Blowing":zero, "Suction":zero}
+    #     return pde_solver(diff_operator=diff_operator_u, 
+    #                     diff_args=diff_args,
+    #                     rhs_operator = rhs_operator_u, 
+    #                     rhs_args=rhs_args, 
+    #                     cloud = cloud_vel, 
+    #                     boundary_conditions = bc_u,
+    #                     rbf=RBF,
+    #                     max_degree=MAX_DEGREE)

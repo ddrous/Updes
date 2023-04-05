@@ -267,7 +267,7 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, nb_monomials:int, d
 
 
 def new_compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, nb_monomials:int):
-    """ Find nodal and polynomial coefficients for scaar field s """ 
+    """ Find nodal and polynomial coefficients for scalar field """ 
 
     rhs = jnp.concatenate((field, jnp.zeros((nb_monomials))))
     inv_A = assemble_invert_A(cloud, rbf, nb_monomials)

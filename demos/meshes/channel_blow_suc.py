@@ -4,7 +4,8 @@ import sys
 
 
 lc = 0.15
-ref = 2           ## Refinement factor to account for Neumann
+ref_io = 2           ## Refinement factor to account for Infow/Outflow
+ref_bs = 3           ## Refinement factor to account for Blowing/Suction
 Lx = 1.5
 Ly = 1.0
 DIM = 2
@@ -15,19 +16,19 @@ gmsh.initialize()
 gmsh.model.add("channel")
 
 ## Make the square
-gmsh.model.geo.addPoint(0, 0, 0, lc/ref, 1)
+gmsh.model.geo.addPoint(0, 0, 0, lc/ref_io, 1)
 gmsh.model.geo.addPoint(Lx/10, 0, 0, lc, 2)
-gmsh.model.geo.addPoint(0.5, 0, 0, lc/ref, 3)
-gmsh.model.geo.addPoint(1, 0, 0, lc/ref, 4)
+gmsh.model.geo.addPoint(0.5, 0, 0, lc/ref_bs, 3)
+gmsh.model.geo.addPoint(1, 0, 0, lc/ref_bs, 4)
 gmsh.model.geo.addPoint(9*Lx/10, 0, 0, lc, 5)   ## New
-gmsh.model.geo.addPoint(Lx, 0, 0, lc/ref, 6)
+gmsh.model.geo.addPoint(Lx, 0, 0, lc/ref_io, 6)
 
-gmsh.model.geo.addPoint(Lx, Ly, 0, lc/ref, 7)
+gmsh.model.geo.addPoint(Lx, Ly, 0, lc/ref_io, 7)
 gmsh.model.geo.addPoint(9*Lx/10, Ly, 0, lc, 8)
-gmsh.model.geo.addPoint(1, Ly, 0, lc/ref, 9)
-gmsh.model.geo.addPoint(0.5, Ly, 0, lc/ref, 10)
+gmsh.model.geo.addPoint(1, Ly, 0, lc/ref_bs, 9)
+gmsh.model.geo.addPoint(0.5, Ly, 0, lc/ref_bs, 10)
 gmsh.model.geo.addPoint(Lx/10, Ly, 0, lc, 11)
-gmsh.model.geo.addPoint(0, Ly, 0, lc/ref, 12)
+gmsh.model.geo.addPoint(0, Ly, 0, lc/ref_io, 12)
 
 
 gmsh.model.geo.addLine(1, 2, 1)
@@ -60,8 +61,8 @@ gmsh.model.addPhysicalGroup(2, [1], name="Fluid")
 
 
 ## Meshing paremeters for quadrangles
-gmsh.option.setNumber("Mesh.RecombineAll", 1)
-gmsh.option.setNumber("Mesh.Algorithm", 11)
+# gmsh.option.setNumber("Mesh.RecombineAll", 1)
+# gmsh.option.setNumber("Mesh.Algorithm", 11)
 gmsh.option.setNumber("Mesh.MshFileVersion", 4.0)
 
 ## Visualisation parameters
