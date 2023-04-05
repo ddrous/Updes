@@ -26,7 +26,7 @@ MAX_DEGREE = 4
 Re = 100        ## Make sure the same constants are used for the forward problem
 Pa = 0.
 
-NB_ITER = 200
+NB_ITER = 50    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 
 
 # %%
@@ -147,9 +147,9 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
     grad_u = interpolate_field(grad_u, cloud_vel, cloud_lamb)   ## TODO Check this !
     grad_v = interpolate_field(grad_v, cloud_vel, cloud_lamb)
 
-    bc_u = {"Wall":zero, "Inflow":zero, "Outflow":(-u2*Re, u1*Re), "Blowing":zero, "Suction":zero}
-    bc_v = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab+pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
-    bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}
+    bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab+pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
+    bc_l2 = {"Wall":zero, "Inflow":zero, "Outflow":(-u2*Re, u1*Re), "Blowing":zero, "Suction":zero}
+    bc_mu = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}
 
 
     l1_list = [lambda1]
@@ -159,7 +159,6 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
     for i in tqdm(range(NB_ITER)):
 
-        ## TODO Interpolate p and gradphi onto cloud_lamb
         pi = interpolate_field(pi_, cloud_mu, cloud_lamb)
 
         l1sol = pde_solver_jit(diff_operator=diff_operator_l1, 
@@ -167,7 +166,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
                         rhs_operator = rhs_operator_l1, 
                         rhs_args=[pi],
                         cloud = cloud_lamb,
-                        boundary_conditions = bc_u,
+                        boundary_conditions = bc_l1,
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
 
@@ -176,7 +175,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
                         rhs_operator = rhs_operator_l2,
                         rhs_args=[pi], 
                         cloud = cloud_lamb, 
-                        boundary_conditions = bc_v,
+                        boundary_conditions = bc_l2,
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
 
@@ -190,12 +189,11 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
                         rhs_operator = rhs_operator_mu,
                         rhs_args=[l1_, l2_], 
                         cloud = cloud_mu, 
-                        boundary_conditions = bc_phi,
+                        boundary_conditions = bc_mu,
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
 
         pi_ = pi_ + musol_.vals
-        # pi_ = pi_.at[out_nodes_pi].set(Pa)
 
         gradmu_ = gradient_vec(cloud_mu.sorted_nodes, musol_.coeffs, cloud_mu.sorted_nodes, RBF)
         # gradmu_ = cartesian_gradient_vec(range(cloud_mu.N), musol_.vals, cloud_mu)
@@ -206,7 +204,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
         l1, l2 = L[:,0], L[:,1]
         lnorm = jnp.linalg.norm(L, axis=-1)
 
-        print("Maximums of lambda 1 and 2:", jnp.max(l1), jnp.max(l2))
+        # print("Maximums of lambda 1 and 2:", jnp.max(l1), jnp.max(l2))
 
         l1_list.append(l1)
         l2_list.append(l2)
@@ -220,27 +218,27 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
 
 
-print(f"\nStarting RBF simulation with {cloud_lamb.N} nodes\n")
-l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes(cloud_lamb, cloud_mu)
+# print(f"\nStarting RBF simulation with {cloud_lamb.N} nodes\n")
+# l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes(cloud_lamb, cloud_mu)
 
 
-print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
+# print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
 
-renum_map_vel = jnp.array(list(cloud_lamb.renumbering_map.keys()))
-renum_map_p = jnp.array(list(cloud_mu.renumbering_map.keys()))
+# renum_map_vel = jnp.array(list(cloud_lamb.renumbering_map.keys()))
+# renum_map_p = jnp.array(list(cloud_mu.renumbering_map.keys()))
 
-jnp.savez(DATAFOLDER+'l1.npz', renum_map_vel, jnp.stack(l1_list, axis=0))
-jnp.savez(DATAFOLDER+'l2.npz', renum_map_vel, jnp.stack(l2_list, axis=0))
-jnp.savez(DATAFOLDER+'lnorm.npz', renum_map_vel, jnp.stack(lnorm_list, axis=0))
-jnp.savez(DATAFOLDER+'pi.npz', renum_map_p, jnp.stack(pi_list, axis=0))
+# jnp.savez(DATAFOLDER+'l1.npz', renum_map_vel, jnp.stack(l1_list, axis=0))
+# jnp.savez(DATAFOLDER+'l2.npz', renum_map_vel, jnp.stack(l2_list, axis=0))
+# jnp.savez(DATAFOLDER+'lnorm.npz', renum_map_vel, jnp.stack(lnorm_list, axis=0))
+# jnp.savez(DATAFOLDER+'pi.npz', renum_map_p, jnp.stack(pi_list, axis=0))
 
 
-# %%
+# # %%
 
-print("\nSaving complete. Now running visualisation ...")
+# print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "lnorm", duration=5, vmin=None, vmax=None)
-pyvista_animation(DATAFOLDER, "pi", duration=5, vmin=None, vmax=None)
+# pyvista_animation(DATAFOLDER, "lnorm", duration=5, vmin=None, vmax=None)
+# pyvista_animation(DATAFOLDER, "pi", duration=5, vmin=None, vmax=None)
 
 
 
@@ -263,7 +261,7 @@ pyvista_animation(DATAFOLDER, "pi", duration=5, vmin=None, vmax=None)
 ## Constants
 LR = 1e-3
 GAMMA = 1
-EPOCHS = 10
+EPOCHS = 3      ## More than enough for 50 iter and 360 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)
@@ -283,8 +281,10 @@ in_nodes_pi = jnp.array(cloud_mu.facet_nodes["Inflow"])
 y_in = cloud_lamb.sorted_nodes[in_nodes_lamb, 1]
 y_out = cloud_vel.sorted_nodes[out_nodes_vel, 1]
 
+zero = jax.jit(lambda x: 0.)
 parabolic = jax.jit(lambda x: 4*x[1]*(1.-x[1]))
 u_parab = jax.vmap(parabolic)(cloud_vel.sorted_nodes[out_nodes_vel])
+u_zero = jax.vmap(zero)(cloud_vel.sorted_nodes[out_nodes_vel])
 
 @jax.jit
 def cost_val_fn(u, v, u_parab):
@@ -301,13 +301,9 @@ def cost_grad_fn(l1, pi_):
     return pi_[in_nodes_pi] - grad_l1[:, 0]/Re
 
 
-
-optimal_u_inflow = jnp.zeros(in_nodes_lamb.shape)       ## Optimised quantity
-
-
 forward_sim_args = {"cloud_vel":cloud_vel,
                     "cloud_phi": cloud_phi,
-                    "inflow_control":optimal_u_inflow,
+                    "inflow_control":None,
                     # "Re":Re,
                     # "Pa":Pa,
                     "NB_ITER":NB_ITER,
@@ -318,11 +314,13 @@ adjoint_sim_args = {"cloud_lamb":cloud_lamb,
                     "cloud_mu": cloud_mu,
                     "u":None,"v":None,
                     "cloud_vel":cloud_vel,
-                    # "grad_u":None,"grad_v":None,
                     "NB_ITER":NB_ITER,
                     "RBF":RBF,
                     "MAX_DEGREE":MAX_DEGREE    
                     }
+
+
+optimal_u_inflow = jnp.zeros(in_nodes_lamb.shape)       ## Optimised quantity
 
 
 history_cost = []
@@ -345,8 +343,6 @@ for step in range(1, EPOCHS+1):
 
     adjoint_sim_args["u"] = u_list[-1]
     adjoint_sim_args["v"] = v_list[-1]
-    # adjoint_sim_args["grad_u"] = grad_u
-    # adjoint_sim_args["grad_v"] = grad_v
     l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes(**adjoint_sim_args)
 
     ### Optimsation start ###
@@ -360,16 +356,18 @@ for step in range(1, EPOCHS+1):
     history_cost.append(loss)
     parab_out_mse.append(parab_error)
 
-    if step<=3 or step%10==0:
+    if step<=3 or step%1==0:
         print("\nEpoch: %-5d  LR: %.4f    Loss: %.10f    GradNorm: %.4f  TestMSE: %.6f" % (step, learning_rate, loss, jnp.linalg.norm(grad), parab_error))
 
 
     fig, (ax1, ax2) = plt.subplots(1,2, figsize=(6*2,5))
 
-    plot(u_parab, y_out, "-", label="Analytical", y_label=r"$y$", xlim=(-0.1, 1.1), figsize=(5,3), ax=ax1)
-    plot(u_list[-1][out_nodes_vel], y_out, "--", label="DAL", ax=ax1, title=f"Outlet velocity / MSE = {parab_error:.4f}");
+    plot(u_parab, y_out, "-", label=r"$u$ target", y_label=r"$y$", xlim=(-0.1, 1.1), figsize=(5,3), ax=ax1)
+    plot(u_list[-1][out_nodes_vel], y_out, "--", label=r"$u$ DAL", ax=ax1, title=f"Outlet velocity / MSE = {parab_error:.4f}");
+    plot(u_zero, y_out, "-", label=r"$v$ target", y_label=r"$y$", ax=ax1)
+    plot(v_list[-1][out_nodes_vel], y_out, "--", label=r"$v$ DAL", ax=ax1);
 
-    print("otpimized inflow vel:", optimal_u_inflow)
+    print("Optimized inflow vel:", optimal_u_inflow)
     plot(optimal_u_inflow, y_in, "--", label="Optimised DAL", ax=ax2, xlim=None, title=f"Inflow velocity");
 
     plt.show()
@@ -392,6 +390,7 @@ jnp.savez(DATAFOLDER+'v.npz', renum_map_vel, jnp.stack(v_list, axis=0))
 jnp.savez(DATAFOLDER+'vel.npz', renum_map_vel, jnp.stack(vel_list, axis=0))
 jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
-
-pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=0.0, vmax=1.08)
-pyvista_animation(DATAFOLDER, "p", duration=5, vmin=-0.15, vmax=0.45)
+pyvista_animation(DATAFOLDER, "u", duration=5, vmin=jnp.min(u_list[-1]), vmax=jnp.max(u_list[-1]))
+pyvista_animation(DATAFOLDER, "v", duration=5, vmin=jnp.min(v_list[-1]), vmax=jnp.max(v_list[-1]))
+pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=jnp.min(vel_list[-1]), vmax=jnp.max(vel_list[-1]))
+pyvista_animation(DATAFOLDER, "p", duration=5, vmin=jnp.min(p_list[-1]), vmax=jnp.max(p_list[-1]))

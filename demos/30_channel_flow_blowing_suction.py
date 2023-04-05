@@ -198,7 +198,7 @@ def simulate_forward_navier_stokes(cloud_vel,
         u, v = U[:,0], U[:,1]
         vel = jnp.linalg.norm(U, axis=-1)
 
-        print("Maximums of u and v:", jnp.max(u), jnp.max(v))
+        # print("Maximums of u and v:", jnp.max(u), jnp.max(v))
 
         u_list.append(u)
         v_list.append(v)
