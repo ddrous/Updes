@@ -78,7 +78,7 @@ d_south = jax.jit(lambda x: jnp.sin(2*jnp.pi * x[0]))
 d_east = jax.jit(lambda x: jnp.sinh(2*jnp.pi*x[1]) / (2*jnp.pi * jnp.cosh(2*jnp.pi)))
 d_west = d_east
 
-@jax.jit
+@jax.jit        ################ TODO TODO TODO don't jitt compile this, jitt the PDE solver instead !!!!
 def loss_fn(bcn):
     sol = pde_solver(diff_operator=my_diff_operator,
                     rhs_operator = my_rhs_operator,
