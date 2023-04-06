@@ -26,7 +26,7 @@ MAX_DEGREE = 4
 Re = 100        ## Make sure the same constants are used for the forward problem
 Pa = 0.
 
-NB_ITER = 50    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
+NB_ITER = 10    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 
 
 # %%
@@ -39,7 +39,7 @@ cloud_lamb = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_typ
 cloud_mu = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_mu)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
-cloud_lamb.visualize_cloud(ax=ax1, s=6, title="Cloud for lambda", xlabel=False);
+cloud_lamb.visualize_cloud(ax=ax1, s=6, title=r"Cloud for $\lambda$", xlabel=False);
 cloud_mu.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\mu$");
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5*2,5))
@@ -261,7 +261,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 ## Constants
 LR = 1e-3
 GAMMA = 1
-EPOCHS = 3      ## More than enough for 50 iter and 360 nodes
+EPOCHS = 5      ## More than enough for 50 iter and 360 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)

@@ -27,7 +27,7 @@ MAX_DEGREE = 4
 Re = 100
 Pa = 0.
 
-NB_ITER = 50
+NB_ITER = 15
 
 
 # %%

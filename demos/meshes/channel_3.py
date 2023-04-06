@@ -5,8 +5,8 @@ import sys
 
 lc = 0.2
 ref_io = 4           ## Refinement factor to account for Infow/Outflow
-ref_bs = 8           ## Refinement factor to account for Blowing/Suction
-box_half_length = 0.003
+ref_bs = 5           ## Refinement factor to account for Blowing/Suction
+box_half_length = 0.005
 Lx = 1.5
 Ly = 1.0
 DIM = 2
@@ -18,19 +18,19 @@ gmsh.model.add("channel")
 
 
 ## Make the square
-gmsh.model.geo.addPoint(0, 0, 0, lc, 1)
+gmsh.model.geo.addPoint(0, 0, 0, lc/ref_io, 1)
 gmsh.model.geo.addPoint(Lx/10, 0, 0, lc, 2)
 gmsh.model.geo.addPoint(0.5, 0, 0, lc, 3)
 gmsh.model.geo.addPoint(1, 0, 0, lc, 4)
 gmsh.model.geo.addPoint(9*Lx/10, 0, 0, lc, 5)   ## New
-gmsh.model.geo.addPoint(Lx, 0, 0, lc, 6)
+gmsh.model.geo.addPoint(Lx, 0, 0, lc/ref_io, 6)
 
-gmsh.model.geo.addPoint(Lx, Ly, 0, lc, 7)
+gmsh.model.geo.addPoint(Lx, Ly, 0, lc/ref_io, 7)
 gmsh.model.geo.addPoint(9*Lx/10, Ly, 0, lc, 8)
 gmsh.model.geo.addPoint(1, Ly, 0, lc, 9)
 gmsh.model.geo.addPoint(0.5, Ly, 0, lc, 10)
 gmsh.model.geo.addPoint(Lx/10, Ly, 0, lc, 11)
-gmsh.model.geo.addPoint(0, Ly, 0, lc, 12)
+gmsh.model.geo.addPoint(0, Ly, 0, lc/ref_io, 12)
 
 
 gmsh.model.geo.addLine(1, 2, 1)
@@ -63,6 +63,7 @@ gmsh.model.mesh.field.setNumber(6, "XMax", 0.5+box_half_length)
 gmsh.model.mesh.field.setNumber(6, "YMin", 0.0)
 gmsh.model.mesh.field.setNumber(6, "YMax", 0.0+2*box_half_length)
 gmsh.model.mesh.field.setNumber(6, "Thickness", 0.3)
+# gmsh.model.mesh.field.setAsBackgroundMesh(6)
 
 gmsh.model.mesh.field.add("Box", 7)
 gmsh.model.mesh.field.setNumber(7, "VIn", lc / ref_bs)
@@ -72,6 +73,7 @@ gmsh.model.mesh.field.setNumber(7, "XMax", 1.0+box_half_length)
 gmsh.model.mesh.field.setNumber(7, "YMin", 0.0)
 gmsh.model.mesh.field.setNumber(7, "YMax", 0.0+2*box_half_length)
 gmsh.model.mesh.field.setNumber(7, "Thickness", 0.3)
+# gmsh.model.mesh.field.setAsBackgroundMesh(7)
 
 gmsh.model.mesh.field.add("Box", 8)
 gmsh.model.mesh.field.setNumber(8, "VIn", lc / ref_bs)
@@ -81,6 +83,7 @@ gmsh.model.mesh.field.setNumber(8, "XMax", 1.0+box_half_length)
 gmsh.model.mesh.field.setNumber(8, "YMin", Ly-2*box_half_length)
 gmsh.model.mesh.field.setNumber(8, "YMax", Ly)
 gmsh.model.mesh.field.setNumber(8, "Thickness", 0.3)
+# gmsh.model.mesh.field.setAsBackgroundMesh(8)
 
 
 gmsh.model.mesh.field.add("Box", 9)
@@ -91,34 +94,13 @@ gmsh.model.mesh.field.setNumber(9, "XMax", 0.5+box_half_length)
 gmsh.model.mesh.field.setNumber(9, "YMin", Ly-2*box_half_length)
 gmsh.model.mesh.field.setNumber(9, "YMax", Ly)
 gmsh.model.mesh.field.setNumber(9, "Thickness", 0.3)
-
-
-gmsh.model.mesh.field.add("Box", 10)
-gmsh.model.mesh.field.setNumber(10, "VIn", lc / ref_io)
-gmsh.model.mesh.field.setNumber(10, "VOut", lc)
-gmsh.model.mesh.field.setNumber(10, "XMin", 0.0)
-gmsh.model.mesh.field.setNumber(10, "XMax", Lx/15)
-gmsh.model.mesh.field.setNumber(10, "YMin", 0)
-gmsh.model.mesh.field.setNumber(10, "YMax", Ly)
-gmsh.model.mesh.field.setNumber(10, "Thickness", 0.3)
-
-
-gmsh.model.mesh.field.add("Box", 11)
-gmsh.model.mesh.field.setNumber(11, "VIn", lc / ref_io)
-gmsh.model.mesh.field.setNumber(11, "VOut", lc)
-gmsh.model.mesh.field.setNumber(11, "XMin", 14*Lx/15)
-gmsh.model.mesh.field.setNumber(11, "XMax", Lx)
-gmsh.model.mesh.field.setNumber(11, "YMin", 0)
-gmsh.model.mesh.field.setNumber(11, "YMax", Ly)
-gmsh.model.mesh.field.setNumber(11, "Thickness", 0.3)
-
 # gmsh.model.mesh.field.setAsBackgroundMesh(9)
 
 
 # Let's use the minimum of all the Box fields as the mesh size field: #TODO Just a combination will do
-gmsh.model.mesh.field.add("Min", 12)
-gmsh.model.mesh.field.setNumbers(12, "FieldsList", [6, 7, 8, 9, 10, 11])
-gmsh.model.mesh.field.setAsBackgroundMesh(12)
+gmsh.model.mesh.field.add("Min", 10)
+gmsh.model.mesh.field.setNumbers(10, "FieldsList", [6, 7, 8, 9])
+gmsh.model.mesh.field.setAsBackgroundMesh(10)
 
 
 gmsh.model.addPhysicalGroup(1, [12], name="Inflow")
