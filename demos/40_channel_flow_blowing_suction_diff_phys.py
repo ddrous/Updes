@@ -26,7 +26,7 @@ MAX_DEGREE = 4
 Re = 100
 Pa = 0.
 
-NB_ITER = 15
+NB_ITER = 5
 
 
 # %%
@@ -131,7 +131,7 @@ def simulate_forward_navier_stokes(cloud_vel,
 
     u_list = [u]
     v_list = [v]
-    vel_list = []
+    vel_list = [jnp.linalg.norm(jnp.stack([u,v], axis=-1), axis=-1)]
     p_list = [p_]
 
     for i in tqdm(range(NB_ITER)):
@@ -235,9 +235,9 @@ def simulate_forward_navier_stokes(cloud_vel,
 
 
 ## Constants
-LR = 1e-3
-GAMMA = 1
-EPOCHS = 5      ## More than enough for 50 iter and 360 nodes
+LR = 1e-1
+GAMMA = 0.99995
+EPOCHS = 10      ## More than enough for 50 iter and 360 nodes
 
 
 out_nodes_vel = jnp.array(cloud_vel.facet_nodes["Outflow"])
@@ -266,7 +266,7 @@ forward_sim_args = {"cloud_vel":cloud_vel,
                     "MAX_DEGREE":MAX_DEGREE    
                     }
 
-@jax.jit
+# @jax.jit
 def loss_fn(u_inflow):
     forward_sim_args["inflow_control"] = u_inflow
     u_list, v_list, _, _ = simulate_forward_navier_stokes(**forward_sim_args)
@@ -277,13 +277,9 @@ grad_loss_fn = jax.value_and_grad(loss_fn)
 
 optimal_u_inflow = jnp.zeros(in_nodes_p.shape)       ## Optimised quantity
 
-
 history_cost = []
-parab_out_mse = []
-
 
 for step in range(1, EPOCHS+1):
-
 
     loss, grad = grad_loss_fn(optimal_u_inflow)
     learning_rate = LR * (GAMMA**step)
@@ -296,14 +292,13 @@ for step in range(1, EPOCHS+1):
         print("\nEpoch: %-5d  LR: %.4f    Loss: %.10f    GradNorm: %.4f" % (step, learning_rate, loss, jnp.linalg.norm(grad)))
 
     print("Optimized inflow vel:", optimal_u_inflow)
-    plot(optimal_u_inflow, y_in, "--", label="Optimised DAL", ax=ax2, xlim=None, title=f"Inflow velocity");
+    plot(optimal_u_inflow, y_in, "--", label="Optimised DP", xlim=None, title=f"Inflow velocity");
 
     plt.show()
 
 
 #%%
-ax = plot(history_cost, label='Cost objective', x_label='epochs', title="Loss", y_scale="log");
-plot(parab_out_mse, label='Test MSE at outlet', x_label='epochs', title="Loss", y_scale="log", ax=ax);
+plot(history_cost, label='Cost objective', x_label='epochs', title="Loss", y_scale="log");
 
 
 #%%
@@ -315,20 +310,18 @@ u_list, v_list, vel_list, p_list = simulate_forward_navier_stokes(**forward_sim_
 parab_error = jnp.mean((u_list[-1][out_nodes_vel] - u_parab)**2)
 
 
-fig, (ax1, ax2) = plt.subplots(1,2, figsize=(6*2,5))
+fig, ax1 = plt.subplots(1,1, figsize=(6*1,5))
 
 plot(u_parab, y_out, "-", label=r"$u$ target", y_label=r"$y$", xlim=(-0.1, 1.1), figsize=(5,3), ax=ax1)
-plot(u_list[-1][out_nodes_vel], y_out, "--", label=r"$u$ DAL", ax=ax1, title=f"Outlet velocity / MSE = {parab_error:.4f}");
+plot(u_list[-1][out_nodes_vel], y_out, "--", label=r"$u$ DP", ax=ax1, title=f"Outlet velocity / MSE = {parab_error:.4f}");
 plot(u_zero, y_out, "-", label=r"$v$ target", y_label=r"$y$", ax=ax1)
-plot(v_list[-1][out_nodes_vel], y_out, "--", label=r"$v$ DAL", ax=ax1);
+plot(v_list[-1][out_nodes_vel], y_out, "--", label=r"$v$ DP", ax=ax1);
 
 
 #%%
 
 print("\nFinal simulation complete. Now running visualisation ...")
 
-forward_sim_args["inflow_control"] = optimal_u_inflow
-u_list, v_list, vel_list, p_list = simulate_forward_navier_stokes(**forward_sim_args)
 
 renum_map_vel = jnp.array(list(cloud_vel.renumbering_map.keys()))
 renum_map_p = jnp.array(list(cloud_phi.renumbering_map.keys()))
@@ -342,3 +335,5 @@ pyvista_animation(DATAFOLDER, "u", duration=5, vmin=jnp.min(u_list[-1]), vmax=jn
 pyvista_animation(DATAFOLDER, "v", duration=5, vmin=jnp.min(v_list[-1]), vmax=jnp.max(v_list[-1]))
 pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=jnp.min(vel_list[-1]), vmax=jnp.max(vel_list[-1]))
 pyvista_animation(DATAFOLDER, "p", duration=5, vmin=jnp.min(p_list[-1]), vmax=jnp.max(p_list[-1]))
+
+# %%
