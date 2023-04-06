@@ -26,7 +26,7 @@ MAX_DEGREE = 4
 Re = 100        ## Make sure the same constants are used for the forward problem
 Pa = 0.
 
-NB_ITER = 10    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
+NB_ITER = 50    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 
 
 # %%
@@ -261,7 +261,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 ## Constants
 LR = 1e-3
 GAMMA = 1
-EPOCHS = 5      ## More than enough for 50 iter and 360 nodes
+EPOCHS = 10      ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)
@@ -286,7 +286,7 @@ parabolic = jax.jit(lambda x: 4*x[1]*(1.-x[1]))
 u_parab = jax.vmap(parabolic)(cloud_vel.sorted_nodes[out_nodes_vel])
 u_zero = jax.vmap(zero)(cloud_vel.sorted_nodes[out_nodes_vel])
 
-@jax.jit
+# @jax.jit
 def cost_val_fn(u, v, u_parab):
     u_out = u[out_nodes_vel]
     v_out = v[out_nodes_vel]
@@ -294,7 +294,7 @@ def cost_val_fn(u, v, u_parab):
     integrand = (u_out-u_parab)**2 + v_out**2
     return 0.5 * jnp.trapz(integrand, x=y_out)
 
-@jax.jit
+# @jax.jit
 def cost_grad_fn(l1, pi_):
     grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[in_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
     # grad_l1 = cartesian_gradient_vec(range(cloud_lamb.N), l1, cloud_lamb)
