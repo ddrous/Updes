@@ -290,7 +290,7 @@ for step in range(1, EPOCHS+1):
         print("\nEpoch: %-5d  LR: %.4f    Loss: %.10f    GradNorm: %.4f" % (step, learning_rate, loss, jnp.linalg.norm(grad)))
 
     print("Optimized inflow vel:", optimal_u_inflow)
-    plot(optimal_u_inflow, y_in, "--", label="Optimised DP", xlim=None, title=f"Inflow velocity");
+    plot(optimal_u_inflow, y_in, "--", label="Optimised DP", xlim=None, title=f"Inflow velocity");      ## TODO put a xlim to this !
 
     plt.show()
 

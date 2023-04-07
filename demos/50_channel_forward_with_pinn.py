@@ -28,7 +28,8 @@ EPOCHS = 100000
 
 W_mo = 1.
 W_co = 1.
-W_bc = 100.
+# W_bc = 100.       ## See the paper !!
+W_bc = 1.
 
 Re = 100
 Pa = 0.
@@ -163,36 +164,28 @@ state = train_state.TrainState.create(apply_fn=pinn.apply,
 
 #%%
 
-@jax.jit
 def u(x, params):
     return pinn.apply(params, x)[...,0]
-@jax.jit
 def v(x, params):
     return pinn.apply(params, x)[...,1]
-@jax.jit
 def p(x, params):
     return pinn.apply(params, x)[...,2]
 
 
-@jax.jit
 def gradu(x, params):
     ufunc = lambda x: pinn.apply(params, x)[...,0]
     return jax.vmap(jax.jacfwd(ufunc))(x)
-@jax.jit
 def gradv(x, params):
     vfunc = lambda x: pinn.apply(params, x)[...,1]
     return jax.vmap(jax.jacfwd(vfunc))(x)
-@jax.jit
 def gradp(x, params):
     pfunc = lambda x: pinn.apply(params, x)[...,2]
     return jax.vmap(jax.jacfwd(pfunc))(x)
 
-@jax.jit
 def lapu(x, params):
     ufunc = lambda y: pinn.apply(params, y)[...,0]
     lapfunc = jax.vmap(jax.jacfwd(jax.jacfwd(ufunc)))
     return jax.vmap(jnp.trace)(lapfunc(x))
-@jax.jit
 def lapv(x, params):
     vfunc = lambda y: pinn.apply(params, y)[...,1]
     lapfunc = jax.vmap(jax.jacfwd(jax.jacfwd(vfunc)))
@@ -206,8 +199,7 @@ def residual(x_vel, x_p, params):
     dot_vec = jax.vmap(jnp.dot, in_axes=(0,0), out_axes=0)
 
     momentum = dot_vec(vals, grads) + gradp(x_p,params) - (laps/Re)
-
-    continuity = dot_vec(grads[:, 0, 0], grads[:, 1, 1])
+    continuity = grads[:, 0, 0] + grads[:, 1, 1]
 
     return jnp.linalg.norm(momentum, axis=-1), continuity
 
@@ -252,7 +244,7 @@ history_loss_bc = []
 
 #%%
 
-if len(os.listdir(DATAFOLDER)) >= 5:
+if len(os.listdir(DATAFOLDER)) > 2:
     print("Found existing network, loading & training")
     state = checkpoints.restore_checkpoint(ckpt_dir=DATAFOLDER, prefix="pinn_checkpoint_", target=state)
 
