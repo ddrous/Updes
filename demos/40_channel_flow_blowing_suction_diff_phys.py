@@ -209,8 +209,8 @@ def simulate_forward_navier_stokes(cloud_vel,
 
 # print("\nSaving complete. Now running visualisation ...")
 
-# pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=0.0, vmax=1.1)
-# pyvista_animation(DATAFOLDER, "p", duration=5, vmin=-0.25, vmax=0.45)
+# pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=0.0, vmax=1.08)
+# pyvista_animation(DATAFOLDER, "p", duration=5, vmin=-0.15, vmax=0.45)
 
 
 # %%
