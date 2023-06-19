@@ -1,5 +1,10 @@
 
 # %%
+
+"""
+Control of Navier Stokes equation with DAL (Direct fomulation)
+"""
+
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
@@ -27,7 +32,7 @@ MAX_DEGREE = 4
 Re = 100
 Pa = 0.
 
-NB_ITER = 15
+NB_ITER = 3
 
 
 # %%
@@ -151,7 +156,8 @@ def simulate_forward_navier_stokes(cloud_vel,
     #                     max_degree=MAX_DEGREE)
 
 
-    for i in tqdm(range(NB_ITER)):
+    # for i in tqdm(range(NB_ITER), disable=True):
+    for i in range(NB_ITER):
         # print("Starting iteration %d" % i)
 
         p = interpolate_field(p_, cloud_phi, cloud_vel)

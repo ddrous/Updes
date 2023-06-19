@@ -1,6 +1,12 @@
 # %%
+
+"""
+Control of Laplace equation with Direct Adjoint Looping (DAL)
+"""
+
 import jax
 import jax.numpy as jnp
+import optax
 
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -15,8 +21,8 @@ RBF = polyharmonic
 MAX_DEGREE = 4
 
 
-RUN_NAME = "LaplaceDiffPhys"
-DATAFOLDER = "./data/" + RUN_NAME +"/"
+RUN_NAME = "LaplaceAdjoint"
+DATAFOLDER = "../data/" + RUN_NAME +"/"
 make_dir(DATAFOLDER)
 # writer = SummaryWriter("runs/"+RUN_NAME)
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
@@ -69,48 +75,74 @@ def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
 
 @Partial(jax.jit, static_argnums=[2])
 def my_rhs_operator(x, centers=None, rbf=None, fields=None):
-    return 0.0
+    return 0.
 
 
-
-### Optimisation start ###
+## Boundary conditions for both primal and adjoint problem
 d_south = jax.jit(lambda x: jnp.sin(2*jnp.pi * x[0]))
 d_east = jax.jit(lambda x: jnp.sinh(2*jnp.pi*x[1]) / (2*jnp.pi * jnp.cosh(2*jnp.pi)))
 d_west = d_east
 
-@jax.jit        ################ TODO TODO TODO don't jitt compile this, jitt the PDE solver instead !!!!
-def loss_fn(bcn):
+
+@jax.jit
+def direct_simulation(bcn):
     sol = pde_solver(diff_operator=my_diff_operator,
                     rhs_operator = my_rhs_operator,
                     cloud = train_cloud, 
                     boundary_conditions = {"South":d_south, "West":d_west, "North":bcn, "East":d_east},
                     rbf=RBF,
                     max_degree=MAX_DEGREE)
+    return sol
 
-    grad_n_y = gradient_vec(xy_north, sol.coeffs, train_cloud.sorted_nodes, RBF)[...,1]
+@jax.jit
+def adjoint_problem(u_coefs):
+    grad_n_y = gradient_vec(xy_north, u_coefs, train_cloud.sorted_nodes, RBF)[...,1]
+
+    sol = pde_solver(diff_operator=my_diff_operator,
+                    rhs_operator = my_rhs_operator,
+                    cloud = train_cloud, 
+                    boundary_conditions = {"South":d_south, "West":d_west, "North":grad_n_y-q_cost, "East":d_east},
+                    rbf=RBF,
+                    max_degree=MAX_DEGREE)
+    return sol
+
+
+
+@jax.jit        ################ TODO TODO TODO don't jitt compile this, jitt the PDE solver instead !!!!
+def loss_fn(u_coeffs):
+    grad_n_y = gradient_vec(xy_north, u_coeffs, train_cloud.sorted_nodes, RBF)[...,1]
 
     loss_cost = (grad_n_y - q_cost)**2
     return jnp.trapz(loss_cost, x=x_north)
 
-
-grad_loss_fn = jax.value_and_grad(loss_fn)
+def grad_loss_fn(lambda_coeffs):
+    return gradient_vec(xy_north, lambda_coeffs, train_cloud.sorted_nodes, RBF)[...,1]
 
 
 # %% 
+
+### Optimisation start ###
 
 optimal_bcn = jnp.zeros((north_ids.shape[0]))
 history_cost = []
 north_mse = []
 
+scheduler = optax.piecewise_constant_schedule(init_value=LR,
+                                            boundaries_and_scales={int(EPOCHS*0.4):0.1, int(EPOCHS*0.8):0.1})
+optimiser = optax.adam(learning_rate=scheduler)
+opt_state = optimiser.init(optimal_bcn)
 
+### Optimsation start ###
 for step in range(1, EPOCHS+1):
 
-    ### Optimsation start ###
-    loss, grad = grad_loss_fn(optimal_bcn)
-    # print("calculated grad = ", grad)
-    learning_rate = LR * (GAMMA**step)
+    u = direct_simulation(optimal_bcn)
+    lamb = adjoint_problem(u.coeffs)
 
-    optimal_bcn = optimal_bcn - grad * learning_rate
+    loss = loss_fn(u.coeffs)
+    grad = grad_loss_fn(lamb.coeffs)
+
+    updates, opt_state = optimiser.update(grad, opt_state, optimal_bcn)
+    optimal_bcn = optax.apply_updates(optimal_bcn, updates)
 
     # writer.add_scalar('loss', float(loss), step)
 
@@ -119,17 +151,17 @@ for step in range(1, EPOCHS+1):
     north_mse.append(north_error)
 
     if step<=3 or step%100==0:
-        print("Epoch: %-5d  LR: %.4f    Loss: %.8f  TestMSE: %.6f" % (step, learning_rate, loss, north_error))
+        print("Epoch: %-5d  InitLR: %.4f    Loss: %.8f  TestMSE: %.6f" % (step, LR, loss, north_error))
 
 
 ### Visualisation at north
-ax = plot(x_north, exact_control, "-", label="Ideal/Analytical", x_label=r"$x$", figsize=(5,3), ylim=(-.2,.2))
-plot(x_north, optimal_bcn, "--", label="Differentiable Physics", ax=ax, title=f"Optimised north solution / MSE = {north_error:.4f}");
+ax = plot(x_north, exact_control, "-", label="Analytical", x_label=r"$x$", figsize=(5,3), ylim=(-.2,.2))
+plot(x_north, optimal_bcn, "--", label="DAL", ax=ax, title=f"Optimised north solution / MSE = {north_error:.4f}");
 # plt.savefig(DATAFOLDER+"bcn_"+str(step)+".png", transparent=True)
 
 
 ax = plot(history_cost, label='Cost objective', x_label='epochs', title="Loss", y_scale="log");
-plot(north_mse, label='Test MSE', x_label='epochs', title="Loss", y_scale="log", ax=ax);
+plot(north_mse, label='Test Error at North', x_label='epochs', title="Loss", y_scale="log", ax=ax);
 
 
 # %%

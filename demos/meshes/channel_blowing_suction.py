@@ -3,8 +3,8 @@ import gmsh
 import sys
 
 
-lc = 0.3
-ref_io = 4           ## Refinement factor to account for Infow/Outflow
+lc = 0.3        ## TODO Set this to 4 !
+ref_io = 8           ## Refinement factor to account for Infow/Outflow
 ref_bs = 8           ## Refinement factor to account for Blowing/Suction
 box_half_length = 0.003
 Lx = 1.5

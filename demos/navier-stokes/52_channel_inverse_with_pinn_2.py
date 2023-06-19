@@ -1,4 +1,7 @@
 #%%
+"""
+Control of Navier-Stokes equation with PINNs (Step 2)
+"""
 
 import jax
 import jax.numpy as jnp
@@ -19,16 +22,16 @@ import time
 #%%
 
 # EXPERIMENET_ID = random_name()
-EXPERIMENET_ID = "ChannelInverseStep1"
+EXPERIMENET_ID = "ChannelInverseStep2"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
 NORM_FACTOR = jnp.array([[1.5, 1.0]])
 
-EPOCHS = 100000
-
 INIT_LR = 1e-3
+
+EPOCHS = 100000
 
 W_mo = 1.
 W_co = 1.
@@ -64,7 +67,7 @@ suction = jax.vmap(lambda x: 0.3)
 zero = jax.vmap(lambda x: 0.)
 atmospheric = jax.vmap(lambda x: Pa)
 
-bc_u = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}            ## Random initialisation of Inflow vel
+bc_u = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}      ## Random initialisation of Inflow vel
 bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":blowing, "Suction":suction}
 bc_p = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Blowing":zero, "Suction":zero}
 
@@ -153,10 +156,11 @@ class MLP(nn.Module):
         else:
             return nn.Dense(self.output_size)(y)
 
-def init_flax_params(net:nn.Module, input_size):
+def init_flax_params(net:nn.Module, input_size, print_network=True):
     init_data = jnp.ones((1,input_size))
     params = net.init(KEY, init_data)
-    print(net.tabulate(KEY, init_data, depth=8, console_kwargs={"force_jupyter":False}))
+    if print_network == True:
+        print(net.tabulate(KEY, init_data, depth=8, console_kwargs={"force_jupyter":False}))
     return params
 
 u_pinn = MLP(input_size=2, nb_layers=5, nb_neurons_per_layer=50, output_size=3)
@@ -181,6 +185,33 @@ c_scheduler = optax.piecewise_constant_schedule(init_value=INIT_LR,
 
 u_optimizer = optax.adam(learning_rate=u_scheduler)
 c_optimizer = optax.adam(learning_rate=c_scheduler)
+
+
+controls_folder = DATAFOLDER[:-2]+"1/"
+controls_folder
+
+
+W_ct_list = []
+control_states = []
+
+for dir in os.listdir(controls_folder):
+    if dir[0] == "c":
+
+        W_ct = float(dir.rsplit("_", 2)[-2])
+
+        prefix = dir.rsplit("_", 1)[0]
+        c_pinn = MLP(input_size=1, nb_layers=3, nb_neurons_per_layer=30, output_size=1)
+        c_params = init_flax_params(c_pinn, 1, False)
+        c_state = train_state.TrainState.create(apply_fn=c_pinn.apply,
+                                        params=c_params,
+                                        tx=c_optimizer)
+        c_state = checkpoints.restore_checkpoint(ckpt_dir=controls_folder, 
+                                                    prefix=prefix+"_", 
+                                                    target=c_state)
+
+        W_ct_list.append(W_ct)
+        control_states.append(c_state)
+
 
 
 #%%
@@ -248,36 +279,34 @@ def loss_fn_ct(params):                 ## TODO make this function pure
     v_out = v(xy_outlet, params)
 
     integrand = (u_out-u_parab)**2 + v_out**2
-
     return 0.5 * jnp.trapz(integrand, x=y_outlet[...,0])
 
 def set_inlet_bc(c_params, u_bc):       ## TODO make this pure
     u_north = c(y_inlet, c_params)
     return u_bc.at[inlet_ids].set(u_north)
 
-def loss_fn(u_params, c_params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, W_ct):
+def loss_fn(u_params, c_params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc):
 
     new_u_bc = set_inlet_bc(c_params, u_bc)
 
     mon, cont = loss_fn_in(u_params, x_in_vel, x_in_p)
     bc = loss_fn_bc(u_params, x_bc_vel, new_u_bc, v_bc, x_bc_p, p_bc)
-    cost = loss_fn_ct(u_params)
 
-    return W_mo*mon + W_co*cont + W_bc*bc + W_ct*cost
+    return W_mo*mon + W_co*cont + W_bc*bc
 
 
 #%%
 
-@partial(jax.jit, static_argnames="W_ct")
-def train_step(u_state, c_state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, W_ct):
+@jax.jit
+def train_step(u_state, c_state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc):
     loss_mon, loss_cont = loss_fn_in(u_state.params, x_in_vel, x_in_p)
     loss_bc = loss_fn_bc(u_state.params, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
     loss_ct = loss_fn_ct(u_state.params)
 
-    u_grads = jax.grad(loss_fn, argnums=0)(u_state.params, c_state.params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, W_ct)
+    u_grads = jax.grad(loss_fn, argnums=0)(u_state.params, c_state.params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
     u_state = u_state.apply_gradients(grads=u_grads)
 
-    c_grads = jax.grad(loss_fn, argnums=1)(u_state.params, c_state.params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, W_ct)
+    c_grads = jax.grad(loss_fn, argnums=1)(u_state.params, c_state.params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
     c_state = c_state.apply_gradients(grads=c_grads)
 
     return u_state, c_state, loss_mon, loss_cont, loss_bc, loss_ct
@@ -285,22 +314,23 @@ def train_step(u_state, c_state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p,
 
 #%%
 
-cost_weights = []
-min_costs_per_weight = []
+### Read all the saved 
+
+
+#%%
+
+costs_vs_weight = []
 loader_keys = jax.random.split(key=KEY, num=EPOCHS)
 
-### Step 1 Line search strategy
-for exp in range(-3, 6):
+### Step 2 Line search strategy
 
-    W_ct = 10**(exp)
+for i, W_ct in enumerate(W_ct_list):
 
     ## Flax training state
     u_state = train_state.TrainState.create(apply_fn=u_pinn.apply,
                                             params=u_params,
                                             tx=u_optimizer)
-    c_state = train_state.TrainState.create(apply_fn=c_pinn.apply,
-                                            params=c_params,
-                                            tx=c_optimizer)
+    c_state = control_states[i]
 
     history_loss_mon = []
     history_loss_cont = []
@@ -310,15 +340,13 @@ for exp in range(-3, 6):
     if len(os.listdir(DATAFOLDER)) > 2:
         print("Found existing networks, loading & training")
         u_state = checkpoints.restore_checkpoint(ckpt_dir=DATAFOLDER, prefix="u_pinn_checkpoint_"+str(W_ct)+"_", target=u_state)
-        c_state = checkpoints.restore_checkpoint(ckpt_dir=DATAFOLDER, prefix="c_pinn_checkpoint_"+str(W_ct)+"_", target=c_state)
 
     else:
         print("Training from scratch")
 
-
     for epoch in range(1,EPOCHS+1):
 
-        u_state, c_state, loss_mon, loss_cont, loss_bc, loss_ct = train_step(u_state, c_state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, W_ct)
+        u_state, c_state, loss_mon, loss_cont, loss_bc, loss_ct = train_step(u_state, c_state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
 
         history_loss_mon.append(loss_mon)
         history_loss_cont.append(loss_cont)
@@ -329,11 +357,9 @@ for exp in range(-3, 6):
             print("Epoch: %-5d      MomentumLoss: %.6f     ContinuityLoss: %.6f   BoundaryLoss: %.6f    CostLoss: %.6f" % (epoch, loss_mon, loss_cont, loss_bc, loss_ct))
 
     checkpoints.save_checkpoint(DATAFOLDER, prefix="u_pinn_checkpoint_"+str(W_ct)+"_", target=u_state, step=u_state.step, overwrite=True)
-    checkpoints.save_checkpoint(DATAFOLDER, prefix="c_pinn_checkpoint_"+str(W_ct)+"_", target=c_state, step=c_state.step, overwrite=True)
     print("Training done, saved networks")
 
-    cost_weights.append(W_ct)
-    min_costs_per_weight.append((jnp.array(history_loss_ct)).min())
+    costs_vs_weight.append(loss_ct)
 
 
 ## %%
@@ -357,8 +383,8 @@ for exp in range(-3, 6):
     vel_pinn = jnp.linalg.norm(vals_pinn[:, :2], axis=-1)
     print("After training:")
 
-    cloud_vel.visualize_field(vel_pinn, cmap="jet", projection="2d", title="PINN velocity", ax=ax[0]);
-    cloud_p.visualize_field(p_pinn, cmap="jet", projection="2d", title="PINN pressure", ax=ax[1]);
+    cloud_vel.visualize_field(vel_pinn, cmap="jet", projection="2d", title="PINN forward velocity", ax=ax[0]);
+    cloud_p.visualize_field(p_pinn, cmap="jet", projection="2d", title="PINN forward pressure", ax=ax[1]);
 
 
 ## %%
@@ -384,6 +410,12 @@ for exp in range(-3, 6):
 
 # %%
 
-plot(cost_weights, min_costs_per_weight, ".-", title='Minimal costs vs. weights', x_label='cost weights', y_label='cost', x_scale="log", y_scale="log", figsize=(6,3));
+W_ct_list = jnp.array(W_ct_list)
+costs_vs_weight = jnp.array(costs_vs_weight)
+ordering = jnp.argsort(W_ct_list)
+
+plot(W_ct_list[ordering], costs_vs_weight[ordering], ".-", title='Step2: Inverse PINN', x_label='cost weights' , y_label='cost', x_scale="log", y_scale="log", figsize=(6,3));
+
+## SOlution: PICK Weight = 0.1 !
 
 # %%

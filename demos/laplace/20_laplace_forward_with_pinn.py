@@ -1,5 +1,9 @@
 #%%
 
+"""
+Control of Laplace equation with PINNs (Preliminary step)
+"""
+
 import jax
 import jax.numpy as jnp
 import flax.linen as nn

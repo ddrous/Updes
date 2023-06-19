@@ -1,9 +1,14 @@
 
 # %%
+"""
+Control of Navier Stokes equation with DAL (Adjoint fomulation)
+"""
+
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
 from functools import partial
+import optax
 from tqdm import tqdm
 jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on Daffy Duck !
 
@@ -13,8 +18,23 @@ import sys
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "ChannelAdjoint2"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
-make_dir(DATAFOLDER)
+# make_dir(DATAFOLDER)
 
+
+# %%
+# Some fake params.
+
+# new_optimal_u_inflow, treedef = jax.tree_util.tree_flatten(optimal_u_inflow)
+# # print(new_optimal_u_inflow)
+# # jax.tree_util.tree_unflatten(treedef, new_optimal_u_inflow)
+# optimiser = optax.adam(learning_rate=1e-4)
+# grad = jax.tree_util.tree_unflatten(treedef, grad)
+
+# opt_state = optimiser.init(optimal_u_inflow)
+# # grad
+# # opt_state
+# # optimal_u_inflow
+# updates, opt_state = optimiser.update(grad, opt_state, optimal_u_inflow)
 
 # %%
 
@@ -26,7 +46,7 @@ MAX_DEGREE = 4
 Re = 100        ## Make sure the same constants are used for the forward problem
 Pa = 0.
 
-NB_ITER = 50    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
+NB_ITER = 3    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 
 
 # %%
@@ -51,35 +71,49 @@ cloud_mu.visualize_normals(ax=ax2,title="Normals for mu", zoom_region=(0.4,0.6,-
 
 
 
-# @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_l1(x, center=None, rbf=None, monomial=None, fields=None):
-    lambda_val = jnp.array([nodal_value(x, center, rbf, monomial), fields[0]])
-    U_val = jnp.array([fields[1], fields[2]])
-    U_grad_T = jnp.array([fields[3], fields[4]])
+    U_val = jnp.array([fields[0], fields[1]])
+    lambda_U_grad_T = fields[2]
     lambda_grad = nodal_gradient(x, center, rbf, monomial)
     lambda_lap = nodal_laplacian(x, center, rbf, monomial)
-    return jnp.dot(lambda_val, U_grad_T) + jnp.dot(U_val, lambda_grad) - lambda_lap/Re
+    return lambda_U_grad_T - jnp.dot(U_val, lambda_grad) - lambda_lap/Re  ## TODO: the first term can be passsed directly
+
+
+# def diff_operator_l1(x, center=None, rbf=None, monomial=None, fields=None):
+#     lambda_val = jnp.array([fields[0], fields[1]])
+#     U_val = jnp.array([fields[2], fields[3]])
+#     U_grad_T = jnp.array([fields[4], fields[5]])
+#     lambda_grad = nodal_gradient(x, center, rbf, monomial)
+#     lambda_lap = nodal_laplacian(x, center, rbf, monomial)
+#     return jnp.dot(lambda_val, U_grad_T) - jnp.dot(U_val, lambda_grad) - lambda_lap/Re  ## TODO: the first term can be passsed directly
 
 # @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_l1(x, centers=None, rbf=None, fields=None):
     grad_pi_x = gradient(x, fields[:, 0], centers, rbf)[0]
-    return -grad_pi_x
-
-
+    return grad_pi_x
 
 # @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_l2(x, center=None, rbf=None, monomial=None, fields=None):
-    lambda_val = jnp.array([fields[0], nodal_value(x, center, rbf, monomial)])
-    U_val = jnp.array([fields[1], fields[2]])
-    U_grad_T = jnp.array([fields[3], fields[4]])
+    U_val = jnp.array([fields[0], fields[1]])
+    lambda_U_grad_T = fields[2]
     lambda_grad = nodal_gradient(x, center, rbf, monomial)
     lambda_lap = nodal_laplacian(x, center, rbf, monomial)
-    return jnp.dot(lambda_val, U_grad_T) + jnp.dot(U_val, lambda_grad) - lambda_lap/Re
+    return lambda_U_grad_T - jnp.dot(U_val, lambda_grad) - lambda_lap/Re
+
+
+# # @Partial(jax.jit, static_argnums=[2,3])
+# def diff_operator_l2(x, center=None, rbf=None, monomial=None, fields=None):
+#     lambda_val = jnp.array([fields[0], fields[1]])
+#     U_val = jnp.array([fields[2], fields[3]])
+#     U_grad_T = jnp.array([fields[4], fields[5]])
+#     lambda_grad = nodal_gradient(x, center, rbf, monomial)
+#     lambda_lap = nodal_laplacian(x, center, rbf, monomial)
+#     return jnp.dot(lambda_val, U_grad_T) - jnp.dot(U_val, lambda_grad) - lambda_lap/Re
 
 # @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_l2(x, centers=None, rbf=None, fields=None):
     grad_pi_y = gradient(x, fields[:, 0], centers, rbf)[1]
-    return  -grad_pi_y
+    return  grad_pi_y
 
 
 
@@ -104,8 +138,10 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
     """ Simulates a adjoint Navier Stokes problem using an iterative approach """
 
 
-    lambda1 = jnp.zeros((cloud_lamb.N,))
-    lambda2 = jnp.zeros((cloud_lamb.N,))
+    l1 = jnp.zeros((cloud_lamb.N,))
+    l2 = jnp.zeros((cloud_lamb.N,))
+    L = jnp.stack([l1, l2], axis=-1)
+
     # out_nodes_lamb = jnp.array(cloud_lamb.facet_nodes["Outflow"])
 
     pi_ = jnp.zeros((cloud_mu.N,))       ## on cloud_mu        ##TODO set this to p_a on Outlet
@@ -147,22 +183,31 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
     grad_u = interpolate_field(grad_u, cloud_vel, cloud_lamb)   ## TODO Check this !
     grad_v = interpolate_field(grad_v, cloud_vel, cloud_lamb)
 
+    grad_U_x = jnp.stack([grad_u[:,0], grad_v[:,0]], axis=-1)
+    grad_U_y = jnp.stack([grad_u[:,1], grad_v[:,1]], axis=-1)
+
+    dot_batched = jax.vmap(jnp.dot, in_axes=(0, 0))
+
     bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab+pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
     bc_l2 = {"Wall":zero, "Inflow":zero, "Outflow":(-u2*Re, u1*Re), "Blowing":zero, "Suction":zero}
     bc_mu = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}
 
 
-    l1_list = [lambda1]
-    l2_list = [lambda2]
+    l1_list = [l1]
+    l2_list = [l2]
     lnorm_list = []
     pi_list = [pi_]
 
-    for i in tqdm(range(NB_ITER)):
+    # for i in tqdm(range(NB_ITER)):
+    for i in range(NB_ITER):
 
         pi = interpolate_field(pi_, cloud_mu, cloud_lamb)
 
+        lambda_U_grad_T_x = dot_batched(L, grad_U_x)
+
         l1sol = pde_solver_jit(diff_operator=diff_operator_l1, 
-                        diff_args=[lambda2, u, v, grad_u[:,0], grad_v[:,0]],
+                        # diff_args=[l1, l2, u, v, grad_u[:,0], grad_v[:,0]],
+                        diff_args=[u, v, lambda_U_grad_T_x],
                         rhs_operator = rhs_operator_l1, 
                         rhs_args=[pi],
                         cloud = cloud_lamb,
@@ -170,8 +215,11 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
 
+        lambda_U_grad_T_y = dot_batched(L, grad_U_y)
+
         l2sol = pde_solver_jit(diff_operator=diff_operator_l2,
-                        diff_args=[lambda1, u, v, grad_u[:,1], grad_v[:,1]],
+                        # diff_args=[l1, l2, u, v, grad_u[:,1], grad_v[:,1]],
+                        diff_args=[u, v, lambda_U_grad_T_y],
                         rhs_operator = rhs_operator_l2,
                         rhs_args=[pi], 
                         cloud = cloud_lamb, 
@@ -204,7 +252,6 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
         l1, l2 = L[:,0], L[:,1]
         lnorm = jnp.linalg.norm(L, axis=-1)
 
-        # print("Maximums of lambda 1 and 2:", jnp.max(l1), jnp.max(l2))
 
         l1_list.append(l1)
         l2_list.append(l2)
@@ -259,9 +306,9 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
 
 ## Constants
-LR = 1e-3
-GAMMA = 1
-EPOCHS = 10      ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
+LR = 5e-2
+GAMMA = 0.995
+EPOCHS = 40     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)
@@ -286,7 +333,7 @@ parabolic = jax.jit(lambda x: 4*x[1]*(1.-x[1]))
 u_parab = jax.vmap(parabolic)(cloud_vel.sorted_nodes[out_nodes_vel])
 u_zero = jax.vmap(zero)(cloud_vel.sorted_nodes[out_nodes_vel])
 
-# @jax.jit
+@jax.jit
 def cost_val_fn(u, v, u_parab):
     u_out = u[out_nodes_vel]
     v_out = v[out_nodes_vel]
@@ -294,18 +341,16 @@ def cost_val_fn(u, v, u_parab):
     integrand = (u_out-u_parab)**2 + v_out**2
     return 0.5 * jnp.trapz(integrand, x=y_out)
 
-# @jax.jit
+@jax.jit
 def cost_grad_fn(l1, pi_):
     grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[in_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
     # grad_l1 = cartesian_gradient_vec(range(cloud_lamb.N), l1, cloud_lamb)
-    return pi_[in_nodes_pi] - grad_l1[:, 0]/Re
+    return -pi_[in_nodes_pi] + grad_l1[:, 0]/Re
 
 
 forward_sim_args = {"cloud_vel":cloud_vel,
                     "cloud_phi": cloud_phi,
                     "inflow_control":None,
-                    # "Re":Re,
-                    # "Pa":Pa,
                     "NB_ITER":NB_ITER,
                     "RBF":RBF,
                     "MAX_DEGREE":MAX_DEGREE    
@@ -321,10 +366,15 @@ adjoint_sim_args = {"cloud_lamb":cloud_lamb,
 
 
 optimal_u_inflow = jnp.zeros(in_nodes_lamb.shape)       ## Optimised quantity
-
+scheduler = optax.piecewise_constant_schedule(init_value=LR,
+                                            boundaries_and_scales={int(EPOCHS*0.4):0.1, int(EPOCHS*0.8):0.1})
+optimiser = optax.adam(learning_rate=scheduler)
+opt_state = optimiser.init(optimal_u_inflow)
 
 history_cost = []
 parab_out_mse = []
+
+
 
 
 for step in range(1, EPOCHS+1):
@@ -348,34 +398,37 @@ for step in range(1, EPOCHS+1):
     ### Optimsation start ###
     loss = cost_val_fn(u_list[-1], v_list[-1], u_parab)
     grad = cost_grad_fn(l1_list[-1], pi_list[-1])
-    learning_rate = LR * (GAMMA**step)
 
-    optimal_u_inflow = optimal_u_inflow - grad * learning_rate          ## Gradient descent !
+    # learning_rate = LR * (GAMMA**step)
+    # optimal_u_inflow = optimal_u_inflow - grad * learning_rate          ## Gradient descent !
+
+    updates, opt_state = optimiser.update(grad, opt_state, optimal_u_inflow)
+    optimal_u_inflow = optax.apply_updates(optimal_u_inflow, updates)
 
     parab_error = jnp.mean((u_list[-1][out_nodes_vel] - u_parab)**2)
     history_cost.append(loss)
     parab_out_mse.append(parab_error)
 
-    if step<=3 or step%1==0:
-        print("\nEpoch: %-5d  LR: %.4f    Loss: %.10f    GradNorm: %.4f  TestMSE: %.6f" % (step, learning_rate, loss, jnp.linalg.norm(grad), parab_error))
+    if step<=30 or step%2==0:
+        print("\nEpoch: %-5d  InitLR: %.4f    Loss: %.10f    GradNorm: %.4f  TestMSE: %.6f" % (step, LR, loss, jnp.linalg.norm(grad), parab_error))
 
 
-    fig, (ax1, ax2) = plt.subplots(1,2, figsize=(6*2,5))
+        fig, (ax1, ax2) = plt.subplots(1,2, figsize=(6*2,5))
 
-    plot(u_parab, y_out, "-", label=r"$u$ target", y_label=r"$y$", xlim=(-0.1, 1.1), figsize=(5,3), ax=ax1)
-    plot(u_list[-1][out_nodes_vel], y_out, "--", label=r"$u$ DAL", ax=ax1, title=f"Outlet velocity / MSE = {parab_error:.4f}");
-    plot(u_zero, y_out, "-", label=r"$v$ target", y_label=r"$y$", ax=ax1)
-    plot(v_list[-1][out_nodes_vel], y_out, "--", label=r"$v$ DAL", ax=ax1);
+        plot(u_parab, y_out, "-", label=r"$u$ target", y_label=r"$y$", xlim=(-0.1, 1.1), figsize=(5,3), ax=ax1)
+        plot(u_list[-1][out_nodes_vel], y_out, "--", label=r"$u$ DAL", ax=ax1, title=f"Outlet velocity / MSE = {parab_error:.4f}");
+        plot(u_zero, y_out, "-", label=r"$v$ target", y_label=r"$y$", ax=ax1)
+        plot(v_list[-1][out_nodes_vel], y_out, "--", label=r"$v$ DAL", ax=ax1);
 
-    print("Optimized inflow vel:", optimal_u_inflow)
-    plot(optimal_u_inflow, y_in, "--", label="Optimised DAL", ax=ax2, xlim=None, title=f"Inflow velocity");
+        print("Optimized inflow vel:", optimal_u_inflow)
+        plot(optimal_u_inflow, y_in, "--", label="Optimised DAL", ax=ax2, xlim=None, title=f"Inflow velocity");
 
-    plt.show()
+        plt.show()
 
 
 #%%
-ax = plot(history_cost, label='Cost objective', x_label='epochs', title="Loss", y_scale="log");
-plot(parab_out_mse, label='Test MSE at outlet', x_label='epochs', title="Loss", y_scale="log", ax=ax);
+ax = plot(history_cost[:], label='Cost objective', x_label='epochs', title="Loss", y_scale="log");
+plot(parab_out_mse[:], label='Test MSE at outlet', x_label='epochs', title="Loss", y_scale="log", ax=ax);
 
 
 #%%

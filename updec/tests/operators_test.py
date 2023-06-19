@@ -7,9 +7,10 @@ from updec import *
 seed = random.randint(0,100)
 seed = 12
 
-EXPERIMENET_ID = random_name()
+# EXPERIMENET_ID = random_name()
+EXPERIMENET_ID = "98539"
 DATAFOLDER = "../../demos/data/" + EXPERIMENET_ID +"/"
-make_dir(DATAFOLDER)
+# make_dir(DATAFOLDER)
 
 
 # %%
@@ -22,8 +23,12 @@ make_dir(DATAFOLDER)
 
 
 # facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n"}
-facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n", "Cylinder":"n"}
-cloud = GmshCloud(filename="../../demos/meshes/channel_cylinder.py", facet_types=facet_types, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+# facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n", "Cylinder":"n"}
+# cloud = GmshCloud(filename="../../demos/meshes/channel_cylinder.py", facet_types=facet_types, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+
+facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n", "Blowing":"n", "Suction":"n"}
+
+cloud = GmshCloud(filename="../../demos/meshes/channel_blowing_suction.py", facet_types=facet_types, mesh_save_location=DATAFOLDER)
 
 cloud.visualize_cloud(figsize=(8.5,2.5), s=6, title=r"Cloud for $\phi$");
 fig, ax = plt.subplots(1, 2, figsize=(5.5*2,5))
@@ -35,8 +40,8 @@ cloud.visualize_normals(ax=ax[1], title="Normals for phi", zoom_region=(7.75,8.2
 # %%
 
 EPS = 10.0
-# RBF = partial(gaussian, eps=EPS)      ## Can define which rbf to use
-RBF = partial(polyharmonic, a=1)
+RBF = partial(gaussian, eps=EPS)      ## Can define which rbf to use
+# RBF = partial(polyharmonic, a=1)
 # RBF = partial(thin_plate, a=3)
 MAX_DEGREE = 4
 
@@ -47,7 +52,9 @@ const = lambda x: seed
 zero = lambda x: 0.
 # bc = {"North":const, "South":const, "East":const, "West":const}
 # bc = {"Wall":const, "Inflow":const, "Outflow":const}
-bc = {"Wall":const, "Inflow":const, "Outflow":const, "Cylinder":const}
+# bc = {"Wall":const, "Inflow":const, "Outflow":const, "Cylinder":const}
+bc = {"Wall":const, "Inflow":const, "Outflow":const, "Blowing":const, "Suction":const}
+
 for k in bc.keys():
     if facet_types[k] == "n":
         bc[k] = zero

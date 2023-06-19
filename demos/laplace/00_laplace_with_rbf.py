@@ -1,4 +1,9 @@
 # %%
+
+"""
+Test of the Updec package on the Laplace equation with RBFs
+"""
+
 import os
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
 import time

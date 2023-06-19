@@ -32,7 +32,7 @@ def pyvista_animation(folderpath, fieldname, duration=10, vmin=None, vmax=None):
     mesh.point_data[fieldname] = field[0]  ## Just create the data field
     mesh.point_data[fieldname][renumb_map] = field[0]
 
-    plt = pv.Plotter()
+    plt = pv.Plotter(notebook=True)
     # Open a movie file
     nbframes = field.shape[0]
     plt.open_movie(videoname, framerate=nbframes/duration)
@@ -45,7 +45,7 @@ def pyvista_animation(folderpath, fieldname, duration=10, vmin=None, vmax=None):
     plt.add_mesh(mesh, scalars=fieldname, clim=[vmin, vmax])
 
     plt.view_xy()
-    plt.show(auto_close=False)  # only necessary for an off-screen movie
+    plt.show(auto_close=False, jupyter_backend='ipyvtklink')  # only necessary for an off-screen movie
 
     # Run through each frame
     plt.write_frame()  # write initial data

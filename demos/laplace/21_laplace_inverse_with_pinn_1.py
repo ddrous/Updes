@@ -1,4 +1,7 @@
 #%%
+"""
+Control of Laplace equation with PINNs (Step 1)
+"""
 
 import jax
 import jax.numpy as jnp
@@ -13,13 +16,12 @@ from functools import partial
 from updec.utils import plot, dataloader, make_dir, random_name
 from updec.cloud import SquareCloud
 import time
-from copy import deepcopy
 
 
 #%%
 
 # EXPERIMENET_ID = random_name()
-EXPERIMENET_ID = "LaplaceStep2"
+EXPERIMENET_ID = "LaplaceStep1"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
@@ -37,7 +39,7 @@ W_bc = 1.
 
 facet_types={"North":"d", "South":"d", "West":"d", "East":"d"}
 
-train_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=None)     ## TODO Like Diff Phys, train on square cloud
+train_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=None)     ## Train set is same as test set, regular !
 
 # test_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=None)
 test_cloud = train_cloud
@@ -109,17 +111,20 @@ class MLP(nn.Module):
             y = nn.Dense(self.nb_neurons_per_layer)(y)
         return nn.Dense(1)(y)[...,0]
 
-def init_flax_params(net:nn.Module, input_size, print_params=True):
+def init_flax_params(net:nn.Module, input_size):
     init_data = jnp.ones((1,input_size))
     params = net.init(KEY, init_data)
-    if print_params:
-        print(net.tabulate(KEY, init_data, depth=8, console_kwargs={"force_jupyter":False}))
+    print(net.tabulate(KEY, init_data, depth=8, console_kwargs={"force_jupyter":False}))
     return params
 
 u_pinn = MLP(input_size=2, nb_layers=4, nb_neurons_per_layer=50)
+c_pinn = MLP(input_size=1, nb_layers=3, nb_neurons_per_layer=30)
 
 print("Solution PINN archtecture: ")
 u_params = init_flax_params(u_pinn, 2)
+
+print("Control PINN archtecture: ")
+c_params = init_flax_params(c_pinn, 1)
 
 
 #%%
@@ -153,11 +158,11 @@ def laplace_exact_control(x):
     PI = jnp.pi
     return (jnp.sin(2*PI*x)/jnp.cosh(2*PI)) + (jnp.cos(2*PI*x)*jnp.tanh(2*PI)/(2*PI))
 
-# pinn_control = c_pinn.apply(c_params, x_north)
+pinn_control = c_pinn.apply(c_params, x_north)
 exact_control = jax.vmap(laplace_exact_control)(x_north)
 
-# ax = plot(x_north, pinn_control, label="Untrained PINN control", x_label=r"$x$", figsize=(6,3));
-ax = plot(x_north, exact_control, label="Exact control", x_label=r"$x$", figsize=(6,3));
+ax = plot(x_north, pinn_control, label="Untrained PINN control", x_label=r"$x$", figsize=(6,3));
+ax = plot(x_north, exact_control, label="Exact control", x_label=r"$x$", ax=ax);
 
 
 #%%
@@ -175,34 +180,13 @@ u_optimizer = optax.adam(learning_rate=u_scheduler)
 c_optimizer = optax.adam(learning_rate=c_scheduler)
 # optimizer = optax.sgd(learning_rate=scheduler)
 
-
-controls_folder = DATAFOLDER[:-2]+"1/"
-controls_folder
-
-os.listdir(controls_folder)
-
-
-W_ct_list = []
-control_states = []
-
-for dir in os.listdir(controls_folder):
-    if dir[0] == "c":
-
-        W_ct = float(dir.rsplit("_", 2)[-2])
-
-        prefix = dir.rsplit("_", 1)[0]
-        c_pinn = MLP(input_size=1, nb_layers=3, nb_neurons_per_layer=30)
-        c_params = init_flax_params(c_pinn, 1, False)
-        c_state = train_state.TrainState.create(apply_fn=c_pinn.apply,
-                                        params=c_params,
-                                        tx=c_optimizer)
-        c_state = checkpoints.restore_checkpoint(ckpt_dir=controls_folder, 
-                                                    prefix=prefix+"_", 
-                                                    target=c_state)
-
-        W_ct_list.append(W_ct)
-        control_states.append(c_state)
-
+# ## Flax training state
+# u_state = train_state.TrainState.create(apply_fn=u_pinn.apply,
+#                                         params=u_params,
+#                                         tx=u_optimizer)
+# c_state = train_state.TrainState.create(apply_fn=c_pinn.apply,
+#                                         params=c_params,
+#                                         tx=c_optimizer)
 
 
 #%%
@@ -259,7 +243,8 @@ def loss_fn(u_params, c_params, x_in, x_bc, u_bc, north_ids, q_cost, W_ct):
     new_u_bc = set_north_bc(c_params, u_bc, north_ids, x_bc)
 
     return W_in*loss_fn_in(u_params, x_in) \
-            + W_bc*loss_fn_bc(u_params, x_bc, new_u_bc)
+            + W_bc*loss_fn_bc(u_params, x_bc, new_u_bc) \
+            + W_ct*loss_fn_ct(u_params, north_ids, x_bc, q_cost)
 
 
 #%%
@@ -273,7 +258,19 @@ def train_step(u_state, c_state, x_in, x_bc, u_bc, north_ids, q_cost, W_ct):
     u_grads = jax.grad(loss_fn, argnums=0)(u_state.params, c_state.params, x_in, x_bc, u_bc, north_ids, q_cost, W_ct)
     u_state = u_state.apply_gradients(grads=u_grads)
 
+    c_grads = jax.grad(loss_fn, argnums=1)(u_state.params, c_state.params, x_in, x_bc, u_bc, north_ids, q_cost, W_ct)
+    c_state = c_state.apply_gradients(grads=c_grads)
+
     return u_state, c_state, loss_in, loss_bc, loss_ct
+
+# @jax.jit
+# def test_step(state, x_test, u_exact):
+#     u_pred = u(x_test, state.params)
+#     error_diff = optax.l2_loss(u_pred-u_exact)
+
+#     error_exact = optax.l2_loss(u_exact)
+
+#     return jnp.mean(error_diff) / jnp.mean(error_exact)
 
 
 # history_loss_in = []
@@ -282,26 +279,24 @@ def train_step(u_state, c_state, x_in, x_bc, u_bc, north_ids, q_cost, W_ct):
 # # history_loss_test = []
 
 
-
 #%%
 
-### Read all the saved 
-
-
-#%%
-
-costs_vs_weight = []
+cost_weights = []
+min_costs_per_weight = []
 loader_keys = jax.random.split(key=KEY, num=EPOCHS)
 
-### Step 2 Line search strategy
+### Step 1 Line search strategy
+for exp in range(-3, 8):
 
-for i, W_ct in enumerate(W_ct_list):
+    W_ct = 10**(exp)
 
     ## Flax training state
     u_state = train_state.TrainState.create(apply_fn=u_pinn.apply,
                                             params=u_params,
                                             tx=u_optimizer)
-    c_state = control_states[i]
+    c_state = train_state.TrainState.create(apply_fn=c_pinn.apply,
+                                            params=c_params,
+                                            tx=c_optimizer)
 
     history_loss_in = []
     history_loss_bc = []
@@ -310,6 +305,7 @@ for i, W_ct in enumerate(W_ct_list):
     if len(os.listdir(DATAFOLDER)) != 0:
         print("Found existing networks, loading & training")
         u_state = checkpoints.restore_checkpoint(ckpt_dir=DATAFOLDER, prefix="u_pinn_checkpoint_"+str(W_ct)+"_", target=u_state)
+        c_state = checkpoints.restore_checkpoint(ckpt_dir=DATAFOLDER, prefix="c_pinn_checkpoint_"+str(W_ct)+"_", target=c_state)
 
     else:
         print("Training from scratch")
@@ -330,25 +326,35 @@ for i, W_ct in enumerate(W_ct_list):
             loss_epch_bc += loss_bc
             loss_epch_ct += loss_ct
 
+        # loss_test = test_step(state, x_test, exact_sol)
+
         history_loss_in.append(loss_epch_in)
         history_loss_bc.append(loss_epch_bc)
         history_loss_ct.append(loss_epch_ct)
+        # history_loss_test.append(loss_test)
 
         if epoch<=3 or epoch%1000==0:
             print("Epoch: %-5d      ResidualLoss: %.6f     BoundaryLoss: %.6f   CostLoss: %.6f" % (epoch, loss_epch_in, loss_epch_bc, loss_epch_ct))
 
     checkpoints.save_checkpoint(DATAFOLDER, prefix="u_pinn_checkpoint_"+str(W_ct)+"_", target=u_state, step=u_state.step, overwrite=True)
+    checkpoints.save_checkpoint(DATAFOLDER, prefix="c_pinn_checkpoint_"+str(W_ct)+"_", target=c_state, step=c_state.step, overwrite=True)
     print("Training done, saved networks")
 
-    costs_vs_weight.append(loss_epch_ct)
+    cost_weights.append(W_ct)
+    min_costs_per_weight.append((jnp.array(history_loss_ct)).min())
 
 
 ## %%
 
-    fig, ax = plt.subplots(1, 1, figsize=(6*1,4))
-    plot(history_loss_in[:], label='Residual', x_label='epochs', y_scale="log", ax=ax)
-    plot(history_loss_bc[:], label='Boundary', x_label='epochs', y_scale="log", ax=ax);
-    plot(history_loss_ct[:], label='Cost', x_label='epochs', title="Cost weight: "+str(W_ct), y_scale="log", ax=ax);
+    fig, ax = plt.subplots(1, 2, figsize=(6*2,4))
+
+    plot(history_loss_in[:], label='Residual', x_label='epochs', y_scale="log", ax=ax[0])
+    plot(history_loss_bc[:], label='Boundary', x_label='epochs', title="Cost Weight: "+str(W_ct), y_scale="log", ax=ax[0]);
+    # plot(history_loss_ct[:], label='Cost', x_label='epochs', y_scale="log", ax=ax[0]);
+
+    # plot(history_loss_test[:], label='PINN Test Error', x_label='epochs', y_scale="log", ax=ax[1]);
+    plot(history_loss_ct[:], label='Cost', x_label='epochs', title="Cost Weight: "+str(W_ct), y_scale="log", ax=ax[1]);
+    # plt.show()
 
 
 ##%%
@@ -357,7 +363,7 @@ for i, W_ct in enumerate(W_ct_list):
     pinn_sol = u_pinn.apply(u_state.params, x_test)         ## For plotting
     print("After training:")
 
-    plt.suptitle("Cost weight: "+str(W_ct))
+    plt.suptitle("Loss Wieght: "+str(W_ct))
     test_cloud.visualize_field(pinn_sol, cmap="jet", projection="2d", title="PINN forward solution", figsize=(6,5), ax=ax[0]);
 
     # test_cloud.visualize_field(exact_sol, cmap="jet", projection="2d", title="Exact solution", figsize=(6,5), ax=ax[0]);
@@ -375,17 +381,12 @@ for i, W_ct in enumerate(W_ct_list):
     ax = plot(x_north, pinn_control, label="PINN control", title="Cost weight: "+str(W_ct), x_label=r"$x$", ax=ax);
     ax = plot(x_north, pinn_sol_control, "--", label="PINN solution at North", ax=ax);
 
+
     plt.show()
 
 
 # %%
 
-W_ct_list = jnp.array(W_ct_list)
-costs_vs_weight = jnp.array(costs_vs_weight)
-ordering = jnp.argsort(W_ct_list)
-
-plot(W_ct_list[ordering], costs_vs_weight[ordering], ".-", title='Step2: Inverse PINN', x_label='cost weights' , y_label='cost', x_scale="log", y_scale="log", figsize=(6,3));
-
-## SOlution: PICK Weight = 0.1
+plot(cost_weights, min_costs_per_weight, ".-", title='Minimal costs vs. weights', x_label='cost weights', y_label='cost', x_scale="log", y_scale="log", figsize=(6,3));
 
 # %%

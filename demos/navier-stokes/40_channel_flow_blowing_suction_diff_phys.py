@@ -1,10 +1,15 @@
 # %%
+"""
+Control of Navier-Stokes equation with differentiable physics
+"""
+
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
+import optax
 from functools import partial
 from tqdm import tqdm
-jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on Daffy Duck !
+jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on Daffy Duck !``
 
 from updec import *
 
@@ -14,7 +19,7 @@ from updec import *
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "ChannelDiffPhys"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
-make_dir(DATAFOLDER)
+# make_dir(DATAFOLDER)
 
 
 # %%
@@ -26,7 +31,7 @@ MAX_DEGREE = 4
 Re = 100
 Pa = 0.
 
-NB_ITER = 5
+NB_ITER = 3
 
 
 # %%
@@ -190,8 +195,13 @@ def simulate_forward_navier_stokes(cloud_vel,
 
 # %%
 
+# test_u_inflow = jnp.array([6.48059152e-05, -1.91390260e-05, -4.44326238e-05, -7.00814192e-03, -1.10402573e-01,  4.75611668e-05,  6.73281570e-05])
+
+# test_u_inflow = jnp.zeros(len(cloud_vel.facet_nodes["Inflow"]))
+
+
 # print(f"\nStarting RBF simulation with {cloud_vel.N} nodes\n")
-# u_list, v_list, vel_list, p_list = simulate_forward_navier_stokes(cloud_vel, cloud_phi)
+# u_list, v_list, vel_list, p_list = simulate_forward_navier_stokes(cloud_vel, cloud_phi, inflow_control=test_u_inflow)
 
 # print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
 
@@ -212,8 +222,18 @@ def simulate_forward_navier_stokes(cloud_vel,
 # pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=0.0, vmax=1.08)
 # pyvista_animation(DATAFOLDER, "p", duration=5, vmin=-0.15, vmax=0.45)
 
+# # pyvista_animation(DATAFOLDER, "vel", duration=5)
+# # pyvista_animation(DATAFOLDER, "p", duration=5)
+
+# vel_arr_prt = jnp.stack(vel_list, axis=0)
+# print("max and min vels:", jnp.max(vel_arr_prt), jnp.min(vel_arr_prt))
 
 # %%
+
+
+
+
+
 
 
 
@@ -234,8 +254,8 @@ def simulate_forward_navier_stokes(cloud_vel,
 
 ## Constants
 LR = 1e-1
-GAMMA = 0.99995
-EPOCHS = 10      ## More than enough for 50 iter and 360 nodes
+GAMMA = 0.995
+EPOCHS = 580      ## More than enough for 50 iter and 360 nodes
 
 
 out_nodes_vel = jnp.array(cloud_vel.facet_nodes["Outflow"])
@@ -264,35 +284,74 @@ forward_sim_args = {"cloud_vel":cloud_vel,
                     "MAX_DEGREE":MAX_DEGREE    
                     }
 
-# @jax.jit
+@jax.jit
 def loss_fn(u_inflow):
     forward_sim_args["inflow_control"] = u_inflow
     u_list, v_list, _, _ = simulate_forward_navier_stokes(**forward_sim_args)
+
+    # print("I GOT CALLED WITH u_inflow:\n", u_inflow, "\n and u_final is:\n", u_list[-1])
 
     return cost_val_fn(u_list[-1], v_list[-1])
 
 grad_loss_fn = jax.value_and_grad(loss_fn)
 
+
+
+
+
+los_fn_vec = jax.vmap(loss_fn, in_axes=0, out_axes=0)
+
+@jax.jit
+def new_grad_loss_fn(u_inflow):
+    t = 1e-6
+    # n = u_inflow.shape[0]
+    h = jnp.diag(jnp.ones_like(u_inflow))
+
+    # grad = jnp.zeros_like(u_inflow)
+    # for i in range(u_inflow.shape[0]):
+    #     part[i] = loss_fn(u_inflow + t*h[i]) - loss_fn(u_inflow - t*h[i])
+
+    val = loss_fn(u_inflow)
+
+    # grad = (los_fn_vec(u_inflow + t*h) - los_fn_vec(u_inflow - t*h)) / (2*t)
+
+    grad = (los_fn_vec(u_inflow + t*h) - val*jnp.ones_like(u_inflow)) / (t)
+
+    # print("I GOT CALLED WITH\n", u_inflow, "\nand val is\n", val, "\nand grad is\n", grad)
+
+    return val, grad
+
+
+
 optimal_u_inflow = jnp.zeros(in_nodes_p.shape)       ## Optimised quantity
+scheduler = optax.piecewise_constant_schedule(init_value=LR,
+                                            boundaries_and_scales={int(EPOCHS*0.4):0.1, int(EPOCHS*0.8):0.1})
+optimiser = optax.adam(learning_rate=scheduler)
+opt_state = optimiser.init(optimal_u_inflow)
 
 history_cost = []
 
 for step in range(1, EPOCHS+1):
 
     loss, grad = grad_loss_fn(optimal_u_inflow)
-    learning_rate = LR * (GAMMA**step)
+    # loss, grad = new_grad_loss_fn(optimal_u_inflow)
 
-    optimal_u_inflow = optimal_u_inflow - grad * learning_rate
+    # learning_rate = LR * (GAMMA**step)
+    # optimal_u_inflow = optimal_u_inflow - grad * learning_rate
+
+    updates, opt_state = optimiser.update(grad, opt_state, optimal_u_inflow)
+    optimal_u_inflow = optax.apply_updates(optimal_u_inflow, updates)
 
     history_cost.append(loss)
 
-    if step<=3 or step%1==0:
-        print("\nEpoch: %-5d  LR: %.4f    Loss: %.10f    GradNorm: %.4f" % (step, learning_rate, loss, jnp.linalg.norm(grad)))
+    if step<=3 or step%50==0:
+        print("\nEpoch: %-5d  InitLR: %.4f    Loss: %.10f    GradNorm: %.4f" % (step, LR, loss, jnp.linalg.norm(grad)))
+        # print("\nEpoch: %-5d  LR: %.4f    Loss: %.10f    GradNorm: %.4f" % (step, learning_rate, loss, jnp.linalg.norm(grad)))
 
-    print("Optimized inflow vel:", optimal_u_inflow)
-    plot(optimal_u_inflow, y_in, "--", label="Optimised DP", xlim=None, title=f"Inflow velocity");      ## TODO put a xlim to this !
+        print("Optimized inflow vel:", optimal_u_inflow)
+        plot(optimal_u_inflow, y_in, "--", label="Optimised DP", xlim=None, title=f"Inflow velocity");      ## TODO put a xlim to this !
 
-    plt.show()
+        plt.show()
 
 
 #%%
