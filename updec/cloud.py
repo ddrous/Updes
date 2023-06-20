@@ -1,6 +1,7 @@
 import warnings
 import jax
 import jax.numpy as jnp
+import numpy as np  ## TODO: Use numpy thoughout this module. The cloud is static
 from sklearn.neighbors import BallTree, KDTree
 from updec.utils import distance
 
@@ -33,10 +34,29 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         return jnp.mean(jnp.array(spacings))
 
     # @cache
-    def get_sorted_nodes(self):       ## LRU cache this, or turn it into @Property
-        """ Return numpy arrays """
-        sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
-        return jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+    # def get_sorted_nodes(self):       ## TODO LRU cache this, or turn it into @Property
+    #     """ Return numpy arrays """
+    #     sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
+    #     return jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
+
+    # def get_sorted_local_supports(self):
+    #     """ Return numpy arrays """
+    #     sorted_local_supports = sorted(self.local_supports.items(), key=lambda x:x[0])
+    #     return jnp.stack(list(dict(sorted_local_supports).values()), axis=-1).T
+    
+    # def get_sorted_outward_normals(self):
+    #     """ Return numpy arrays """
+    #     sorted_outward_normals = sorted(self.outward_normals.items(), key=lambda x:x[0])
+    #     return jnp.stack(list(dict(sorted_outward_normals).values()), axis=-1).T
+
+    def sort_dict_by_keys(self, dictionnary):
+        """ Sorts a dictionnay whose values are jax arrays; and returns an array easily indexable """ ## TODO: add the warning, only use this after nodes have been renumbered
+        # sorted_dict = sorted(dictionnary.items(), key=lambda x:x[0])
+        # sorted_dict_stacked = np.stack(list(dict(sorted_dict).values()), axis=-1).T
+        # return jnp.asarray(sorted_dict_stacked)
+        sorted_dict = sorted(dictionnary.items(), key=lambda x:x[0])
+        sorted_dict = {k:jnp.array(v) for k,v in sorted_dict}
+        return jnp.stack(list(dict(sorted_dict).values()), axis=-1).T
 
     def define_local_supports(self):
         ## finds the 'support_size' nearest neighbords of each node
@@ -107,12 +127,23 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             self.local_supports = jax.tree_util.tree_map(lambda i:new_numb[i], self.local_supports)
             self.local_supports = {new_numb[k]:v for k,v in self.local_supports.items()}
 
+            # print("Renumbered or not:", self.local_supports.keys())
+            # print()
+
+            # self.local_supports = jnp.array(np.stack(list(self.local_supports.values()), axis=0))   ## Needed for JIT. Because renumbering only happens at cloud creation, this is not a problem 
+
         self.facet_nodes = jax.tree_util.tree_map(lambda i:new_numb[i], self.facet_nodes)
         if hasattr(self, 'facet_tag_nodes'):
             self.facet_tag_nodes = jax.tree_util.tree_map(lambda i:new_numb[i], self.facet_tag_nodes)
 
         if hasattr(self, 'outward_normals'):
             self.outward_normals = {new_numb[k]:v for k,v in self.outward_normals.items()}
+
+            # print("Renumbered or not:", self.outward_normals.keys())
+            # print()
+
+            # if len(self.outward_normals) > 0:
+            #     self.outward_normals = jnp.array(np.stack(list(self.outward_normals.values()), axis=0))     ## Needed for JIT
 
         self.renumbering_map = new_numb
 
@@ -297,7 +328,12 @@ class SquareCloud(Cloud):
         self.define_outward_normals()
         self.renumber_nodes()
 
-        self.sorted_nodes = self.get_sorted_nodes()
+        self.sorted_nodes = self.sort_dict_by_keys(self.nodes)
+
+        self.sorted_local_supports = self.sort_dict_by_keys(self.local_supports)
+
+        if len(self.outward_normals) > 0:
+            self.sorted_outward_normals = self.sort_dict_by_keys(self.outward_normals)
 
         # self.visualise_cloud()        ## TODO Finsih this properly
 
@@ -423,7 +459,12 @@ class GmshCloud(Cloud):
             self.define_local_supports()
         self.renumber_nodes()
 
-        self.sorted_nodes = self.get_sorted_nodes()
+        self.sorted_nodes = self.sort_dict_by_keys(self.nodes)  ## !TODO: Shall we delete the dictionary after this? It becomes useless !
+
+        self.sorted_local_supports = self.sort_dict_by_keys(self.local_supports)
+
+        if len(self.outward_normals) > 0:
+            self.sorted_outward_normals = self.sort_dict_by_keys(self.outward_normals)
 
 
     def get_meshfile(self, filename, mesh_save_location):

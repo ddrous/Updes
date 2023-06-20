@@ -18,7 +18,7 @@ from updec import *
 
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "ChannelDiffPhys"
-DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
+DATAFOLDER = "../data/" + EXPERIMENET_ID +"/"
 # make_dir(DATAFOLDER)
 
 
@@ -26,7 +26,7 @@ DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 ### Constants for the problem
 
 RBF = polyharmonic      ## Can define which rbf to use
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 Re = 100
 Pa = 0.
@@ -39,7 +39,7 @@ NB_ITER = 3
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Blowing":"d", "Suction":"d"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Suction":"n"}
 
-cloud_vel = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)
+cloud_vel = GmshCloud(filename="../meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
@@ -255,7 +255,7 @@ def simulate_forward_navier_stokes(cloud_vel,
 ## Constants
 LR = 1e-1
 GAMMA = 0.995
-EPOCHS = 580      ## More than enough for 50 iter and 360 nodes
+EPOCHS = 500      ## More than enough for 50 iter and 360 nodes
 
 
 out_nodes_vel = jnp.array(cloud_vel.facet_nodes["Outflow"])

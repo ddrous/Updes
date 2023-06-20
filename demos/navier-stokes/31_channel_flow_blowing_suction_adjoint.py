@@ -17,7 +17,7 @@ import sys
 
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "ChannelAdjoint2"
-DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
+DATAFOLDER = "../data/" + EXPERIMENET_ID +"/"
 # make_dir(DATAFOLDER)
 
 
@@ -41,7 +41,7 @@ DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 ### Constants for the problem
 
 RBF = polyharmonic
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 Re = 100        ## Make sure the same constants are used for the forward problem
 Pa = 0.
@@ -55,7 +55,7 @@ NB_ITER = 3    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 facet_types_lamb = {"Wall":"d", "Inflow":"d", "Outflow":"r", "Blowing":"d", "Suction":"d"}
 facet_types_mu = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Suction":"n"}
 
-cloud_lamb = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_lamb, mesh_save_location=DATAFOLDER)
+cloud_lamb = GmshCloud(filename="../meshes/channel_blowing_suction.py", facet_types=facet_types_lamb, mesh_save_location=DATAFOLDER)
 cloud_mu = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_mu)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
@@ -306,9 +306,9 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
 
 ## Constants
-LR = 5e-2
+LR = 1e-1
 GAMMA = 0.995
-EPOCHS = 40     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
+EPOCHS = 500     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)
@@ -409,7 +409,7 @@ for step in range(1, EPOCHS+1):
     history_cost.append(loss)
     parab_out_mse.append(parab_error)
 
-    if step<=30 or step%2==0:
+    if step<=30 or step%20==0:
         print("\nEpoch: %-5d  InitLR: %.4f    Loss: %.10f    GradNorm: %.4f  TestMSE: %.6f" % (step, LR, loss, jnp.linalg.norm(grad), parab_error))
 
 

@@ -18,14 +18,14 @@ from updec import *
 #%%
 
 RBF = polyharmonic
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 
 RUN_NAME = "LaplaceDiffPhys"
 DATAFOLDER = "../data/" + RUN_NAME +"/"
 make_dir(DATAFOLDER)
 # writer = SummaryWriter("runs/"+RUN_NAME)
-KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
+# KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
 Nx = 35
 Ny = Nx
@@ -113,7 +113,7 @@ scheduler = optax.piecewise_constant_schedule(init_value=LR,
 optimiser = optax.adam(learning_rate=scheduler)
 opt_state = optimiser.init(optimal_bcn)
 
-for step in range(1, EPOCHS+1):
+for step in tqdm(range(1, EPOCHS+1)):
 
     ### Optimsation start ###
     loss, grad = grad_loss_fn(optimal_bcn)

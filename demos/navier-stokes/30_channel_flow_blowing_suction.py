@@ -19,7 +19,7 @@ from updec import *
 
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "ChannelAdjoint1"
-DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
+DATAFOLDER = "../data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
 
 
@@ -27,7 +27,7 @@ make_dir(DATAFOLDER)
 ### Constants for the problem
 
 RBF = polyharmonic      ## Can define which rbf to use
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 Re = 100
 Pa = 0.
@@ -40,7 +40,7 @@ NB_ITER = 3
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Blowing":"d", "Suction":"d"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Suction":"n"}
 
-cloud_vel = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)
+cloud_vel = GmshCloud(filename="../meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 if __name__ == "__main__":

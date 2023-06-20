@@ -29,11 +29,11 @@ key = None
 # import datetime
 
 RUN_NAME = "TempFolder"
-DATAFOLDER = "./data/" + RUN_NAME +"/"
+DATAFOLDER = "../data/" + RUN_NAME +"/"
 make_dir(DATAFOLDER)
 
 RBF = partial(polyharmonic, a=1)
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 # EPS=3.0
 # RBF = partial(gaussian, eps=EPS)
@@ -87,7 +87,7 @@ boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_north, "East":d_
 
 start = time.time()
 # solution_field = pde_solver(my_diff_operator, my_rhs_operator, cloud, boundary_conditions, RBF, MAX_DEGREE)
-sol = pde_solver(diff_operator=my_diff_operator, 
+sol = pde_solver_jit(diff_operator=my_diff_operator, 
                 rhs_operator = my_rhs_operator, 
                 cloud = cloud, 
                 boundary_conditions = boundary_conditions, 
@@ -122,10 +122,10 @@ error = jnp.nan_to_num(jnp.abs(exact_sol-rbf_sol))
 print("MSE total error:", jnp.mean(error**2))
 
 error_neumann = jnp.nan_to_num(jnp.abs(exact_sol[south_nodes]-rbf_sol[south_nodes]))
-print("MSE error on Neumann boundary:", jnp.mean(error_neumann**2))
+print("MSE on Neumann boundary:", jnp.mean(error_neumann**2))
 
-error_dirichlet = jnp.mean(error**2) - jnp.mean(error_neumann**2) - jnp.mean(jnp.nan_to_num(jnp.abs(exact_sol[internal_nodes]-rbf_sol[internal_nodes]))**2) ##TODO this formula is wrong, but informative
-print("MSE error on Dirichlet boundaries:", error_dirichlet)
+# error_dirichlet = jnp.mean(error**2) - jnp.mean(error_neumann**2) - jnp.mean(jnp.nan_to_num(jnp.abs(exact_sol[internal_nodes]-rbf_sol[internal_nodes]))**2) ##TODO this formula is wrong, but informative
+# print("MSE error on Dirichlet boundaries:", error_dirichlet)
 
 ## JNP SAVE solutions
 # cloud_shape = str(Nx)+"x"+str(Ny)

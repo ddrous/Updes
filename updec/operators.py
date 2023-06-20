@@ -1,3 +1,4 @@
+import functools
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial, tree_map
@@ -53,7 +54,7 @@ def nodal_gradient(x, center=None, rbf=None, monomial=None):
         # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         # return jax.grad(nodal_rbf)(x, node)
         # return jnp.where(jnp.all(x==node), jax.grad(nodal_rbf)(x, node), jnp.array([0., 0.]))
-        return core_gradient_rbf(rbf)(x, center)                    ## TODO: benchmark agains line above to see the cost of avoiding NaNs
+        return jnp.nan_to_num(core_gradient_rbf(rbf)(x, center), posinf=0., neginf=0.)                    ## TODO: benchmark agains line above to see the cost of avoiding NaNs
     elif monomial != None:
         # monomial = Partial(make_monomial, id=monomial)
         # return jax.grad(monomial)(x)
@@ -80,7 +81,7 @@ def nodal_laplacian(x, center=None, rbf=None, monomial=None):     ## TODO Jitt t
         # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
         # nodal_rbf = rbf
         # return jnp.trace(core_laplacian_rbf(rbf)(x, center))      ## TODO: try reverse mode
-        return jnp.nan_to_num(jnp.trace(core_laplacian_rbf(rbf)(x, center)), neginf=0., posinf=0.)      ## TODO: try reverse mode
+        return jnp.nan_to_num(jnp.trace(core_laplacian_rbf(rbf)(x, center)), posinf=0., neginf=0.)      ## TODO: try reverse mode
     elif monomial != None:
         # monomial = Partial(make_monomial, id=monomial)
         # monomial = monomial
@@ -109,8 +110,9 @@ def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_d
 
 _nodal_value_rbf_vec = jax.vmap(nodal_value, in_axes=(None, 0, None, None), out_axes=0)
 
+
 def value(x, field, centers, rbf=None):
-    """ Computes the gradient of field quantity s at position x """
+    """ Computes the value of field quantity s at position x """
     ## Find coefficients for s on the cloud
 
     ## Now, compute the value of the field
@@ -121,9 +123,15 @@ def value(x, field, centers, rbf=None):
     final_val = jnp.sum(jnp.nan_to_num(lambdas*val_rbf, posinf=0., neginf=0.), axis=0)
 
     all_monomials = make_all_monomials(gammas.shape[0])
-    for j in range(gammas.shape[0]):    ### TODO: Use VMAP to vectorise this too !!
+
+    for j in range(gammas.shape[0]):    ### TODO: Use FOR_I LOOP
         polynomial_val = nodal_value(x, monomial=all_monomials[j])
         final_val = final_val + jnp.nan_to_num(gammas[j] * polynomial_val, posinf=0., neginf=0.)
+
+    # def mon_val_body(j, val):
+    #     polynomial_val = nodal_value(x, monomial=all_monomials[j])
+    #     return val + jnp.nan_to_num(gammas[j] * polynomial_val, posinf=0., neginf=0.)
+    # final_val = jax.lax.fori_loop(0, gammas.shape[0], mon_val_body, final_val)
 
     return final_val
 
@@ -156,10 +164,15 @@ def gradient(x, field, centers, rbf=None):
     final_grad = jnp.sum(jnp.nan_to_num(lambdas*grads_rbf, posinf=0., neginf=0.), axis=0)
 
     all_monomials = make_all_monomials(gammas.shape[0])
-    for j in range(gammas.shape[0]):                                                   ### TODO: Use VMAP to vectorise this too !!
+
+    for j in range(gammas.shape[0]):                                                   ### TODO: Use FOR_I LOOP
         polynomial_grad = nodal_gradient(x, monomial=all_monomials[j])
-        # print(polynomial_grad)
         final_grad = final_grad.at[:].add(jnp.nan_to_num(gammas[j] * polynomial_grad, posinf=0., neginf=0.))
+
+    # def mon_grad_body(j, grad):
+    #     polynomial_grad = nodal_gradient(x, monomial=all_monomials[j])
+    #     return grad + jnp.nan_to_num(gammas[j] * polynomial_grad, posinf=0., neginf=0.)
+    # final_grad = jax.lax.fori_loop(0, gammas.shape[0], mon_grad_body, final_grad)
 
     return final_grad
 
@@ -289,11 +302,17 @@ def laplacian(x, field, centers, rbf=None):
 
 
     all_monomials = make_all_monomials(gammas.shape[0])
+
     mon_lap = jnp.array([0.])
-    for j in range(gammas.shape[0]):
+    for j in range(gammas.shape[0]):    ## TODO use FOR_I LOOP
         # monomial = Partial(make_monomial, id=j)
         poly_lap = nodal_laplacian(x, monomial=all_monomials[j])
         mon_lap = mon_lap.at[:].add(gammas[j] * poly_lap)
+
+    # def mon_lap_body(j, lap):
+    #     poly_lap = nodal_laplacian(x, monomial=all_monomials[j])
+    #     return lap + jnp.nan_to_num(gammas[j] * poly_lap, posinf=0., neginf=0.)
+    # mon_lap = jax.lax.fori_loop(0, gammas.shape[0], mon_lap_body, jnp.array([0.]))
 
     return rbf_lap + mon_lap[0]
 
@@ -433,11 +452,11 @@ def pde_solver( diff_operator:callable,
 #                                                     "rbf",
 #                                                     "max_degree"])
 
-pde_solver_jit_with_bc = jax.jit(pde_solver, static_argnames=["diff_operator",
-                                                    "rhs_operator",
-                                                    "cloud",
-                                                    "rbf",
-                                                    "max_degree"])
+# pde_solver_jit_with_bc = jax.jit(pde_solver, static_argnames=["diff_operator",
+#                                                     "rhs_operator",
+#                                                     "cloud",
+#                                                     "rbf",
+#                                                     "max_degree"])
 
 def pde_solver_jit( diff_operator:callable,
                 rhs_operator:callable,
@@ -464,6 +483,11 @@ def pde_solver_jit( diff_operator:callable,
         else:
             boundary_conditions_arr[f_id] = f_bc
 
+    pde_solver_jit_with_bc = jax.jit(pde_solver, static_argnames=["diff_operator",
+                                                        "rhs_operator",
+                                                        "cloud",
+                                                        "rbf",
+                                                        "max_degree"])
 
     return pde_solver_jit_with_bc(diff_operator=diff_operator,
                                     rhs_operator=rhs_operator,
@@ -475,7 +499,51 @@ def pde_solver_jit( diff_operator:callable,
                                     rhs_args = rhs_args)
 
 
+# def jit_bc(pde_solver):
+#     @functools.wraps(pde_solver)
+#     def clocked(diff_operator,
+#                 rhs_operator,
+#                 cloud, 
+#                 boundary_conditions, 
+#                 rbf,
+#                 max_degree,
+#                 diff_args=None,
+#                 rhs_args=None):
 
+#         boundary_conditions_arr = {}
+
+#         for f_id, f_bc in boundary_conditions.items():
+#             if callable(f_bc):
+#                 f_nodes = cloud.sorted_nodes[jnp.array(cloud.facet_nodes[f_id])]
+#                 boundary_conditions_arr[f_id] = jax.vmap(f_bc)(f_nodes)
+#             elif type(f_bc) == tuple:
+#                 f_nodes = cloud.sorted_nodes[jnp.array(cloud.facet_nodes[f_id])]
+#                 boundary_conditions_arr[f_id] = f_bc
+#                 if callable(f_bc[0]):
+#                     boundary_conditions_arr[f_id] = (jax.vmap(f_bc[0])(f_nodes), f_bc[1])
+#                 if callable(f_bc[1]):
+#                     boundary_conditions_arr[f_id] = (f_bc[0], jax.vmap(f_bc[1])(f_nodes))
+#             else:
+#                 boundary_conditions_arr[f_id] = f_bc
+
+#         result = jax.jit(pde_solver, static_argnames=["diff_operator",
+#                                                     "rhs_operator",
+#                                                     "cloud",
+#                                                     "rbf",
+#                                                     "max_degree"])(
+#                         diff_operator=diff_operator,
+#                         diff_args = diff_args,
+#                         rhs_operator=rhs_operator,
+#                         rhs_args = rhs_args,
+#                         cloud=cloud, 
+#                         boundary_conditions=boundary_conditions_arr, 
+#                         rbf=rbf,
+#                         max_degree=max_degree)
+
+#         name = pde_solver.__name__+"_jit"
+
+#         return result
+#     return clocked
 
 
 

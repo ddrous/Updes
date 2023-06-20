@@ -18,14 +18,14 @@ from updec import *
 #%%
 
 RBF = polyharmonic
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 
 RUN_NAME = "LaplaceAdjoint"
 DATAFOLDER = "../data/" + RUN_NAME +"/"
 make_dir(DATAFOLDER)
 # writer = SummaryWriter("runs/"+RUN_NAME)
-KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
+# KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
 Nx = 35
 Ny = Nx
@@ -133,7 +133,7 @@ optimiser = optax.adam(learning_rate=scheduler)
 opt_state = optimiser.init(optimal_bcn)
 
 ### Optimsation start ###
-for step in range(1, EPOCHS+1):
+for step in tqdm(range(1, EPOCHS+1)):
 
     u = direct_simulation(optimal_bcn)
     lamb = adjoint_problem(u.coeffs)
