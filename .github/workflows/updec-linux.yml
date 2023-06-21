@@ -25,11 +25,11 @@ jobs:
         python setup.py develop && conda install pytest
     - name: Run differential operators test
       run: |
-        pytest -q no:warnings updec/tests/operators.py
+        pytest --disable-warnings -q updec/tests/operators.py
     - name: Run cloud interpolation test
       run: |
-        pytest -q no:warnings updec/tests/interpolation.py
+        pytest --disable-warnings -q updec/tests/interpolation.py
     - name: Run outward normals test
       run: |
-        pytest -q no:warnings updec/tests/normals.py
+        pytest --disable-warnings -q updec/tests/normals.py
 
