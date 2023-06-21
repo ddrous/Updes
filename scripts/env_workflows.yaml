@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - pip
   - pip:
       - flax==0.6.7
       - gmsh==4.11.1
