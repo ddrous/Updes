@@ -19,7 +19,7 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        conda env update --file scripts/env_daffyduck.yml --name base
+        conda env update --file scripts/env_daffyduck.yaml --name base
     - name: Install Updec
       run: |
         python setup.py develop
