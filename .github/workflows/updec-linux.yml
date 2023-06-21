@@ -25,7 +25,7 @@ jobs:
         python setup.py develop && conda install pytest
     - name: Run differential operators test
       run: |
-        cd updec/tests && pytest -q operators.py
+        pytest -q updec/tests/operators.py
     - name: Run cloud interpolation test
       run: |
         pytest -q updec/tests/interpolation.py

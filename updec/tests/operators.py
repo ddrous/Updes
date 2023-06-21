@@ -9,7 +9,7 @@ seed = 12
 
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "TempFolder"
-DATAFOLDER = "../../demos/data/" + EXPERIMENET_ID + "/"
+DATAFOLDER = "./demos/data/" + EXPERIMENET_ID + "/"
 # make_dir(DATAFOLDER)
 
 
@@ -28,7 +28,7 @@ DATAFOLDER = "../../demos/data/" + EXPERIMENET_ID + "/"
 
 facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n", "Blowing":"n", "Suction":"n"}
 
-cloud = GmshCloud(filename="../../demos/meshes/channel_blowing_suction.py", facet_types=facet_types, mesh_save_location=DATAFOLDER)
+cloud = GmshCloud(filename="./demos/meshes/channel_blowing_suction.py", facet_types=facet_types, mesh_save_location=DATAFOLDER)
 
 cloud.visualize_cloud(figsize=(8.5,2.5), s=6, title=r"Cloud for $\phi$");
 fig, ax = plt.subplots(1, 2, figsize=(5.5*2,5))
