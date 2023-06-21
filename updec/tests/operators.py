@@ -30,10 +30,10 @@ facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n", "Blowing":"n", "Suction"
 
 cloud = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types, mesh_save_location=DATAFOLDER)
 
-cloud.visualize_cloud(figsize=(8.5,2.5), s=6, title=r"Cloud for $\phi$");
-fig, ax = plt.subplots(1, 2, figsize=(5.5*2,5))
-cloud.visualize_normals(ax=ax[0], title="Normals for phi", zoom_region=(-0.25,0.25,-0.25,0.25))
-cloud.visualize_normals(ax=ax[1], title="Normals for phi", zoom_region=(7.75,8.25,-0.25,0.25))
+# cloud.visualize_cloud(figsize=(8.5,2.5), s=6, title=r"Cloud for $\phi$");
+# fig, ax = plt.subplots(1, 2, figsize=(5.5*2,5))
+# cloud.visualize_normals(ax=ax[0], title="Normals for phi", zoom_region=(-0.25,0.25,-0.25,0.25))
+# cloud.visualize_normals(ax=ax[1], title="Normals for phi", zoom_region=(7.75,8.25,-0.25,0.25))
 
 
 
@@ -94,7 +94,7 @@ grads_norm = jnp.linalg.norm(grads, axis=-1)
 # print("Grads close to 0 ?", jnp.allclose(grads_norm, 0, atol=1e-05))
 # print("Maximum of grad norm:", jnp.max(grads_norm))
 
-assert jnp.allclose(grads_norm, 0, atol=1e-05)
+# assert jnp.allclose(grads_norm, 0, atol=1e-05)
 
 field_vec = jnp.stack([sol.coeffs, sol.coeffs], axis=-1)
 divs = divergence_vec(cloud.sorted_nodes, field_vec, cloud.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
@@ -102,7 +102,9 @@ divs = divergence_vec(cloud.sorted_nodes, field_vec, cloud.sorted_nodes, RBF)   
 # print("Divs close to 0 ?", jnp.allclose(divs, 0, atol=1e-05))
 # print("Maximum of div norm:", jnp.max(divs))
 
-assert jnp.allclose(divs, 0, atol=1e-05)
+def test():
+    assert jnp.allclose(grads_norm, 0, atol=1e-05) == True
+    assert jnp.allclose(divs, 0, atol=1e-05) == True
 
 # cloud.visualize_field(sol.vals, projection="2d", figsize=(8.5,2.5), title="Constant field");
 # # cloud.visualize_field(grads[:,0], figsize=(6,4.5), title="Partial along x");
