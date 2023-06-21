@@ -27,7 +27,7 @@ print(cloud2.global_indices)
 
 
 field = jnp.arange(0, cloud1.N)
-cloud1.visualize_field(field)
+# cloud1.visualize_field(field)
 
 
 # #%%
@@ -45,7 +45,7 @@ cloud1.visualize_field(field)
 
 new_field = interpolate_field(field, cloud1, cloud2)
 
-cloud2.visualize_field(new_field)
+# cloud2.visualize_field(new_field)
 print(new_field)
 
 
@@ -53,6 +53,6 @@ print(new_field)
 # %%
 
 ## Run the test. Should be equal on the internal nodes at the very least
-jnp.allclose(field[:cloud1.Ni], new_field[:cloud2.Ni], atol=1e-12)
+assert jnp.allclose(field[:cloud1.Ni], new_field[:cloud2.Ni], atol=1e-12)
 
 # %%

@@ -43,12 +43,12 @@ cloud_vel = GmshCloud(filename="../meshes/channel_blowing_suction.py", facet_typ
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
-cloud_vel.visualize_cloud(ax=ax1, s=6, title="Cloud for velocity", xlabel=False);
-cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
+cloud_vel.visualize_cloud(ax=ax1, s=1, title="Cloud for velocity", xlabel=False);
+cloud_phi.visualize_cloud(ax=ax2, s=1, title=r"Cloud for $\phi$");
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5*2,5))
-cloud_vel.visualize_normals(ax=ax1, title="Normals for velocity")
-cloud_phi.visualize_normals(ax=ax2,title="Normals for phi", zoom_region=(0.25,1.25,-0.1,1.1));
+# fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5*2,5))
+# cloud_vel.visualize_normals(ax=ax1, title="Normals for velocity")
+# cloud_phi.visualize_normals(ax=ax2,title="Normals for phi", zoom_region=(0.25,1.25,-0.1,1.1));
 
 
 # %%
@@ -255,7 +255,7 @@ def simulate_forward_navier_stokes(cloud_vel,
 ## Constants
 LR = 1e-1
 GAMMA = 0.995
-EPOCHS = 500      ## More than enough for 50 iter and 360 nodes
+EPOCHS = 200      ## More than enough for 50 iter and 360 nodes
 
 
 out_nodes_vel = jnp.array(cloud_vel.facet_nodes["Outflow"])
@@ -344,7 +344,7 @@ for step in range(1, EPOCHS+1):
 
     history_cost.append(loss)
 
-    if step<=3 or step%50==0:
+    if step<=3 or step%10==0:
         print("\nEpoch: %-5d  InitLR: %.4f    Loss: %.10f    GradNorm: %.4f" % (step, LR, loss, jnp.linalg.norm(grad)))
         # print("\nEpoch: %-5d  LR: %.4f    Loss: %.10f    GradNorm: %.4f" % (step, learning_rate, loss, jnp.linalg.norm(grad)))
 

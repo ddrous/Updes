@@ -43,7 +43,7 @@ EPS = 10.0
 RBF = partial(gaussian, eps=EPS)      ## Can define which rbf to use
 # RBF = partial(polyharmonic, a=1)
 # RBF = partial(thin_plate, a=3)
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 # r = jnp.linspace(-10,10,1000)
 # plt.plot(r, gaussian_func(r, eps=EPS))
@@ -91,19 +91,24 @@ print()
 grads = cartesian_gradient_vec(range(cloud.N), sol.vals, cloud)        ## TODO use Pde_solver here instead ?
 
 grads_norm = jnp.linalg.norm(grads, axis=-1)
-print("Grads close to 0 ?", jnp.allclose(grads_norm, 0, atol=1e-05))
-print("Maximum of grad norm:", jnp.max(grads_norm))
+# print("Grads close to 0 ?", jnp.allclose(grads_norm, 0, atol=1e-05))
+# print("Maximum of grad norm:", jnp.max(grads_norm))
+
+assert jnp.allclose(grads_norm, 0, atol=1e-05)
 
 field_vec = jnp.stack([sol.coeffs, sol.coeffs], axis=-1)
 divs = divergence_vec(cloud.sorted_nodes, field_vec, cloud.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
-print("Divs close to 0 ?", jnp.allclose(divs, 0, atol=1e-05))
-print("Maximum of div norm:", jnp.max(divs))
 
-cloud.visualize_field(sol.vals, projection="2d", figsize=(8.5,2.5), title="Constant field");
-# cloud.visualize_field(grads[:,0], figsize=(6,4.5), title="Partial along x");
-# cloud.visualize_field(grads[:,1], figsize=(6,4.5), title="Partial along y");
-cloud.visualize_field(grads_norm, figsize=(8.5,2.5), title="Norm of gradient of const field");
-cloud.visualize_field(divs, figsize=(8.5,2.5), title="Divergence of (const, const) vector field");
+# print("Divs close to 0 ?", jnp.allclose(divs, 0, atol=1e-05))
+# print("Maximum of div norm:", jnp.max(divs))
+
+assert jnp.allclose(divs, 0, atol=1e-05)
+
+# cloud.visualize_field(sol.vals, projection="2d", figsize=(8.5,2.5), title="Constant field");
+# # cloud.visualize_field(grads[:,0], figsize=(6,4.5), title="Partial along x");
+# # cloud.visualize_field(grads[:,1], figsize=(6,4.5), title="Partial along y");
+# cloud.visualize_field(grads_norm, figsize=(8.5,2.5), title="Norm of gradient of const field");
+# cloud.visualize_field(divs, figsize=(8.5,2.5), title="Divergence of (const, const) vector field");
 
 # plt.show()
 

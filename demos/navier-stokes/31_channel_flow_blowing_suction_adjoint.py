@@ -309,7 +309,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 ## Constants
 LR = 1e-1
 GAMMA = 0.995
-EPOCHS = 500     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
+EPOCHS = 200     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)
@@ -410,7 +410,7 @@ for step in range(1, EPOCHS+1):
     history_cost.append(loss)
     parab_out_mse.append(parab_error)
 
-    if step<=30 or step%20==0:
+    if step<=30 or step%10==0:
         print("\nEpoch: %-5d  InitLR: %.4f    Loss: %.10f    GradNorm: %.4f  TestMSE: %.6f" % (step, LR, loss, jnp.linalg.norm(grad), parab_error))
 
 

@@ -3,9 +3,9 @@ import gmsh
 import sys
 
 
-lc = 0.025        ## TODO Set this to 4 !
-ref_io = 2           ## Refinement factor to account for Infow/Outflow
-ref_bs = 2           ## Refinement factor to account for Blowing/Suction
+lc = 0.1        ## TODO Set this to 4 !
+ref_io = 7           ## Refinement factor to account for Infow/Outflow
+ref_bs = 4           ## Refinement factor to account for Blowing/Suction
 box_half_length = 0.001
 Lx = 1.5
 Ly = 1.0
@@ -97,7 +97,7 @@ gmsh.model.mesh.field.add("Box", 10)
 gmsh.model.mesh.field.setNumber(10, "VIn", lc / ref_io)
 gmsh.model.mesh.field.setNumber(10, "VOut", lc)
 gmsh.model.mesh.field.setNumber(10, "XMin", 0.0)
-gmsh.model.mesh.field.setNumber(10, "XMax", 0.25*Lx/15)
+gmsh.model.mesh.field.setNumber(10, "XMax", 0.1*Lx/15)
 gmsh.model.mesh.field.setNumber(10, "YMin", 0)
 gmsh.model.mesh.field.setNumber(10, "YMax", Ly)
 gmsh.model.mesh.field.setNumber(10, "Thickness", 0.3)
@@ -106,7 +106,7 @@ gmsh.model.mesh.field.setNumber(10, "Thickness", 0.3)
 gmsh.model.mesh.field.add("Box", 11)
 gmsh.model.mesh.field.setNumber(11, "VIn", lc / ref_io)
 gmsh.model.mesh.field.setNumber(11, "VOut", lc)
-gmsh.model.mesh.field.setNumber(11, "XMin", Lx-0.25*Lx/15)
+gmsh.model.mesh.field.setNumber(11, "XMin", Lx-0.1*Lx/15)
 gmsh.model.mesh.field.setNumber(11, "XMax", Lx)
 gmsh.model.mesh.field.setNumber(11, "YMin", 0)
 gmsh.model.mesh.field.setNumber(11, "YMax", Ly)
