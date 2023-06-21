@@ -32,7 +32,7 @@ MAX_DEGREE = 1
 Re = 100
 Pa = 0.
 
-NB_ITER = 3
+NB_ITER = 10
 
 
 # %%

@@ -46,7 +46,7 @@ MAX_DEGREE = 1
 Re = 100        ## Make sure the same constants are used for the forward problem
 Pa = 0.
 
-NB_ITER = 3    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
+NB_ITER = 10    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 
 
 # %%
