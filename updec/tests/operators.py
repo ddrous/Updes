@@ -8,7 +8,7 @@ seed = random.randint(0,100)
 seed = 12
 
 # EXPERIMENET_ID = random_name()
-EXPERIMENET_ID = "98539"
+EXPERIMENET_ID = ""
 DATAFOLDER = "../../demos/data/" + EXPERIMENET_ID +"/"
 # make_dir(DATAFOLDER)
 
