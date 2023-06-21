@@ -4,3 +4,5 @@
 *
 # Except this file
 !.gitignore
+!mesh.msh
+!mesh.vtk
