@@ -58,13 +58,14 @@ facet_types_mu = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Sucti
 cloud_lamb = GmshCloud(filename="../meshes/channel_blowing_suction.py", facet_types=facet_types_lamb, mesh_save_location=DATAFOLDER)
 cloud_mu = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_mu)
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
-cloud_lamb.visualize_cloud(ax=ax1, s=6, title=r"Cloud for $\lambda$", xlabel=False);
-cloud_mu.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\mu$");
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5*2,5))
-cloud_lamb.visualize_normals(ax=ax1, title="Normals for lambda", zoom_region=(1.4,1.6,-0.1,1.1));
-cloud_mu.visualize_normals(ax=ax2,title="Normals for mu", zoom_region=(0.4,0.6,-0.1,0.1));
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
+cloud_lamb.visualize_cloud(ax=ax1, s=1, title=r"Cloud for $\lambda$", xlabel=False);
+cloud_mu.visualize_cloud(ax=ax2, s=1, title=r"Cloud for $\mu$");
+
+# fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5*2,5))
+# cloud_lamb.visualize_normals(ax=ax1, title="Normals for lambda", zoom_region=(1.4,1.6,-0.1,1.1));
+# cloud_mu.visualize_normals(ax=ax2,title="Normals for mu", zoom_region=(0.4,0.6,-0.1,0.1));
 
 
 # %%
