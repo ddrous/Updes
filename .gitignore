@@ -20,3 +20,4 @@ demos/data/*
 *msh
 *vtk
 quadqs_statistics.json
+!demos/data/TempFolder/*

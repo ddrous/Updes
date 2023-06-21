@@ -7,7 +7,9 @@ from updec import *
 seed = random.randint(0,100)
 seed = 12
 
-DATAFOLDER = "../../demos/data/"
+# EXPERIMENET_ID = random_name()
+EXPERIMENET_ID = "TempFolder"
+DATAFOLDER = "../../demos/data/" + EXPERIMENET_ID + "/"
 # make_dir(DATAFOLDER)
 
 
