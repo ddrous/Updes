@@ -3,9 +3,9 @@ import gmsh
 import sys
 
 
-lc = 0.2
-nm_factor = 1           ## Refinement factor to account for Neumann
-cy_factor = 20         ## Refinement factor to account for cylinder
+lc = 0.12
+nm_factor = 2           ## Refinement factor to account for Neumann
+cy_factor = 4         ## Refinement factor to account for cylinder
 L = 1.0
 DIM = 2
 
@@ -52,8 +52,8 @@ gmsh.model.addPhysicalGroup(2, [1], name="Fluid")
 
 
 ## Meshing paremeters for quadrangles
-gmsh.option.setNumber("Mesh.RecombineAll", 1)
-gmsh.option.setNumber("Mesh.Algorithm", 11)
+# gmsh.option.setNumber("Mesh.RecombineAll", 1)
+# gmsh.option.setNumber("Mesh.Algorithm", 11)
 gmsh.option.setNumber("Mesh.MshFileVersion", 4.0)
 
 ## Visualisation parameters

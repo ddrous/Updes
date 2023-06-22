@@ -10,9 +10,10 @@ jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on D
 from updec import *
 
 
-EXPERIMENET_ID = random_name()
-DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
-make_dir(DATAFOLDER)
+# EXPERIMENET_ID = random_name()
+EXPERIMENET_ID = "85151"
+DATAFOLDER = "../data/" + EXPERIMENET_ID +"/"
+# make_dir(DATAFOLDER)
 
 
 # %%
@@ -24,7 +25,7 @@ RBF = polyharmonic      ## Can define which rbf to use
 # RBF = partial(gaussian, eps=1e2)
 # RBF = partial(thin_plate, a=3)
 
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 Re = 10
 RHO = 1.          ## Water
@@ -33,25 +34,25 @@ NU = 1./Re           ## water
 # Pa = 101325.0
 Pa = 0.0
 
-NB_ITER = 10
+NB_ITER = 20
 
 
 
 # %%
 
 
-facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
-facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
-# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
-# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
+# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
+# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
+facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
+facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
 
-cloud_vel = GmshCloud(filename="./meshes/channel_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+cloud_vel = GmshCloud(filename="../meshes/channel_cylinder_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 # cloud_vel = GmshCloud(filename="./meshes/channel_cylinder_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
-cloud_vel.visualize_cloud(ax=ax1, s=6, title="Cloud for velocity", xlabel=False);
-cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
+cloud_vel.visualize_cloud(ax=ax1, s=2, title="Cloud for velocity", xlabel=False);
+cloud_phi.visualize_cloud(ax=ax2, s=2, title=r"Cloud for $\phi$");
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5*2,5))
 cloud_vel.visualize_normals(ax=ax1, title="Normals for velocity")
@@ -136,7 +137,7 @@ for i in tqdm(range(NB_ITER)):
     ## TODO Interpolate p and gradphi onto cloud_vel
     p = interpolate_field(p_, cloud_phi, cloud_vel)
 
-    usol = pde_solver(diff_operator=diff_operator_u, 
+    usol = pde_solver_jit(diff_operator=diff_operator_u, 
                     diff_args=[u, v],
                     rhs_operator = rhs_operator_u, 
                     rhs_args=[p], 
@@ -145,7 +146,7 @@ for i in tqdm(range(NB_ITER)):
                     rbf=RBF,
                     max_degree=MAX_DEGREE)
 
-    vsol = pde_solver(diff_operator=diff_operator_v,
+    vsol = pde_solver_jit(diff_operator=diff_operator_v,
                     diff_args=[u, v],
                     rhs_operator = rhs_operator_v,
                     rhs_args=[p], 
@@ -157,16 +158,16 @@ for i in tqdm(range(NB_ITER)):
     ustar , vstar = usol.vals, vsol.vals     ## Star
     Ustar = jnp.stack([ustar,vstar], axis=-1)
 
-    print("u star max:", jnp.max(ustar))
-    print("u star max loc:", cloud_vel.sorted_nodes[jnp.argmax(ustar)])
-    print("v star max:", jnp.max(vstar))
-    print("v star max loc:", cloud_vel.sorted_nodes[jnp.argmax(vstar)])
+    # print("u star max:", jnp.max(ustar))
+    # print("u star max loc:", cloud_vel.sorted_nodes[jnp.argmax(ustar)])
+    # print("v star max:", jnp.max(vstar))
+    # print("v star max loc:", cloud_vel.sorted_nodes[jnp.argmax(vstar)])
 
     ## TODO Interpolate Ustar onto cloud_phi
     u_ = interpolate_field(ustar, cloud_vel, cloud_phi)
     v_ = interpolate_field(vstar, cloud_vel, cloud_phi)
 
-    phisol_ = pde_solver(diff_operator=diff_operator_phi,
+    phisol_ = pde_solver_jit(diff_operator=diff_operator_phi,
                     rhs_operator = rhs_operator_phi,
                     rhs_args=[u_,v_], 
                     cloud = cloud_phi, 
@@ -186,10 +187,10 @@ for i in tqdm(range(NB_ITER)):
     u, v = U[:,0], U[:,1]
     vel = jnp.linalg.norm(U, axis=-1)
 
-    print("u max:", jnp.max(u))
-    print("u max loc:", cloud_vel.sorted_nodes[jnp.argmax(u)])
-    print("v max:", jnp.max(v))
-    print("v max loc:", cloud_vel.sorted_nodes[jnp.argmax(v)])
+    # print("u max:", jnp.max(u))
+    # print("u max loc:", cloud_vel.sorted_nodes[jnp.argmax(u)])
+    # print("v max:", jnp.max(v))
+    # print("v max loc:", cloud_vel.sorted_nodes[jnp.argmax(v)])
 
     u_list.append(u)
     v_list.append(v)

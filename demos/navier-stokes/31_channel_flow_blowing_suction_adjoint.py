@@ -91,7 +91,7 @@ def diff_operator_l1(x, center=None, rbf=None, monomial=None, fields=None):
 # @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_l1(x, centers=None, rbf=None, fields=None):
     grad_pi_x = gradient(x, fields[:, 0], centers, rbf)[0]
-    return grad_pi_x
+    return -grad_pi_x
 
 # @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_l2(x, center=None, rbf=None, monomial=None, fields=None):
@@ -114,7 +114,7 @@ def diff_operator_l2(x, center=None, rbf=None, monomial=None, fields=None):
 # @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_l2(x, centers=None, rbf=None, fields=None):
     grad_pi_y = gradient(x, fields[:, 0], centers, rbf)[1]
-    return  grad_pi_y
+    return  -grad_pi_y
 
 
 
@@ -309,7 +309,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 ## Constants
 LR = 1e-1
 GAMMA = 0.995
-EPOCHS = 200     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
+EPOCHS = 30     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)
@@ -346,7 +346,7 @@ def cost_val_fn(u, v, u_parab):
 def cost_grad_fn(l1, pi_):
     grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[in_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
     # grad_l1 = cartesian_gradient_vec(range(cloud_lamb.N), l1, cloud_lamb)
-    return -pi_[in_nodes_pi] + grad_l1[:, 0]/Re
+    return +pi_[in_nodes_pi] - grad_l1[:, 0]/Re
 
 
 forward_sim_args = {"cloud_vel":cloud_vel,

@@ -13,21 +13,21 @@ import sys
 
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "ChannelAdjoint2"
-DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
+DATAFOLDER = "../data/" + EXPERIMENET_ID +"/"
 # make_dir(DATAFOLDER)
 
 
 
 ### Constants for the problem
-EPS = 10.0
-RBF = partial(gaussian, eps=EPS)
-# RBF = polyharmonic
-MAX_DEGREE = 4
+# EPS = 10.0
+# RBF = partial(gaussian, eps=EPS)
+RBF = polyharmonic
+MAX_DEGREE = 1
 
 Re = 100        ## Make sure the same constants are used for the forward problem
 Pa = 0.
 
-NB_ITER = 3    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
+NB_ITER = 10    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 
 
 # %%
@@ -36,7 +36,7 @@ NB_ITER = 3    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 facet_types_lamb = {"Wall":"d", "Inflow":"d", "Outflow":"r", "Blowing":"d", "Suction":"d"}
 facet_types_mu = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Suction":"n"}
 
-cloud_lamb = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_lamb, mesh_save_location=DATAFOLDER)
+cloud_lamb = GmshCloud(filename="../meshes/channel_blowing_suction.py", facet_types=facet_types_lamb, mesh_save_location=DATAFOLDER)
 cloud_mu = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_mu)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
@@ -155,7 +155,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
         pi = interpolate_field(pi_, cloud_mu, cloud_lamb)
         div_U = divergence_vec(cloud_mu.sorted_nodes, jnp.stack([u, v], axis=-1), cloud_mu.sorted_nodes, RBF)
-        print("min max of div_U: ", jnp.min(div_U), jnp.max(div_U))
+        # print("min max of div_U: ", jnp.min(div_U), jnp.max(div_U))
 
 
         l1sol = pde_solver_jit(diff_operator=diff_operator_l1, 
@@ -258,7 +258,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 ## Constants
 LR = 1e-1
 GAMMA = 0.995
-EPOCHS = 300     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
+EPOCHS = 30     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)
@@ -271,6 +271,7 @@ cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_ph
 ## Import forward solver
 simulate_forward_navier_stokes = __import__('30_channel_flow_blowing_suction').simulate_forward_navier_stokes
 
+in_nodes_vel = jnp.array(cloud_vel.facet_nodes["Inflow"])
 out_nodes_vel = jnp.array(cloud_vel.facet_nodes["Outflow"])
 in_nodes_lamb = jnp.array(cloud_lamb.facet_nodes["Inflow"])
 in_nodes_pi = jnp.array(cloud_mu.facet_nodes["Inflow"])
@@ -291,12 +292,12 @@ def cost_val_fn(u, v, u_parab):
     integrand = (u_out-u_parab)**2 + v_out**2
     return 0.5 * jnp.trapz(integrand, x=y_out)
 
-# @jax.jit
+@jax.jit
 def cost_grad_fn(l1, pi_):
-    # grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[in_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
+    grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[in_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
 
-    grad_l1 = cartesian_gradient_vec(range(cloud_lamb.N), l1, cloud_lamb)       ## TODO: use the one above
-    grad_l1 = grad_l1[in_nodes_lamb, :]
+    # grad_l1 = cartesian_gradient_vec(range(cloud_lamb.N), l1, cloud_lamb)       ## TODO: use the one above
+    # grad_l1 = grad_l1[in_nodes_lamb, :]
 
     return pi_[in_nodes_pi] + grad_l1[:, 0]/Re
 
@@ -320,7 +321,8 @@ adjoint_sim_args = {"cloud_lamb":cloud_lamb,
                     }
 
 
-optimal_u_inflow = jnp.zeros(in_nodes_lamb.shape)       ## Optimised quantity
+# optimal_u_inflow = jnp.zeros(in_nodes_lamb.shape)       ## Optimised quantity
+optimal_u_inflow = jax.vmap(parabolic)(cloud_vel.sorted_nodes[in_nodes_vel])
 scheduler = optax.piecewise_constant_schedule(init_value=LR,
                                             boundaries_and_scales={int(EPOCHS*0.4):0.1, int(EPOCHS*0.8):0.1})
 optimiser = optax.adam(learning_rate=scheduler)
@@ -364,7 +366,7 @@ for step in range(1, EPOCHS+1):
     history_cost.append(loss)
     parab_out_mse.append(parab_error)
 
-    if step<=3 or step%50==0:
+    if step<=3 or step%5==0:
         print("\nEpoch: %-5d  InitLR: %.4f    Loss: %.10f    GradNorm: %.4f  TestMSE: %.6f" % (step, LR, loss, jnp.linalg.norm(grad), parab_error))
 
 
