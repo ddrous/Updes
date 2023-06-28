@@ -15,9 +15,14 @@ scripts/reports/*
 runs/*
 !runs/README.md
 demos/temp/*
-demos/data/*
-!demos/data/README.md
 *msh
 *vtk
 quadqs_statistics.json
-!demos/data/TempFolder/*
+
+demos/Laplace/data/*
+!demos/Laplace/data/README.md
+!demos/Laplace/data/TempFolder/*
+
+demos/NavierStokes/data/*
+!demos/NavierStokes/data/README.md
+!demos/NavierStokes/data/TempFolder/*

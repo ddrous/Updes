@@ -319,6 +319,20 @@ def laplacian(x, field, centers, rbf=None):
 laplacian_vec = jax.vmap(laplacian, in_axes=(0, None, None, None), out_axes=0)
 
 
+def laplacian_vals(x, field, cloud, rbf, max_degree):
+    """ Computes the gradient of field quantity at position x 
+        The field is defined by its _values_ in the RBF basis """
+
+    nb_monomials = compute_nb_monomials(max_degree, cloud.dim)
+    coeffs = new_compute_coefficients(field, cloud, rbf, nb_monomials)
+
+    return laplacian(x, coeffs, cloud.sorted_nodes, rbf)
+
+laplacian_vals_vec_ = jax.vmap(laplacian_vals, in_axes=(0, None, None, None, None), out_axes=0)
+laplacian_vals_vec = jax.jit(laplacian_vals_vec_, static_argnums=[2,3,4])
+
+
+
 def interpolate_field(field, cloud1, cloud2):
     """ Interpolates field from cloud1 to cloud2 """
 
@@ -558,3 +572,7 @@ def pde_solver_jit( diff_operator:callable,
     #                     boundary_conditions = bc_u,
     #                     rbf=RBF,
     #                     max_degree=MAX_DEGREE)
+
+
+dot_vec = jax.jit(jax.vmap(jnp.dot, in_axes=(0, 0), out_axes=0))
+dot_mat = jax.jit(jax.vmap(lambda J, v: J@v, in_axes=(0,0), out_axes=0))

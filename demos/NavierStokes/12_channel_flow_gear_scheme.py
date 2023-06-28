@@ -12,24 +12,24 @@ from updec import *
 # EPS = 10.0
 # RBF = partial(gaussian, eps=EPS)
 RBF = polyharmonic      ## Can define which rbf to use
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 # RBF = partial(thin_plate, a=3)
 # MAX_DEGREE = 2
 
 Re = 10
 Du = Re
-DT = 1e-7
+DT = 1e-4
 
-Pa = 101325.0
-# Pa = 0.
+# Pa = 101325.0
+Pa = 0.
 
-NB_ITER = 5
-NB_REFINEMENTS = 2
+NB_ITER = 10
+NB_REFINEMENTS = 100
 
-EXPERIMENET_ID = random_name()
-DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
-make_dir(DATAFOLDER)
+EXPERIMENET_ID = "CilynderFlow"
+DATAFOLDER = "../data/" + EXPERIMENET_ID +"/"
+# make_dir(DATAFOLDER)
 
 
 
@@ -38,10 +38,10 @@ make_dir(DATAFOLDER)
 
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
-# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cylinder":"d"}
-# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cylinder":"n"}
+# facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cilynder":"d"}
+# facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cilynder":"n"}
 
-cloud_vel = GmshCloud(filename="./meshes/channel_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+cloud_vel = GmshCloud(filename="../meshes/channel_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)
@@ -54,7 +54,7 @@ cloud_phi.visualize_cloud(ax=ax2, s=6, title=r"Cloud for $\phi$");
 print(f"\nStarting RBF simulations with {cloud_vel.N} nodes\n")
 
 
-@Partial(jax.jit, static_argnums=[2,3])
+# @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_u(x, center=None, rbf=None, monomial=None, fields=None):
     U = jnp.array([fields[0], fields[1]])
     u_val = nodal_value(x, center, rbf, monomial)
@@ -62,7 +62,7 @@ def diff_operator_u(x, center=None, rbf=None, monomial=None, fields=None):
     u_lap = nodal_laplacian(x, center, rbf, monomial)
     return 3*u_val/(2*DT) + jnp.dot(U, u_grad) - u_lap/Du
 
-@Partial(jax.jit, static_argnums=[2])
+# @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_u(x, centers=None, rbf=None, fields=None):
     u_rhs = value(x, fields[:, 0], centers, rbf)
     grad_px = gradient(x, fields[:, 1], centers, rbf)[0]
@@ -70,7 +70,7 @@ def rhs_operator_u(x, centers=None, rbf=None, fields=None):
 
 
 
-@Partial(jax.jit, static_argnums=[2,3])
+# @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_v(x, center=None, rbf=None, monomial=None, fields=None):
     U = jnp.array([fields[0], fields[1]])
     v_val = nodal_value(x, center, rbf, monomial)
@@ -78,7 +78,7 @@ def diff_operator_v(x, center=None, rbf=None, monomial=None, fields=None):
     v_lap = nodal_laplacian(x, center, rbf, monomial)
     return 3*v_val/(2*DT) + jnp.dot(U, v_grad) - v_lap/Du
 
-@Partial(jax.jit, static_argnums=[2])
+# @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_v(x, centers=None, rbf=None, fields=None):
     v_rhs = value(x, fields[:, 0], centers, rbf)
     grad_py = gradient(x, fields[:, 1], centers, rbf)[1]
@@ -86,11 +86,11 @@ def rhs_operator_v(x, centers=None, rbf=None, fields=None):
 
 
 
-@Partial(jax.jit, static_argnums=[2,3])
+# @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_phi(x, center=None, rbf=None, monomial=None, fields=None):
     return nodal_laplacian(x, center, rbf, monomial)
 
-@Partial(jax.jit, static_argnums=[2])
+# @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_phi(x, centers=None, rbf=None, fields=None):
     return divergence(x, fields[:, :2], centers, rbf)
 
@@ -116,9 +116,9 @@ zero = jax.jit(lambda x: 0.)
 bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero}
 bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero}
 bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero}
-# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cylinder":zero}
-# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
-# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cylinder":zero}
+# bc_u = {"Wall":zero, "Inflow":ones, "Outflow":zero, "Cilynder":zero}
+# bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cilynder":zero}
+# bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Cilynder":zero}
 
 
 
@@ -143,7 +143,7 @@ for i in tqdm(range(NB_ITER)):
         ## TODO Interpolate p and gradphi onto cloud_vel
         p_next_prev = interpolate_field(p_next_prev_, cloud_phi, cloud_vel)
 
-        usol = pde_solver(diff_operator=diff_operator_u,
+        usol = pde_solver_jit(diff_operator=diff_operator_u,
                         diff_args=[u_next_prev, v_next_prev],
                         rhs_operator = rhs_operator_u,
                         rhs_args=[u_rhs, p_next_prev],
@@ -152,10 +152,10 @@ for i in tqdm(range(NB_ITER)):
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
         u_star_now = usol.vals
-        print("u max:", jnp.max(u_star_now))
-        print("u max loc:", cloud_vel.sorted_nodes[jnp.argmax(u_star_now)])
+        # print("u max:", jnp.max(u_star_now))
+        # print("u max loc:", cloud_vel.sorted_nodes[jnp.argmax(u_star_now)])
 
-        vsol = pde_solver(diff_operator=diff_operator_v,
+        vsol = pde_solver_jit(diff_operator=diff_operator_v,
                         diff_args=[u_next_prev, v_next_prev],
                         rhs_operator = rhs_operator_v,
                         rhs_args=[v_rhs, p_next_prev], 
@@ -164,15 +164,15 @@ for i in tqdm(range(NB_ITER)):
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
         v_star_now = vsol.vals
-        print("v max:", jnp.max(v_star_now))
-        print("v max loc:", cloud_vel.sorted_nodes[jnp.argmax(v_star_now)])
+        # print("v max:", jnp.max(v_star_now))
+        # print("v max loc:", cloud_vel.sorted_nodes[jnp.argmax(v_star_now)])
 
         U_star_now = jnp.stack([u_star_now, v_star_now], axis=-1)
         ## TODO Interpolate Ustar onto cloud_phi
         u_star_now_ = interpolate_field(u_star_now, cloud_vel, cloud_phi)
         v_star_now_ = interpolate_field(v_star_now, cloud_vel, cloud_phi)
 
-        phisol_ = pde_solver(diff_operator=diff_operator_phi,
+        phisol_ = pde_solver_jit(diff_operator=diff_operator_phi,
                         rhs_operator = rhs_operator_phi,
                         rhs_args=[u_star_now_,v_star_now_], 
                         cloud = cloud_phi, 
@@ -237,7 +237,10 @@ jnp.savez(DATAFOLDER+'p.npz', renum_map_p, jnp.stack(p_list, axis=0))
 
 print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "u", duration=5)
+# pyvista_animation(DATAFOLDER, "u", duration=5)
+# pyvista_animation(DATAFOLDER, "v", duration=5)
+pyvista_animation(DATAFOLDER, "vel", duration=5)
+# pyvista_animation(DATAFOLDER, "p", duration=5)
 
 
 # %%

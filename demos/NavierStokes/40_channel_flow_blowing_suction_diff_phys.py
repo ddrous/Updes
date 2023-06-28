@@ -255,7 +255,7 @@ def simulate_forward_navier_stokes(cloud_vel,
 ## Constants
 LR = 1e-1
 GAMMA = 0.995
-EPOCHS = 200      ## More than enough for 50 iter and 360 nodes
+EPOCHS = 30      ## More than enough for 50 iter and 360 nodes
 
 
 out_nodes_vel = jnp.array(cloud_vel.facet_nodes["Outflow"])
@@ -323,7 +323,9 @@ def new_grad_loss_fn(u_inflow):
 
 
 
-optimal_u_inflow = jnp.zeros(in_nodes_p.shape)       ## Optimised quantity
+in_nodes_vel = jnp.array(cloud_vel.facet_nodes["Inflow"])
+optimal_u_inflow = jax.vmap(parabolic)(cloud_vel.sorted_nodes[in_nodes_vel])
+
 scheduler = optax.piecewise_constant_schedule(init_value=LR,
                                             boundaries_and_scales={int(EPOCHS*0.4):0.1, int(EPOCHS*0.8):0.1})
 optimiser = optax.adam(learning_rate=scheduler)
@@ -344,7 +346,7 @@ for step in range(1, EPOCHS+1):
 
     history_cost.append(loss)
 
-    if step<=3 or step%10==0:
+    if step<=3 or step%5==0:
         print("\nEpoch: %-5d  InitLR: %.4f    Loss: %.10f    GradNorm: %.4f" % (step, LR, loss, jnp.linalg.norm(grad)))
         # print("\nEpoch: %-5d  LR: %.4f    Loss: %.10f    GradNorm: %.4f" % (step, learning_rate, loss, jnp.linalg.norm(grad)))
 

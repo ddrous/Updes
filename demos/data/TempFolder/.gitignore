@@ -1,8 +1,0 @@
-## A git file just to make sure the directory is tracked by git
-
-# Ignore everything in this directory
-*
-# Except this file
-!.gitignore
-!mesh.msh
-!mesh.vtk

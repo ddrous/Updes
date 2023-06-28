@@ -29,10 +29,10 @@ make_dir(DATAFOLDER)
 RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 1
 
-Re = 100
+Re = 10
 Pa = 0.
 
-NB_ITER = 10
+NB_ITER = 100
 
 
 # %%
@@ -211,7 +211,50 @@ def simulate_forward_navier_stokes(cloud_vel,
         vel_list.append(vel)
         p_list.append(p_)
 
+
+    grad_u = gradient_vals_vec(cloud_vel.sorted_nodes, u, cloud_vel, RBF, MAX_DEGREE)
+    grad_v = gradient_vals_vec(cloud_vel.sorted_nodes, v, cloud_vel, RBF, MAX_DEGREE)
+
+    # print("OLD MAX abs grad u: ", jnp.max(jnp.abs(grad_u)))
+    # print("OLD MAX abs grad v: ", jnp.max(jnp.abs(grad_v)))
+
+
+    usol = pde_solver_jit(diff_operator=diff_operator_id, 
+                    diff_args=None,
+                    rhs_operator = rhs_operator_id, 
+                    rhs_args=[u],
+                    cloud = cloud_vel,
+                    boundary_conditions = bc_u,
+                    rbf=RBF,
+                    max_degree=MAX_DEGREE)
+    vsol = pde_solver_jit(diff_operator=diff_operator_id, 
+                    diff_args=None,
+                    rhs_operator = rhs_operator_id, 
+                    rhs_args=[v],
+                    cloud = cloud_vel,
+                    boundary_conditions = bc_v,
+                    rbf=RBF,
+                    max_degree=MAX_DEGREE)
+
+    grad_u = gradient_vec(cloud_vel.sorted_nodes, usol.coeffs, cloud_vel.sorted_nodes, RBF)
+    grad_v = gradient_vec(cloud_vel.sorted_nodes, vsol.coeffs, cloud_vel.sorted_nodes, RBF)
+
+    # print("MAX abs grad u: ", jnp.max(jnp.abs(grad_u)))
+    # print("MAX abs grad v: ", jnp.max(jnp.abs(grad_v)))
+
+    # print("MAX abs u: ", jnp.max(jnp.abs(u)))
+    # print("MAX abs v: ", jnp.max(jnp.abs(v)))
+
+
     return u_list, v_list, vel_list, p_list
+
+
+def diff_operator_id(x, center=None, rbf=None, monomial=None, fields=None):
+    return nodal_value(x, center, rbf, monomial)
+
+def rhs_operator_id(x, centers=None, rbf=None, fields=None):
+    return value(x, fields[:, 0], centers, rbf)
+
 
 
 # %%

@@ -37,7 +37,7 @@ DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 ### Constants for the problem
 
 RBF = polyharmonic
-MAX_DEGREE = 4
+MAX_DEGREE = 1
 
 Re = 100        ## Make sure the same constants are used for the forward problem
 Pa = 0.
@@ -69,12 +69,11 @@ cloud_mu.visualize_normals(ax=ax2,title="Normals for mu", zoom_region=(0.4,0.6,-
 
 # @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_l1(x, center=None, rbf=None, monomial=None, fields=None):
-    lambda_val = jnp.array([nodal_value(x, center, rbf, monomial), fields[0]])
+    lambda_grad_T = jnp.array([nodal_gradient(x, center, rbf, monomial)[0], fields[0]])
     U_val = jnp.array([fields[1], fields[2]])
-    U_grad_T = jnp.array([fields[3], fields[4]])
     lambda_grad = nodal_gradient(x, center, rbf, monomial)
     lambda_lap = nodal_laplacian(x, center, rbf, monomial)
-    return jnp.dot(lambda_val, U_grad_T) - jnp.dot(U_val, lambda_grad) - lambda_lap/Re  ## TODO: minus
+    return jnp.dot(U_val, lambda_grad_T) + jnp.dot(U_val, lambda_grad) + lambda_lap/Re
 
 # @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_l1(x, centers=None, rbf=None, fields=None):
@@ -85,17 +84,16 @@ def rhs_operator_l1(x, centers=None, rbf=None, fields=None):
 
 # @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_l2(x, center=None, rbf=None, monomial=None, fields=None):
-    lambda_val = jnp.array([fields[0], nodal_value(x, center, rbf, monomial)])
+    lambda_grad_T = jnp.array([fields[0], nodal_gradient(x, center, rbf, monomial)[1]])
     U_val = jnp.array([fields[1], fields[2]])
-    U_grad_T = jnp.array([fields[3], fields[4]])
     lambda_grad = nodal_gradient(x, center, rbf, monomial)
     lambda_lap = nodal_laplacian(x, center, rbf, monomial)
-    return jnp.dot(lambda_val, U_grad_T) - jnp.dot(U_val, lambda_grad) - lambda_lap/Re  ## TODO: minus
+    return jnp.dot(U_val, lambda_grad_T) + jnp.dot(U_val, lambda_grad) + lambda_lap/Re
 
 # @Partial(jax.jit, static_argnums=[2])
 def rhs_operator_l2(x, centers=None, rbf=None, fields=None):
     grad_pi_y = gradient(x, fields[:, 0], centers, rbf)[1]
-    return  -grad_pi_y
+    return -grad_pi_y
 
 
 
@@ -157,11 +155,11 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
     # grad_u = cartesian_gradient_vec(range(cloud_vel.N), u, cloud_vel)
     # grad_v = cartesian_gradient_vec(range(cloud_vel.N), v, cloud_vel)
 
-    grad_u = gradient_vals_vec(cloud_vel.sorted_nodes, u, cloud_vel, RBF, MAX_DEGREE)
-    grad_v = gradient_vals_vec(cloud_vel.sorted_nodes, v, cloud_vel, RBF, MAX_DEGREE)
+    grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes, l1, cloud_lamb, RBF, MAX_DEGREE)
+    grad_l2 = gradient_vals_vec(cloud_lamb.sorted_nodes, l2, cloud_lamb, RBF, MAX_DEGREE)
 
-    grad_u = interpolate_field(grad_u, cloud_vel, cloud_lamb)   ## TODO Check this !
-    grad_v = interpolate_field(grad_v, cloud_vel, cloud_lamb)
+    grad_l1 = interpolate_field(grad_l1, cloud_vel, cloud_lamb)   ## TODO Check this !
+    grad_l2 = interpolate_field(grad_l2, cloud_vel, cloud_lamb)
 
     bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab+pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
     bc_l2 = {"Wall":zero, "Inflow":zero, "Outflow":(-u2*Re, u1*Re), "Blowing":zero, "Suction":zero}
@@ -173,12 +171,19 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
     lnorm_list = []
     pi_list = [pi_]
 
-    for i in tqdm(range(NB_ITER)):
+    # for i in tqdm(range(NB_ITER), disable=True):
+    for i in range(NB_ITER):
 
         pi = interpolate_field(pi_, cloud_mu, cloud_lamb)
+        grad_l1 = interpolate_field(grad_l1, cloud_vel, cloud_lamb)   ## TODO Check this !
+        grad_l2 = interpolate_field(grad_l2, cloud_vel, cloud_lamb)
+
+        # if i%50:
+        #     div_U = divergence_vec(cloud_mu.sorted_nodes, jnp.stack([u, v], axis=-1), cloud_mu.sorted_nodes, RBF)
+        #     print("min max of div_U: ", jnp.min(div_U), jnp.max(div_U))
 
         l1sol = pde_solver_jit(diff_operator=diff_operator_l1, 
-                        diff_args=[l2, u, v, grad_u[:,0], grad_v[:,0]],
+                        diff_args=[grad_l2[:, 0], u, v],
                         rhs_operator = rhs_operator_l1, 
                         rhs_args=[pi],
                         cloud = cloud_lamb,
@@ -187,7 +192,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
                         max_degree=MAX_DEGREE)
 
         l2sol = pde_solver_jit(diff_operator=diff_operator_l2,
-                        diff_args=[l1, u, v, grad_u[:,1], grad_v[:,1]],
+                        diff_args=[grad_l1[:, 1], u, v],
                         rhs_operator = rhs_operator_l2,
                         rhs_args=[pi], 
                         cloud = cloud_lamb, 
@@ -219,6 +224,10 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
         L = Lstar - gradmu
         l1, l2 = L[:,0], L[:,1]
         lnorm = jnp.linalg.norm(L, axis=-1)
+
+        grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes, l1, cloud_lamb, RBF, MAX_DEGREE)
+        grad_l2 = gradient_vals_vec(cloud_lamb.sorted_nodes, l2, cloud_lamb, RBF, MAX_DEGREE)
+
 
         # print("Maximums of lambda 1 and 2:", jnp.max(l1), jnp.max(l2))
 
@@ -277,7 +286,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 ## Constants
 LR = 1e-1
 GAMMA = 0.995
-EPOCHS = 580     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
+EPOCHS = 30     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)
@@ -320,8 +329,6 @@ def cost_grad_fn(l1, pi_):
 forward_sim_args = {"cloud_vel":cloud_vel,
                     "cloud_phi": cloud_phi,
                     "inflow_control":None,
-                    # "Re":Re,
-                    # "Pa":Pa,
                     "NB_ITER":NB_ITER,
                     "RBF":RBF,
                     "MAX_DEGREE":MAX_DEGREE    
@@ -337,6 +344,8 @@ adjoint_sim_args = {"cloud_lamb":cloud_lamb,
 
 
 optimal_u_inflow = jnp.zeros(in_nodes_lamb.shape)       ## Optimised quantity
+# scheduler = optax.piecewise_constant_schedule(init_value=LR,
+#                                             boundaries_and_scales={int(EPOCHS*0.4):0.1, int(EPOCHS*0.8):0.1})
 scheduler = optax.piecewise_constant_schedule(init_value=LR,
                                             boundaries_and_scales={int(EPOCHS*0.4):0.1, int(EPOCHS*0.8):0.1})
 optimiser = optax.adam(learning_rate=scheduler)
