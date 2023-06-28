@@ -15,7 +15,8 @@ from functools import partial
 # import functools
 from updec.utils import plot, dataloader, make_dir, random_name
 from updec.cloud import SquareCloud
-import time
+import tracemalloc, time
+
 
 
 #%%
@@ -24,6 +25,12 @@ import time
 EXPERIMENET_ID = "LaplaceStep1"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
+
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
+
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
 Nx = 50
@@ -47,6 +54,11 @@ test_cloud = train_cloud
 fig, ax = plt.subplots(1, 2, figsize=(6*2,5))
 train_cloud.visualize_cloud(s=0.1, title="Training cloud", ax=ax[0])
 test_cloud.visualize_cloud(s=0.1, title="Testing cloud", ax=ax[1])
+
+
+start = time.process_time()
+tracemalloc.start()
+
 
 x_in = train_cloud.sorted_nodes[:train_cloud.Ni, :]
 dataloader_in = dataloader(x_in, BATCH_SIZE, KEY)       ## For training
@@ -286,7 +298,7 @@ min_costs_per_weight = []
 loader_keys = jax.random.split(key=KEY, num=EPOCHS)
 
 ### Step 1 Line search strategy
-for exp in range(-3, 8):
+for W_id, exp in enumerate(range(-3, 8)):
 
     W_ct = 10**(exp)
 
@@ -382,7 +394,20 @@ for exp in range(-3, 8):
     ax = plot(x_north, pinn_sol_control, "--", label="PINN solution at North", ax=ax);
 
 
+## %%
+
+    mem_usage = tracemalloc.get_traced_memory()[1]
+    exec_time = time.process_time() - start
+
+    print("A few script details:")
+    print(" Peak memory usage: ", mem_usage, 'bytes')
+    print(' CPU execution time:', exec_time, 'seconds')
+
+    jnp.savez(COMPFOLDER+"pinn_inv_1_"+str(W_id), objective_cost=history_loss_ct, in_loss_train=history_loss_in, bc_loss_train=history_loss_bc, exact_control=exact_control, optimal_bcn_c=pinn_control, optimal_bcn_u=pinn_sol_control, exact_solution=exact_sol, optimal_solution=pinn_sol, mem_time_cum=jnp.array([mem_usage, exec_time]))
+
     plt.show()
+
+tracemalloc.stop()
 
 
 # %%

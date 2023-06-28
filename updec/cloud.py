@@ -69,7 +69,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         # print("This is coords", coords)
 
 
-        if self.support_size == "max":
+        if self.support_size == "max" or self.support_size == None:
             # warnings.warn("Support size is too big. Setting it to maximum")
             # self.support_size = self.N-1
             self.support_size = coords.shape[0]
@@ -323,8 +323,8 @@ class SquareCloud(Cloud):
         self.define_global_indices()
         self.define_node_types()
         self.define_node_coordinates(noise_key)
-        if self.support_size:
-            self.define_local_supports()
+        # if self.support_size:
+        self.define_local_supports()
         self.define_outward_normals()
         self.renumber_nodes()
 
@@ -455,8 +455,8 @@ class GmshCloud(Cloud):
 
         self.extract_nodes_and_boundary_type()
         self.define_outward_normals()
-        if self.support_size:
-            self.define_local_supports()
+        # if self.support_size:
+        self.define_local_supports()
         self.renumber_nodes()
 
         self.sorted_nodes = self.sort_dict_by_keys(self.nodes)  ## !TODO: Shall we delete the dictionary after this? It becomes useless !

@@ -15,7 +15,7 @@ from functools import partial
 # import functools
 from updec.utils import plot, dataloader, make_dir, random_name
 from updec.cloud import SquareCloud
-import time
+import tracemalloc, time
 from copy import deepcopy
 
 
@@ -25,6 +25,12 @@ from copy import deepcopy
 EXPERIMENET_ID = "LaplaceStep2"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
+
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
+
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
 Nx = 50
@@ -48,6 +54,12 @@ test_cloud = train_cloud
 fig, ax = plt.subplots(1, 2, figsize=(6*2,5))
 train_cloud.visualize_cloud(s=0.1, title="Training cloud", ax=ax[0])
 test_cloud.visualize_cloud(s=0.1, title="Testing cloud", ax=ax[1])
+
+
+start = time.process_time()
+tracemalloc.start()
+
+
 
 x_in = train_cloud.sorted_nodes[:train_cloud.Ni, :]
 dataloader_in = dataloader(x_in, BATCH_SIZE, KEY)       ## For training
@@ -298,13 +310,13 @@ loader_keys = jax.random.split(key=KEY, num=EPOCHS)
 
 ### Step 2 Line search strategy
 
-for i, W_ct in enumerate(W_ct_list):
+for W_id, W_ct in enumerate(W_ct_list):
 
     ## Flax training state
     u_state = train_state.TrainState.create(apply_fn=u_pinn.apply,
                                             params=u_params,
                                             tx=u_optimizer)
-    c_state = control_states[i]
+    c_state = control_states[W_id]
 
     history_loss_in = []
     history_loss_bc = []
@@ -381,6 +393,21 @@ for i, W_ct in enumerate(W_ct_list):
     plt.show()
 
 
+## %%
+
+    mem_usage = tracemalloc.get_traced_memory()[1]
+    exec_time = time.process_time() - start
+
+    print("A few script details:")
+    print(" Peak memory usage: ", mem_usage, 'bytes')
+    print(' CPU execution time:', exec_time, 'seconds')
+
+
+    jnp.savez(COMPFOLDER+"pinn_inv_2_"+str(W_id), objective_cost=history_loss_ct, in_loss_train=history_loss_in, bc_loss_train=history_loss_bc, exact_control=exact_control, optimal_bcn_c=pinn_control, optimal_bcn_u=pinn_sol_control, exact_solution=exact_sol, optimal_solution=pinn_sol, mem_time_cum=jnp.array([mem_usage, exec_time]))
+
+tracemalloc.stop()
+
+
 # %%
 
 W_ct_list = jnp.array(W_ct_list)
@@ -392,3 +419,5 @@ plot(W_ct_list[ordering], costs_vs_weight[ordering], ".-", title='Step2: Inverse
 ## SOlution: PICK Weight = 0.1
 
 # %%
+
+jnp.savez(COMPFOLDER+"pinn_inv_2_final", weight_list=W_ct_list[ordering], cost_list=costs_vs_weight[ordering])

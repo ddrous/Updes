@@ -11,7 +11,7 @@ import optax
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-# from torch.utils.tensorboard import SummaryWriter
+import tracemalloc, time
 
 from updec import *
 
@@ -22,17 +22,13 @@ MAX_DEGREE = 1
 
 
 RUN_NAME = "LaplaceAdjoint"
-DATAFOLDER = "../data/" + RUN_NAME +"/"
+DATAFOLDER = "./data/" + RUN_NAME +"/"
 make_dir(DATAFOLDER)
-# writer = SummaryWriter("runs/"+RUN_NAME)
-# KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
-Nx = 35
+Nx = 10
 Ny = Nx
 LR = 1e-2
-GAMMA = 1       ### LR decay rate
-EPOCHS = 500
-
+EPOCHS = 5
 
 
 facet_types={"North":"d", "South":"d", "West":"d", "East":"d"}
@@ -41,6 +37,9 @@ train_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None,
 train_cloud.visualize_cloud(s=0.1, title="Training cloud", figsize=(5,4));
 
 #%%
+
+start = time.process_time()
+tracemalloc.start()
 
 ## For the cost function
 north_ids = jnp.array(train_cloud.facet_nodes["North"])
@@ -69,11 +68,10 @@ exact_control = jax.vmap(laplace_exact_control)(x_north)
 
 
 #%%
-@Partial(jax.jit, static_argnums=[2,3])
+
 def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
     return nodal_laplacian(x, center, rbf, monomial)
 
-@Partial(jax.jit, static_argnums=[2])
 def my_rhs_operator(x, centers=None, rbf=None, fields=None):
     return 0.
 
@@ -108,7 +106,7 @@ def adjoint_problem(u_coefs):
 
 
 
-@jax.jit        ################ TODO TODO TODO don't jitt compile this, jitt the PDE solver instead !!!!
+@jax.jit
 def loss_fn(u_coeffs):
     grad_n_y = gradient_vec(xy_north, u_coeffs, train_cloud.sorted_nodes, RBF)[...,1]
 
@@ -141,10 +139,10 @@ for step in tqdm(range(1, EPOCHS+1)):
     loss = loss_fn(u.coeffs)
     grad = grad_loss_fn(lamb.coeffs)
 
+    # optimal_bcn = optimal_bcn - LR * grad
+
     updates, opt_state = optimiser.update(grad, opt_state, optimal_bcn)
     optimal_bcn = optax.apply_updates(optimal_bcn, updates)
-
-    # writer.add_scalar('loss', float(loss), step)
 
     north_error = jnp.mean((optimal_bcn-exact_control)**2)
     history_cost.append(loss)
@@ -154,11 +152,20 @@ for step in tqdm(range(1, EPOCHS+1)):
         print("Epoch: %-5d  InitLR: %.4f    Loss: %.8f  TestMSE: %.6f" % (step, LR, loss, north_error))
 
 
+mem_usage = tracemalloc.get_traced_memory()[1]
+exec_time = time.process_time() - start
+
+print("A few script details:")
+print(" Peak memory usage: ", mem_usage, 'bytes')
+print(' CPU execution time:', exec_time, 'seconds')
+
+tracemalloc.stop()
+
+# %%
+
 ### Visualisation at north
 ax = plot(x_north, exact_control, "-", label="Analytical", x_label=r"$x$", figsize=(5,3), ylim=(-.2,.2))
 plot(x_north, optimal_bcn, "--", label="DAL", ax=ax, title=f"Optimised north solution / MSE = {north_error:.4f}");
-# plt.savefig(DATAFOLDER+"bcn_"+str(step)+".png", transparent=True)
-
 
 ax = plot(history_cost, label='Cost objective', x_label='epochs', title="Loss", y_scale="log");
 plot(north_mse, label='Test Error at North', x_label='epochs', title="Loss", y_scale="log", ax=ax);
@@ -166,7 +173,6 @@ plot(north_mse, label='Test Error at North', x_label='epochs', title="Loss", y_s
 
 # %%
 
-############# Just for fun ########## TODO do this outside the loop
 
 optimal_conditions = {"South":d_south, "West":d_west, "North":optimal_bcn, "East":d_east}
 sol = pde_solver(diff_operator=my_diff_operator,
@@ -175,28 +181,28 @@ sol = pde_solver(diff_operator=my_diff_operator,
                 boundary_conditions = optimal_conditions,
                 rbf=RBF,
                 max_degree=MAX_DEGREE)
-# optimal_error = jnp.mean((exact_sol-sol.vals)**2)
 
-# print("calculated sol = ", sol.vals)
 
 ### Optional visualisation of whole solution
 fig, (ax1, ax2) = plt.subplots(1,2, figsize=(6*2,5))
 train_cloud.visualize_field(sol.vals, cmap="jet", projection="2d", title="Optimized solution", ax=ax1, vmin=-1, vmax=1)
-# test_cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", ax=ax2, vmin=-1, vmax=1)
+# train_cloud.visualize_field(exact_sol, cmap="jet", projection="2d", title="Analytical solution", ax=ax2, vmin=-1, vmax=1)
 train_cloud.visualize_field(jnp.abs(sol.vals-exact_sol), cmap="magma", projection="2d", title="Absolute error", ax=ax2, vmin=0, vmax=1);
-plt.savefig(DATAFOLDER+"solution_"+str(step)+".png", transparent=True)
 
-############# fun ends ##########
-
+# plt.savefig(DATAFOLDER+"bcn_dal"+".png", transparent=True, bbox_inches="tight", dpi=600)
 
 
-## Write to tensorboard
-# hparams_dict = {"learning_rate":LR, "nb_epochs":EPOCHS, "rbf":RBF.__name__, "max_degree":MAX_DEGREE, "nb_nodes":cloud.N, "support_size":cloud.support_size}
-# metrics_dict = {"metrics/mse_error_north":float(north_error)}
-# writer.add_hparams(hparams_dict, metrics_dict, run_name="hp_params")
-# writer.add_figure("plots", fig)
-# writer.flush()
-# writer.close()
+
+# %%
+
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
+# hyperparams = {"RBF":RBF, "MAX_DEGREE":MAX_DEGREE, "LR":LR, "EPOCHS":EPOCHS, "Nx":Nx, "Ny":Ny, "q_cost":q_cost}
+
+
+jnp.savez(COMPFOLDER+"dal", objective_cost=history_cost, north_mse=north_error, exact_control=exact_control, optimal_bcn=optimal_bcn, exact_solution=exact_sol, optimal_solution=sol.vals, mem_time=jnp.array([mem_usage, exec_time]))
 
 
 # %%

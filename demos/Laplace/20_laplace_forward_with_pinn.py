@@ -15,7 +15,8 @@ import matplotlib.pyplot as plt
 # import functools
 from updec.utils import plot, dataloader, make_dir, random_name
 from updec.cloud import SquareCloud
-import time
+import tracemalloc, time
+
 
 
 #%%
@@ -40,13 +41,18 @@ W_bc = 1.
 
 facet_types={"South":"d", "West":"d", "North":"d", "East":"d"}
 
-train_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=KEY, support_size=None)
+train_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=KEY)
 
-test_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=None)
+test_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None)
 
 fig, ax = plt.subplots(1, 2, figsize=(6*2,5))
 train_cloud.visualize_cloud(s=0.1, title="Training cloud", ax=ax[0])
 test_cloud.visualize_cloud(s=0.1, title="Testing cloud", ax=ax[1])
+
+
+start = time.process_time()
+tracemalloc.start()
+
 
 x_in = train_cloud.sorted_nodes[:train_cloud.Ni, :]
 dataloader_in = dataloader(x_in, BATCH_SIZE, KEY)       ## For training
@@ -243,6 +249,17 @@ checkpoints.save_checkpoint(DATAFOLDER, prefix="pinn_checkpoint_", target=state,
 print("Training done, saved network")
 
 
+mem_usage = tracemalloc.get_traced_memory()[1]
+exec_time = time.process_time() - start
+
+print("A few script details:")
+print(" Peak memory usage: ", mem_usage, 'bytes')
+print(' CPU execution time:', exec_time, 'seconds')
+
+tracemalloc.stop()
+
+
+
 #%%
 
 fig, ax = plt.subplots(1, 2, figsize=(6*2,4))
@@ -264,6 +281,15 @@ test_cloud.visualize_field(u_pinn, cmap="jet", projection="2d", title="PINN forw
 # test_cloud.visualize_field(exact_sol, cmap="jet", projection="2d", title="Exact solution", figsize=(6,5), ax=ax[0]);
 
 test_cloud.visualize_field(jnp.abs(exact_sol-u_pinn), cmap="magma", projection="2d", title="PINN absolute error", figsize=(6,5), ax=ax[1]);
+
+
+# %%
+
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
+jnp.savez(COMPFOLDER+"pinn_forward", in_loss_train=history_loss_in, bc_loss_train=history_loss_bc, total_loss_test=history_loss_test, exact_solution=exact_sol, optimal_solution_test=u_pinn, mem_time=jnp.array([mem_usage, exec_time]))
 
 
 # %%

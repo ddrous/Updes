@@ -132,9 +132,9 @@ def random_name(length=5):
 
 def make_dir(path):
     "Make a directory if it doesn't exist"
-    if os.path.exists(path):
-        os.system("rm -rf " + path)
-    os.mkdir(path)
+    if not os.path.exists(path):
+        # os.system("rm -rf " + path)
+        os.mkdir(path)
 
 
 # plt.style.use('bmh')
