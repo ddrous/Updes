@@ -17,13 +17,16 @@ from updec import *
 
 #%%
 
-RBF = polyharmonic
-MAX_DEGREE = 1
-
-
 RUN_NAME = "LaplaceAdjoint"
 DATAFOLDER = "./data/" + RUN_NAME +"/"
 make_dir(DATAFOLDER)
+
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
+RBF = polyharmonic
+MAX_DEGREE = 1
 
 Nx = 10
 Ny = Nx
@@ -195,12 +198,7 @@ train_cloud.visualize_field(jnp.abs(sol.vals-exact_sol), cmap="magma", projectio
 
 # %%
 
-## Save data for comparison
-COMPFOLDER = "./data/" + "Comparison" +"/"
-make_dir(COMPFOLDER)
-
 # hyperparams = {"RBF":RBF, "MAX_DEGREE":MAX_DEGREE, "LR":LR, "EPOCHS":EPOCHS, "Nx":Nx, "Ny":Ny, "q_cost":q_cost}
-
 
 jnp.savez(COMPFOLDER+"dal", objective_cost=history_cost, north_mse=north_error, exact_control=exact_control, optimal_bcn=optimal_bcn, exact_solution=exact_sol, optimal_solution=sol.vals, mem_time=jnp.array([mem_usage, exec_time]))
 

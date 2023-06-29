@@ -21,8 +21,10 @@ quadqs_statistics.json
 
 demos/Laplace/data/*
 !demos/Laplace/data/README.md
+!demos/Laplace/data/Comparison
 !demos/Laplace/data/TempFolder/*
 
 demos/NavierStokes/data/*
 !demos/NavierStokes/data/README.md
+!demos/NavierStokes/data/Comparison
 !demos/NavierStokes/data/TempFolder/*

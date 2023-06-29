@@ -16,7 +16,9 @@ import matplotlib.pyplot as plt
 from updec.utils import plot, dataloader, make_dir
 from updec.cloud import GmshCloud
 from updec.visualise import pyvista_animation
-import time
+
+import tracemalloc, time
+
 
 
 #%%
@@ -25,10 +27,14 @@ import time
 EXPERIMENET_ID = "ChannelForward"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
+
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
+
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
-
-EPOCHS = 100000
 
 W_mo = 1.
 W_co = 1.
@@ -39,28 +45,35 @@ Re = 100
 Pa = 0.
 
 
+## Normalising the x coordinates
+NORM_FACTOR = jnp.array([[1.5, 1.0]])
+
+
+INIT_LR = 1e-3
+EPOCHS = 100000
+
+
 #%%
 
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Blowing":"d", "Suction":"d"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Suction":"n"}
 
-cloud_vel = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER, support_size=0)
-cloud_p = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi, support_size=0)
+cloud_vel = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER, support_size=1)
+cloud_p = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi, support_size=1)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
 cloud_vel.visualize_cloud(ax=ax1, s=1, title="Cloud for velocity", xlabel=False);
 cloud_p.visualize_cloud(ax=ax2, s=1, title=r"Cloud for pressure");
 
 
-## Normalising the x coordinates
-# NORM_FACTOR = jnp.array([[1.0, 1.0]])
-NORM_FACTOR = jnp.array([[1.5, 1.0]])
-
 x_in_vel = cloud_vel.sorted_nodes[:cloud_vel.Ni, :] / NORM_FACTOR
 x_in_p = cloud_p.sorted_nodes[:cloud_p.Ni, :] / NORM_FACTOR
 
 
 #%%
+
+start = time.process_time()
+tracemalloc.start()
 
 parabolic = jax.vmap(lambda x: 4*x[1]*(1.-x[1]))
 blowing = jax.vmap(lambda x: 0.3)
@@ -149,7 +162,6 @@ params = init_flax_params(pinn)
 
 #%%
 
-INIT_LR = 1e-3
 # total_steps = EPOCHS*(x_in_vel.shape[0]//BATCH_SIZE)
 total_steps = EPOCHS     ## No batch size
 
@@ -271,6 +283,16 @@ checkpoints.save_checkpoint(DATAFOLDER, prefix="pinn_checkpoint_", target=state,
 print("Training done, saved network")
 
 
+mem_usage = tracemalloc.get_traced_memory()[1]
+exec_time = time.process_time() - start
+
+print("A few performance details:")
+print(" Peak memory usage: ", mem_usage, 'bytes')
+print(' CPU execution time:', exec_time, 'seconds')
+
+tracemalloc.stop()
+
+
 #%%
 
 fig, ax = plt.subplots(1, 1, figsize=(6*1,4))
@@ -311,3 +333,5 @@ pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=jnp.min(vel_pinn), vmax=jn
 pyvista_animation(DATAFOLDER, "p", duration=5, vmin=jnp.min(p_pinn), vmax=jnp.max(p_pinn))
 
 # %%
+
+jnp.savez(COMPFOLDER+"pinn_forward", mom_loss=history_loss_mon, cont_loss=history_loss_cont, bc_loss=history_loss_bc, mem_time=jnp.array([mem_usage, exec_time]))

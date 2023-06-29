@@ -11,6 +11,8 @@ from functools import partial
 from tqdm import tqdm
 jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on Daffy Duck !``
 
+import tracemalloc, time
+
 from updec import *
 
 # %%
@@ -18,12 +20,9 @@ from updec import *
 
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "ChannelDiffPhys"
-DATAFOLDER = "../data/" + EXPERIMENET_ID +"/"
+DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 # make_dir(DATAFOLDER)
 
-
-# %%
-### Constants for the problem
 
 RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 1
@@ -34,12 +33,18 @@ Pa = 0.
 NB_ITER = 3
 
 
+## Constants for gradient descent
+LR = 1e-1
+GAMMA = 0.995
+EPOCHS = 300      ## More than enough for 50 iter and 360 nodes
+
+
 # %%
 
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Blowing":"d", "Suction":"d"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Suction":"n"}
 
-cloud_vel = GmshCloud(filename="../meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)
+cloud_vel = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
@@ -53,6 +58,8 @@ cloud_phi.visualize_cloud(ax=ax2, s=1, title=r"Cloud for $\phi$");
 
 # %%
 
+start = time.process_time()
+tracemalloc.start()
 
 # @Partial(jax.jit, static_argnums=[2,3])
 def diff_operator_u(x, center=None, rbf=None, monomial=None, fields=None):
@@ -252,12 +259,6 @@ def simulate_forward_navier_stokes(cloud_vel,
 ### Direct adjoitn Looping 
 
 
-## Constants
-LR = 1e-1
-GAMMA = 0.995
-EPOCHS = 30      ## More than enough for 50 iter and 360 nodes
-
-
 out_nodes_vel = jnp.array(cloud_vel.facet_nodes["Outflow"])
 in_nodes_p = jnp.array(cloud_phi.facet_nodes["Inflow"])
 
@@ -355,6 +356,15 @@ for step in range(1, EPOCHS+1):
 
         plt.show()
 
+mem_usage = tracemalloc.get_traced_memory()[1]
+exec_time = time.process_time() - start
+
+print("A few performance details:")
+print(" Peak memory usage: ", mem_usage, 'bytes')
+print(' CPU execution time:', exec_time, 'seconds')
+
+tracemalloc.stop()
+
 
 #%%
 plot(history_cost, label='Cost objective', x_label='epochs', title="Loss", y_scale="log");
@@ -396,3 +406,9 @@ pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=jnp.min(vel_list[-1]), vma
 pyvista_animation(DATAFOLDER, "p", duration=5, vmin=jnp.min(p_list[-1]), vmax=jnp.max(p_list[-1]))
 
 # %%
+
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
+jnp.savez(COMPFOLDER+"dp", objective_cost=history_cost, outflow_final_mse=parab_error, optimal_control=optimal_u_inflow, mem_time=jnp.array([mem_usage, exec_time]))

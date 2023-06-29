@@ -25,11 +25,18 @@ import tracemalloc, time
 EXPERIMENET_ID = "LaplaceForward"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
+
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
 Nx = 50
 Ny = Nx
+
 BATCH_SIZE = Nx*Ny // 10
+INIT_LR = 1e-3
 NB_LAYERS = 4
 EPOCHS = 20000
 
@@ -134,7 +141,6 @@ test_cloud.visualize_field(exact_sol, cmap="jet", projection="2d", title="Exact 
 
 #%%
 
-INIT_LR = 1e-3
 total_steps = EPOCHS*(x_in.shape[0]//BATCH_SIZE)
 
 ## Optimizer
@@ -285,9 +291,6 @@ test_cloud.visualize_field(jnp.abs(exact_sol-u_pinn), cmap="magma", projection="
 
 # %%
 
-## Save data for comparison
-COMPFOLDER = "./data/" + "Comparison" +"/"
-make_dir(COMPFOLDER)
 
 jnp.savez(COMPFOLDER+"pinn_forward", in_loss_train=history_loss_in, bc_loss_train=history_loss_bc, total_loss_test=history_loss_test, exact_solution=exact_sol, optimal_solution_test=u_pinn, mem_time=jnp.array([mem_usage, exec_time]))
 

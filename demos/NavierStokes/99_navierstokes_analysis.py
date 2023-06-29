@@ -1,7 +1,7 @@
 # %%
 
 """
-Comparison of Laplace control methods
+Comparison of NavierStokes control methods
 """
 
 import jax.numpy as jnp
@@ -10,23 +10,17 @@ import matplotlib.pyplot as plt
 
 from updec import *
 
+
 #%%
 
-RBF = polyharmonic
-MAX_DEGREE = 1
-
-
 DATAFOLDER = "./data/Comparison/"
-Nx = 15
-Ny = Nx
-LR = 1e-2
-EPOCHS = 5
 
 
-facet_types={"North":"d", "South":"d", "West":"d", "East":"d"}
-train_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size="max")
+facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Blowing":"d", "Suction":"d"}
+facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Suction":"n"}
 
-train_cloud.visualize_cloud(s=0.1, title="Training cloud", figsize=(5,4));
+cloud_vel = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)
+cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 #%%
 
@@ -37,11 +31,6 @@ arraynames = dal_arrays.files
 print(arraynames)
 
 
-objective_cost_dal = dal_arrays["objective_cost"]
-north_mse_dal = dal_arrays["north_mse"]
-optimal_bcn_dal = dal_arrays["optimal_bcn"]
-exact_solution_dal = dal_arrays["exact_solution"]
-optimal_solution_dal = dal_arrays["optimal_solution"]
 
 
 

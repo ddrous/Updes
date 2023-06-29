@@ -13,31 +13,19 @@ import optax
 from tqdm import tqdm
 jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on Daffy Duck !
 
+import tracemalloc, time
+
 from updec import *
 import sys
 
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "ChannelAdjoint2"
-DATAFOLDER = "../data/" + EXPERIMENET_ID +"/"
+DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 # make_dir(DATAFOLDER)
 
-
-# %%
-# Some fake params.
-
-# new_optimal_u_inflow, treedef = jax.tree_util.tree_flatten(optimal_u_inflow)
-# # print(new_optimal_u_inflow)
-# # jax.tree_util.tree_unflatten(treedef, new_optimal_u_inflow)
-# optimiser = optax.adam(learning_rate=1e-4)
-# grad = jax.tree_util.tree_unflatten(treedef, grad)
-
-# opt_state = optimiser.init(optimal_u_inflow)
-# # grad
-# # opt_state
-# # optimal_u_inflow
-# updates, opt_state = optimiser.update(grad, opt_state, optimal_u_inflow)
-
-# %%
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
 
 ### Constants for the problem
 
@@ -50,13 +38,19 @@ Pa = 0.
 NB_ITER = 100    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 
 
+## Constants for gradient descent
+LR = 1e-2
+GAMMA = 0.995
+EPOCHS = 20
+
+
 # %%
 
 
 facet_types_lamb = {"Wall":"d", "Inflow":"d", "Outflow":"r", "Blowing":"d", "Suction":"d"}
 facet_types_mu = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Suction":"n"}
 
-cloud_lamb = GmshCloud(filename="../meshes/channel_blowing_suction.py", facet_types=facet_types_lamb, mesh_save_location=DATAFOLDER)
+cloud_lamb = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_lamb, mesh_save_location=DATAFOLDER)
 cloud_mu = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_mu)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
@@ -70,6 +64,8 @@ cloud_mu.visualize_normals(ax=ax2,title="Normals for mu", zoom_region=(0.4,0.6,-
 
 # %%
 
+start = time.process_time()
+tracemalloc.start()
 
 
 def diff_operator_l1(x, center=None, rbf=None, monomial=None, fields=None):
@@ -273,155 +269,155 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
 
 
-def diff_operator_l(x, center=None, rbf=None, monomial=None, fields=None):
-    return nodal_value(x, center, rbf, monomial)
+# def diff_operator_l(x, center=None, rbf=None, monomial=None, fields=None):
+#     return nodal_value(x, center, rbf, monomial)
 
-def rhs_operator_l(x, centers=None, rbf=None, fields=None):
-    return value(x, fields[:, 0], centers, rbf)
-
-
-def simulate_adjoint_navier_stokes_instationnary(cloud_lamb, 
-                                                cloud_mu, 
-                                                cloud_vel=None,
-                                                u=None, v=None,
-                                                NB_ITER=NB_ITER, 
-                                                RBF=RBF, MAX_DEGREE=MAX_DEGREE):
-
-    """ Simulates a adjoint Navier Stokes problem using an iterative approach """
-
-    l1 = jnp.zeros((cloud_lamb.N,))
-    l2 = jnp.zeros((cloud_lamb.N,))
-    # out_nodes_lamb = jnp.array(cloud_lamb.facet_nodes["Outflow"])
-
-    pi_ = jnp.zeros((cloud_mu.N,))       ## on cloud_mu        ##TODO set this to p_a on Outlet
-    out_nodes_pi = jnp.array(cloud_mu.facet_nodes["Outflow"])
-    pi_ = pi_.at[out_nodes_pi].set(Pa)
+# def rhs_operator_l(x, centers=None, rbf=None, fields=None):
+#     return value(x, fields[:, 0], centers, rbf)
 
 
-    parabolic = jax.jit(lambda x: 4*x[1]*(1.-x[1]))
-    zero = jax.jit(lambda x: 0.)
+# def simulate_adjoint_navier_stokes_instationnary(cloud_lamb, 
+#                                                 cloud_mu, 
+#                                                 cloud_vel=None,
+#                                                 u=None, v=None,
+#                                                 NB_ITER=NB_ITER, 
+#                                                 RBF=RBF, MAX_DEGREE=MAX_DEGREE):
+
+#     """ Simulates a adjoint Navier Stokes problem using an iterative approach """
+
+#     l1 = jnp.zeros((cloud_lamb.N,))
+#     l2 = jnp.zeros((cloud_lamb.N,))
+#     # out_nodes_lamb = jnp.array(cloud_lamb.facet_nodes["Outflow"])
+
+#     pi_ = jnp.zeros((cloud_mu.N,))       ## on cloud_mu        ##TODO set this to p_a on Outlet
+#     out_nodes_pi = jnp.array(cloud_mu.facet_nodes["Outflow"])
+#     pi_ = pi_.at[out_nodes_pi].set(Pa)
 
 
-    ## Quantities for Robin boundary condition
-    if cloud_vel == None:
-        print("WARNING: no cloud for forward grad computation. Using cloud for lambda ")
-        cloud_vel = cloud_lamb
-        if u != None or v != None:
-            print("ERROR: You've provided a cloud for velocity without an actual velocity !")
-            sys.exit(1)
-        if u == None:
-            print("WARNING: u velocity not provided, using ones")
-            u = jnp.ones((cloud_vel.N))
-        if v == None:
-            print("WARNING: v velocity not provided, using ones")
-            v = jnp.ones((cloud_vel.N))
+#     parabolic = jax.jit(lambda x: 4*x[1]*(1.-x[1]))
+#     zero = jax.jit(lambda x: 0.)
 
 
-    out_nodes_vel = jnp.array(cloud_vel.facet_nodes["Outflow"])
-    u1 = u[out_nodes_vel]      ## For robin BCs
-    u2 = v[out_nodes_vel]
-    u_parab = jax.vmap(parabolic)(cloud_vel.sorted_nodes[out_nodes_vel])
-    pi_out = pi_[out_nodes_pi]
-
-    # grad_u = cartesian_gradient_vec(range(cloud_vel.N), u, cloud_vel)
-    # grad_v = cartesian_gradient_vec(range(cloud_vel.N), v, cloud_vel)
-
-    grad_u = gradient_vals_vec(cloud_vel.sorted_nodes, u, cloud_vel, RBF, MAX_DEGREE)
-    grad_v = gradient_vals_vec(cloud_vel.sorted_nodes, v, cloud_vel, RBF, MAX_DEGREE)
-
-    grad_u = interpolate_field(grad_u, cloud_vel, cloud_lamb)   ## TODO Check this !
-    grad_v = interpolate_field(grad_v, cloud_vel, cloud_lamb)
-
-
-    bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab-pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
-    bc_l2 = {"Wall":zero, "Inflow":zero, "Outflow":(u2*Re, u1*Re), "Blowing":zero, "Suction":zero}
-    bc_mu = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}
+#     ## Quantities for Robin boundary condition
+#     if cloud_vel == None:
+#         print("WARNING: no cloud for forward grad computation. Using cloud for lambda ")
+#         cloud_vel = cloud_lamb
+#         if u != None or v != None:
+#             print("ERROR: You've provided a cloud for velocity without an actual velocity !")
+#             sys.exit(1)
+#         if u == None:
+#             print("WARNING: u velocity not provided, using ones")
+#             u = jnp.ones((cloud_vel.N))
+#         if v == None:
+#             print("WARNING: v velocity not provided, using ones")
+#             v = jnp.ones((cloud_vel.N))
 
 
-    l1_list = [l1]
-    l2_list = [l2]
-    lnorm_list = []
-    pi_list = [pi_]
+#     out_nodes_vel = jnp.array(cloud_vel.facet_nodes["Outflow"])
+#     u1 = u[out_nodes_vel]      ## For robin BCs
+#     u2 = v[out_nodes_vel]
+#     u_parab = jax.vmap(parabolic)(cloud_vel.sorted_nodes[out_nodes_vel])
+#     pi_out = pi_[out_nodes_pi]
 
-    dt = 1e-3
+#     # grad_u = cartesian_gradient_vec(range(cloud_vel.N), u, cloud_vel)
+#     # grad_v = cartesian_gradient_vec(range(cloud_vel.N), v, cloud_vel)
 
-    for i in tqdm(range(NB_ITER)):
+#     grad_u = gradient_vals_vec(cloud_vel.sorted_nodes, u, cloud_vel, RBF, MAX_DEGREE)
+#     grad_v = gradient_vals_vec(cloud_vel.sorted_nodes, v, cloud_vel, RBF, MAX_DEGREE)
 
-        l1sol = pde_solver_jit(diff_operator=diff_operator_l, 
-                        diff_args=None,
-                        rhs_operator = rhs_operator_l, 
-                        rhs_args=[l1],
-                        cloud = cloud_lamb,
-                        boundary_conditions = bc_l1,
-                        rbf=RBF,
-                        max_degree=MAX_DEGREE)
-
-        l2sol = pde_solver_jit(diff_operator=diff_operator_l,
-                        diff_args=None,
-                        rhs_operator = rhs_operator_l,
-                        rhs_args=[l2], 
-                        cloud = cloud_lamb, 
-                        boundary_conditions = bc_l2,
-                        rbf=RBF,
-                        max_degree=MAX_DEGREE)
-
-        l1, l2 = l1sol.vals, l2sol.vals
-
-        Lk = jnp.stack([l1, l2], axis=-1)
-        # gradl1 = gradient_vals_vec(cloud_lamb.sorted_nodes, l1, cloud_lamb, RBF, MAX_DEGREE)
-        # gradl2 = gradient_vals_vec(cloud_lamb.sorted_nodes, l2, cloud_lamb, RBF, MAX_DEGREE)
-        gradl1 = gradient_vec(cloud_lamb.sorted_nodes, l1sol.coeffs, cloud_lamb.sorted_nodes, RBF)
-        gradl2 = gradient_vec(cloud_lamb.sorted_nodes, l2sol.coeffs, cloud_lamb.sorted_nodes, RBF)
-        U = jnp.stack([u, v], axis=-1)
-        ugradLk = jnp.stack([dot_vec(U, gradl1), dot_vec(U, gradl2)], axis=-1)
+#     grad_u = interpolate_field(grad_u, cloud_vel, cloud_lamb)   ## TODO Check this !
+#     grad_v = interpolate_field(grad_v, cloud_vel, cloud_lamb)
 
 
-        graduT = jnp.stack((grad_u, grad_v), axis=-1)
-        graduTLk = dot_mat(graduT, Lk)
-
-        grad_pi_ = gradient_vals_vec(cloud_mu.sorted_nodes, pi_, cloud_mu, RBF, MAX_DEGREE)
-        grad_pi = interpolate_field(grad_pi_, cloud_mu, cloud_lamb)
+#     bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab-pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
+#     bc_l2 = {"Wall":zero, "Inflow":zero, "Outflow":(u2*Re, u1*Re), "Blowing":zero, "Suction":zero}
+#     bc_mu = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}
 
 
-        # lap_l1 = laplacian_vals_vec(cloud_lamb.sorted_nodes, l1, cloud_lamb, RBF, MAX_DEGREE)
-        # lap_l2 = laplacian_vals_vec(cloud_lamb.sorted_nodes, l2, cloud_lamb, RBF, MAX_DEGREE)
-        lap_l1 = laplacian_vec(cloud_lamb.sorted_nodes, l1, cloud_lamb.sorted_nodes, RBF)
-        lap_l2 = laplacian_vec(cloud_lamb.sorted_nodes, l2, cloud_lamb.sorted_nodes, RBF)
-        lap_Lk = jnp.stack([lap_l1, lap_l2], axis=-1)
+#     l1_list = [l1]
+#     l2_list = [l2]
+#     lnorm_list = []
+#     pi_list = [pi_]
+
+#     dt = 1e-3
+
+#     for i in tqdm(range(NB_ITER)):
+
+#         l1sol = pde_solver_jit(diff_operator=diff_operator_l, 
+#                         diff_args=None,
+#                         rhs_operator = rhs_operator_l, 
+#                         rhs_args=[l1],
+#                         cloud = cloud_lamb,
+#                         boundary_conditions = bc_l1,
+#                         rbf=RBF,
+#                         max_degree=MAX_DEGREE)
+
+#         l2sol = pde_solver_jit(diff_operator=diff_operator_l,
+#                         diff_args=None,
+#                         rhs_operator = rhs_operator_l,
+#                         rhs_args=[l2], 
+#                         cloud = cloud_lamb, 
+#                         boundary_conditions = bc_l2,
+#                         rbf=RBF,
+#                         max_degree=MAX_DEGREE)
+
+#         l1, l2 = l1sol.vals, l2sol.vals
+
+#         Lk = jnp.stack([l1, l2], axis=-1)
+#         # gradl1 = gradient_vals_vec(cloud_lamb.sorted_nodes, l1, cloud_lamb, RBF, MAX_DEGREE)
+#         # gradl2 = gradient_vals_vec(cloud_lamb.sorted_nodes, l2, cloud_lamb, RBF, MAX_DEGREE)
+#         gradl1 = gradient_vec(cloud_lamb.sorted_nodes, l1sol.coeffs, cloud_lamb.sorted_nodes, RBF)
+#         gradl2 = gradient_vec(cloud_lamb.sorted_nodes, l2sol.coeffs, cloud_lamb.sorted_nodes, RBF)
+#         U = jnp.stack([u, v], axis=-1)
+#         ugradLk = jnp.stack([dot_vec(U, gradl1), dot_vec(U, gradl2)], axis=-1)
 
 
-        Lstar = Lk + dt * (ugradLk - graduTLk + grad_pi + lap_Lk/Re)
+#         graduT = jnp.stack((grad_u, grad_v), axis=-1)
+#         graduTLk = dot_mat(graduT, Lk)
+
+#         grad_pi_ = gradient_vals_vec(cloud_mu.sorted_nodes, pi_, cloud_mu, RBF, MAX_DEGREE)
+#         grad_pi = interpolate_field(grad_pi_, cloud_mu, cloud_lamb)
 
 
-        l1star, l2star = Lstar[:, 0], Lstar[:, 1]     ## Star
+#         # lap_l1 = laplacian_vals_vec(cloud_lamb.sorted_nodes, l1, cloud_lamb, RBF, MAX_DEGREE)
+#         # lap_l2 = laplacian_vals_vec(cloud_lamb.sorted_nodes, l2, cloud_lamb, RBF, MAX_DEGREE)
+#         lap_l1 = laplacian_vec(cloud_lamb.sorted_nodes, l1, cloud_lamb.sorted_nodes, RBF)
+#         lap_l2 = laplacian_vec(cloud_lamb.sorted_nodes, l2, cloud_lamb.sorted_nodes, RBF)
+#         lap_Lk = jnp.stack([lap_l1, lap_l2], axis=-1)
 
-        l1_ = interpolate_field(l1star, cloud_lamb, cloud_mu)
-        l2_ = interpolate_field(l2star, cloud_lamb, cloud_mu)
 
-        musol_ = pde_solver_jit(diff_operator=diff_operator_mu,
-                        rhs_operator = rhs_operator_mu,
-                        rhs_args=[l1_, l2_], 
-                        cloud = cloud_mu, 
-                        boundary_conditions = bc_mu,
-                        rbf=RBF,
-                        max_degree=MAX_DEGREE)
+#         Lstar = Lk + dt * (ugradLk - graduTLk + grad_pi + lap_Lk/Re)
 
-        pi_ = pi_ + musol_.vals
 
-        gradmu_ = gradient_vec(cloud_mu.sorted_nodes, musol_.coeffs, cloud_mu.sorted_nodes, RBF)
+#         l1star, l2star = Lstar[:, 0], Lstar[:, 1]     ## Star
 
-        gradmu = interpolate_field(gradmu_, cloud_mu, cloud_lamb)
+#         l1_ = interpolate_field(l1star, cloud_lamb, cloud_mu)
+#         l2_ = interpolate_field(l2star, cloud_lamb, cloud_mu)
 
-        L = Lstar + gradmu
-        l1, l2 = L[:,0], L[:,1]
-        lnorm = jnp.linalg.norm(L, axis=-1)
+#         musol_ = pde_solver_jit(diff_operator=diff_operator_mu,
+#                         rhs_operator = rhs_operator_mu,
+#                         rhs_args=[l1_, l2_], 
+#                         cloud = cloud_mu, 
+#                         boundary_conditions = bc_mu,
+#                         rbf=RBF,
+#                         max_degree=MAX_DEGREE)
 
-        l1_list.append(l1)
-        l2_list.append(l2)
-        lnorm_list.append(lnorm)
-        pi_list.append(pi_)
+#         pi_ = pi_ + musol_.vals
 
-    return l1_list, l2_list, lnorm_list, pi_list
+#         gradmu_ = gradient_vec(cloud_mu.sorted_nodes, musol_.coeffs, cloud_mu.sorted_nodes, RBF)
+
+#         gradmu = interpolate_field(gradmu_, cloud_mu, cloud_lamb)
+
+#         L = Lstar + gradmu
+#         l1, l2 = L[:,0], L[:,1]
+#         lnorm = jnp.linalg.norm(L, axis=-1)
+
+#         l1_list.append(l1)
+#         l2_list.append(l2)
+#         lnorm_list.append(lnorm)
+#         pi_list.append(pi_)
+
+#     return l1_list, l2_list, lnorm_list, pi_list
 
 
 
@@ -477,11 +473,6 @@ def simulate_adjoint_navier_stokes_instationnary(cloud_lamb,
 
 ### Direct adjoitn Looping 
 
-
-## Constants
-LR = 1e-2
-GAMMA = 0.995
-EPOCHS = 20     ## 3 More than enough for 50 iter and 360 nodes, but at least 4 needed for 314 nodes
 
 
 ## Bluid new clouds for forward problem (different boundary conditions)
@@ -590,7 +581,6 @@ for step in range(1, EPOCHS+1):
     if step<=3 or step%5==0:
         print("\nEpoch: %-5d  InitLR: %.4f    Loss: %.10f    GradNorm: %.4f  TestMSE: %.6f" % (step, LR, loss, jnp.linalg.norm(grad), parab_error))
 
-
         fig, (ax1, ax2) = plt.subplots(1,2, figsize=(6*2,5))
 
         plot(u_parab, y_out, "-", label=r"$u$ target", y_label=r"$y$", xlim=(-0.1, 1.1), figsize=(5,3), ax=ax1)
@@ -602,6 +592,17 @@ for step in range(1, EPOCHS+1):
         plot(optimal_u_inflow, y_in, "--", label="Optimised DAL", ax=ax2, xlim=None, title=f"Inflow velocity");
 
         plt.show()
+
+
+mem_usage = tracemalloc.get_traced_memory()[1]
+exec_time = time.process_time() - start
+
+print("A few performance details:")
+print(" Peak memory usage: ", mem_usage, 'bytes')
+print(' CPU execution time:', exec_time, 'seconds')
+
+tracemalloc.stop()
+
 
 
 #%%
@@ -650,3 +651,9 @@ pyvista_animation(DATAFOLDER, "l1", duration=5)
 pyvista_animation(DATAFOLDER, "l2", duration=5)
 pyvista_animation(DATAFOLDER, "lnorm", duration=5)
 pyvista_animation(DATAFOLDER, "pi", duration=5)
+
+
+
+# %%
+
+jnp.savez(COMPFOLDER+"dal", objective_cost=history_cost, outflow_mse=parab_out_mse, optimal_control=optimal_u_inflow, mem_time=jnp.array([mem_usage, exec_time]))

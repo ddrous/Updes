@@ -16,20 +16,23 @@ from updec import *
 
 #%%
 
-RBF = polyharmonic
-MAX_DEGREE = 1
-
 
 RUN_NAME = "LaplaceDiffPhys"
 DATAFOLDER = "./data/" + RUN_NAME +"/"
 make_dir(DATAFOLDER)
 
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
+RBF = polyharmonic
+MAX_DEGREE = 1
+
 Nx = 15
 Ny = Nx
+
 LR = 1e-2
 GAMMA = 1       ### LR decay rate
 EPOCHS = 5
-
 
 
 facet_types={"North":"d", "South":"d", "West":"d", "East":"d"}
@@ -172,8 +175,6 @@ plt.savefig(DATAFOLDER+"solution_"+str(step)+".png", transparent=True)
 # %%
 
 ## Save data for comparison
-COMPFOLDER = "./data/" + "Comparison" +"/"
-make_dir(COMPFOLDER)
 
 jnp.savez(COMPFOLDER+"dp", objective_cost=history_cost, north_mse=north_error, exact_control=exact_control, optimal_bcn=optimal_bcn, exact_solution=exact_sol, optimal_solution=sol.vals, mem_time=jnp.array([mem_usage, exec_time]))
 

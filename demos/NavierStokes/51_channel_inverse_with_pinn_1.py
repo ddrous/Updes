@@ -16,7 +16,9 @@ from functools import partial
 from updec.utils import plot, dataloader, make_dir
 from updec.cloud import GmshCloud
 from updec.visualise import pyvista_animation
-import time
+
+import tracemalloc, time
+
 
 
 #%%
@@ -25,13 +27,14 @@ import time
 EXPERIMENET_ID = "ChannelInverseStep1"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 make_dir(DATAFOLDER)
+
+
+## Save data for comparison
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
+
+
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
-
-NORM_FACTOR = jnp.array([[1.5, 1.0]])
-
-EPOCHS = 100000
-
-INIT_LR = 1e-3
 
 W_mo = 1.
 W_co = 1.
@@ -40,14 +43,19 @@ W_bc = 1.
 Re = 100
 Pa = 0.
 
+NORM_FACTOR = jnp.array([[1.5, 1.0]])
+
+INIT_LR = 1e-3
+EPOCHS = 100000
+
 
 #%%
 
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Blowing":"d", "Suction":"d"}
 facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Blowing":"n", "Suction":"n"}
 
-cloud_vel = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER, support_size=0)
-cloud_p = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi, support_size=0)
+cloud_vel = GmshCloud(filename="./meshes/channel_blowing_suction.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER, support_size=1)
+cloud_p = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi, support_size=1)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,3*2), sharex=True)
 cloud_vel.visualize_cloud(ax=ax1, s=1, title="Cloud for velocity", xlabel=False);
@@ -60,6 +68,8 @@ x_in_p = cloud_p.sorted_nodes[:cloud_p.Ni, :] / NORM_FACTOR
 
 #%%
 
+start = time.process_time()
+tracemalloc.start()
 
 parabolic = jax.vmap(lambda x: 4*x[1]*(1.-x[1]))
 blowing = jax.vmap(lambda x: 0.3)
@@ -293,7 +303,7 @@ min_costs_per_weight = []
 loader_keys = jax.random.split(key=KEY, num=EPOCHS)
 
 ### Step 1 Line search strategy
-for exp in range(-3, 6):
+for W_id, exp in enumerate(range(-3, 6)):
 
     W_ct = 10**(exp)
 
@@ -380,6 +390,18 @@ for exp in range(-3, 6):
     plot(u_outlet, y_outlet, "--", label=r"$u$ PINN", ax=ax2, title=f"Outlet velocity / MSE = {parab_error:.4f}");
     plot(jnp.zeros_like(y_outlet), y_outlet, "-", label=r"$v$ target", y_label=r"$y$", ax=ax2)
     plot(v_outlet, y_outlet, "--", label=r"$v$ PINN", ax=ax2);
+
+
+    mem_usage = tracemalloc.get_traced_memory()[1]
+    exec_time = time.process_time() - start
+
+    print("A few performance details:")
+    print(" Peak memory usage: ", mem_usage, 'bytes')
+    print(' CPU execution time:', exec_time, 'seconds')
+
+    tracemalloc.stop()
+
+    jnp.savez(COMPFOLDER+"pinn_inv_1_"+str(W_id), objective_cost=history_loss_ct, mom_loss=history_loss_mon, cont_loss=history_loss_cont, bc_loss=history_loss_bc, pinn_control=pinn_control, pinn_sol_control=pinn_sol_control, u_target=u_parab, u_outlet=u_outlet, v_target=jnp.zeros_like(y_outlet), v_outlet=v_outlet,mem_time_cum=jnp.array([mem_usage, exec_time]))
 
 
     plt.show()

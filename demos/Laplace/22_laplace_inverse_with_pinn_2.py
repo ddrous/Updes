@@ -16,7 +16,6 @@ from functools import partial
 from updec.utils import plot, dataloader, make_dir, random_name
 from updec.cloud import SquareCloud
 import tracemalloc, time
-from copy import deepcopy
 
 
 #%%
@@ -30,12 +29,13 @@ make_dir(DATAFOLDER)
 COMPFOLDER = "./data/" + "Comparison" +"/"
 make_dir(COMPFOLDER)
 
-
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
 Nx = 50
 Ny = Nx
+
 BATCH_SIZE = Nx*Ny // 10
+INIT_LR = 1e-3
 EPOCHS = 10000
 
 W_in = 1.
@@ -177,7 +177,6 @@ ax = plot(x_north, exact_control, label="Exact control", x_label=r"$x$", figsize
 
 #%%
 
-INIT_LR = 1e-3
 total_steps = EPOCHS*(x_in.shape[0]//BATCH_SIZE)
 
 ## Optimizer

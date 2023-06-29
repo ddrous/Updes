@@ -30,12 +30,12 @@ make_dir(DATAFOLDER)
 COMPFOLDER = "./data/" + "Comparison" +"/"
 make_dir(COMPFOLDER)
 
-
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
 Nx = 50
 Ny = Nx
 BATCH_SIZE = Nx*Ny // 10
+INIT_LR = 1e-3
 EPOCHS = 10000
 
 W_in = 1.
@@ -179,7 +179,6 @@ ax = plot(x_north, exact_control, label="Exact control", x_label=r"$x$", ax=ax);
 
 #%%
 
-INIT_LR = 1e-3
 total_steps = EPOCHS*(x_in.shape[0]//BATCH_SIZE)
 
 ## Optimizer
