@@ -399,12 +399,12 @@ for W_id, exp in enumerate(range(-3, 6)):
     print(" Peak memory usage: ", mem_usage, 'bytes')
     print(' CPU execution time:', exec_time, 'seconds')
 
-    tracemalloc.stop()
-
     jnp.savez(COMPFOLDER+"pinn_inv_1_"+str(W_id), objective_cost=history_loss_ct, mom_loss=history_loss_mon, cont_loss=history_loss_cont, bc_loss=history_loss_bc, pinn_control=pinn_control, pinn_sol_control=pinn_sol_control, u_target=u_parab, u_outlet=u_outlet, v_target=jnp.zeros_like(y_outlet), v_outlet=v_outlet,mem_time_cum=jnp.array([mem_usage, exec_time]))
 
 
     plt.show()
+
+    tracemalloc.stop()
 
 
 # %%
