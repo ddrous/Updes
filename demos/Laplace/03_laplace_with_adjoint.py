@@ -28,10 +28,10 @@ make_dir(COMPFOLDER)
 RBF = polyharmonic
 MAX_DEGREE = 1
 
-Nx = 10
+Nx = 100
 Ny = Nx
 LR = 1e-2
-EPOCHS = 5
+EPOCHS = 500
 
 
 facet_types={"North":"d", "South":"d", "West":"d", "East":"d"}
@@ -151,7 +151,7 @@ for step in tqdm(range(1, EPOCHS+1)):
     history_cost.append(loss)
     north_mse.append(north_error)
 
-    if step<=3 or step%100==0:
+    if step<=3 or step%10==0:
         print("Epoch: %-5d  InitLR: %.4f    Loss: %.8f  TestMSE: %.6f" % (step, LR, loss, north_error))
 
 
