@@ -32,11 +32,11 @@ make_dir(COMPFOLDER)
 
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
-Nx = 50
+Nx = 100
 Ny = Nx
 BATCH_SIZE = Nx*Ny // 10
 INIT_LR = 1e-3
-EPOCHS = 10000
+EPOCHS = 20000
 
 W_in = 1.
 W_bc = 1.

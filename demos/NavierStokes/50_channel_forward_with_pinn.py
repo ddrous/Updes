@@ -167,7 +167,7 @@ total_steps = EPOCHS     ## No batch size
 
 ## Optimizer
 scheduler = optax.piecewise_constant_schedule(init_value=INIT_LR,
-                                            boundaries_and_scales={int(total_steps*0.4):0.1, int(total_steps*0.8):0.1})
+                                            boundaries_and_scales={int(total_steps*0.5):0.1, int(total_steps*0.75):0.1})
 
 optimizer = optax.adam(learning_rate=scheduler)
 # optimizer = optax.sgd(learning_rate=scheduler)

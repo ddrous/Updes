@@ -32,7 +32,7 @@ make_dir(COMPFOLDER)
 
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
-Nx = 50
+Nx = 100
 Ny = Nx
 
 BATCH_SIZE = Nx*Ny // 10
@@ -248,7 +248,7 @@ for epoch in range(1,EPOCHS+1):
     history_loss_bc.append(loss_epch_bc)
     history_loss_test.append(loss_test)
 
-    if epoch<=3 or epoch%100==0:
+    if epoch<=3 or epoch%1000==0:
         print("Epoch: %-5d      ResidualLoss: %.6f     BoundaryLoss: %.6f   TestLoss: %.6f" % (epoch, loss_epch_in, loss_epch_bc, loss_test))
 
 checkpoints.save_checkpoint(DATAFOLDER, prefix="pinn_checkpoint_", target=state, step=state.step, overwrite=True)

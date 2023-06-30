@@ -188,9 +188,9 @@ total_steps = EPOCHS
 
 ## Optimizer
 u_scheduler = optax.piecewise_constant_schedule(init_value=INIT_LR,
-                                            boundaries_and_scales={int(total_steps*0.4):0.1, int(total_steps*0.8):0.1})
+                                            boundaries_and_scales={int(total_steps*0.5):0.1, int(total_steps*0.75):0.1})
 c_scheduler = optax.piecewise_constant_schedule(init_value=INIT_LR,
-                                            boundaries_and_scales={int(total_steps*0.4):0.1, int(total_steps*0.8):0.1})
+                                            boundaries_and_scales={int(total_steps*0.5):0.1, int(total_steps*0.75):0.1})
 
 u_optimizer = optax.adam(learning_rate=u_scheduler)
 c_optimizer = optax.adam(learning_rate=c_scheduler)

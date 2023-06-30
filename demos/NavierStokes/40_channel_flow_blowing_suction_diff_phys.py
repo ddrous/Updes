@@ -328,7 +328,7 @@ in_nodes_vel = jnp.array(cloud_vel.facet_nodes["Inflow"])
 optimal_u_inflow = jax.vmap(parabolic)(cloud_vel.sorted_nodes[in_nodes_vel])
 
 scheduler = optax.piecewise_constant_schedule(init_value=LR,
-                                            boundaries_and_scales={int(EPOCHS*0.4):0.1, int(EPOCHS*0.8):0.1})
+                                            boundaries_and_scales={int(EPOCHS*0.5):0.1, int(EPOCHS*0.75):0.1})
 optimiser = optax.adam(learning_rate=scheduler)
 opt_state = optimiser.init(optimal_u_inflow)
 

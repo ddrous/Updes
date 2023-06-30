@@ -27,12 +27,12 @@ make_dir(COMPFOLDER)
 RBF = polyharmonic
 MAX_DEGREE = 1
 
-Nx = 15
+Nx = 100
 Ny = Nx
 
 LR = 1e-2
 GAMMA = 1       ### LR decay rate
-EPOCHS = 5
+EPOCHS = 500
 
 
 facet_types={"North":"d", "South":"d", "West":"d", "East":"d"}
@@ -111,7 +111,7 @@ history_cost = []
 north_mse = []
 
 scheduler = optax.piecewise_constant_schedule(init_value=LR,
-                                            boundaries_and_scales={int(EPOCHS*0.4):0.1, int(EPOCHS*0.8):0.1})
+                                            boundaries_and_scales={int(EPOCHS*0.5):0.1, int(EPOCHS*0.75):0.1})
 optimiser = optax.adam(learning_rate=scheduler)
 opt_state = optimiser.init(optimal_bcn)
 
@@ -129,7 +129,7 @@ for step in tqdm(range(1, EPOCHS+1)):
     history_cost.append(loss)
     north_mse.append(north_error)
 
-    if step<=3 or step%100==0:
+    if step<=3 or step%10==0:
         print("Epoch: %-5d  InitLR: %.4f    Loss: %.8f  TestError: %.6f" % (step, LR, loss, north_error))
 
 mem_usage = tracemalloc.get_traced_memory()[1]
