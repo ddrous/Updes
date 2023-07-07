@@ -83,6 +83,8 @@ u_bc = []
 v_bc = []
 p_bc = []
 
+x_bc_n_vel = []
+
 inlet_start = 0     ## Helps identify inlet ids amond boundary conditions
 
 for f_id in cloud_vel.facet_types.keys():
@@ -102,6 +104,10 @@ for f_id in cloud_vel.facet_types.keys():
         else:
             inlet_start += u_id.shape[0]
 
+    if cloud_vel.facet_types[f_id]=="n":
+        bd_node_ids = jnp.array(cloud_vel.facet_nodes[f_id])
+        x_id_vel = cloud_vel.sorted_nodes[bd_node_ids]
+        x_bc_n_vel.append(x_id_vel)
 
     if cloud_p.facet_types[f_id]=="d":
         bd_node_ids = jnp.array(cloud_p.facet_nodes[f_id])
@@ -113,6 +119,8 @@ for f_id in cloud_vel.facet_types.keys():
 x_bc_vel = jnp.concatenate(x_bc_vel, axis=0) / NORM_FACTOR
 u_bc = jnp.concatenate(u_bc, axis=0)
 v_bc = jnp.concatenate(v_bc, axis=0)
+
+x_bc_n_vel = jnp.concatenate(x_bc_n_vel, axis=0) / NORM_FACTOR
 
 x_bc_p = jnp.concatenate(x_bc_p, axis=0)    / NORM_FACTOR
 p_bc = jnp.concatenate(p_bc, axis=0)
@@ -291,31 +299,41 @@ def set_inlet_bc(c_params, u_bc):       ## TODO make this pure
     u_north = c(y_inlet, c_params)
     return u_bc.at[inlet_ids].set(u_north)
 
-def loss_fn(u_params, c_params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc):
+def loss_fn_bc_n(params, x_bc_n_vel):
+    u_bc_pred = gradu(x_bc_n_vel, params)[:, 0]
+    v_bc_pred = gradv(x_bc_n_vel, params)[:, 0]
+
+    loss_bc_u = jnp.mean(optax.l2_loss(u_bc_pred))
+    loss_bc_v = jnp.mean(optax.l2_loss(v_bc_pred))
+
+    return loss_bc_u + loss_bc_v
+
+def loss_fn(u_params, c_params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, x_bc_n_vel):
 
     new_u_bc = set_inlet_bc(c_params, u_bc)
 
     mon, cont = loss_fn_in(u_params, x_in_vel, x_in_p)
     bc = loss_fn_bc(u_params, x_bc_vel, new_u_bc, v_bc, x_bc_p, p_bc)
 
-    return W_mo*mon + W_co*cont + W_bc*bc
+    bc_n = loss_fn_bc_n(u_params, x_bc_n_vel)
+
+    return W_mo*mon + W_co*cont + W_bc*(bc+bc_n)
 
 
 #%%
 
 @jax.jit
-def train_step(u_state, c_state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc):
+def train_step(u_state, c_state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, x_bc_n_vel):
     loss_mon, loss_cont = loss_fn_in(u_state.params, x_in_vel, x_in_p)
     loss_bc = loss_fn_bc(u_state.params, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
+    loss_bc_n = loss_fn_bc_n(u_state.params, x_bc_n_vel)
+
     loss_ct = loss_fn_ct(u_state.params)
 
-    u_grads = jax.grad(loss_fn, argnums=0)(u_state.params, c_state.params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
+    u_grads = jax.grad(loss_fn, argnums=0)(u_state.params, c_state.params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, x_bc_n_vel)
     u_state = u_state.apply_gradients(grads=u_grads)
 
-    c_grads = jax.grad(loss_fn, argnums=1)(u_state.params, c_state.params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
-    c_state = c_state.apply_gradients(grads=c_grads)
-
-    return u_state, c_state, loss_mon, loss_cont, loss_bc, loss_ct
+    return u_state, c_state, loss_mon, loss_cont, loss_bc+loss_bc_n, loss_ct
 
 
 #%%
@@ -352,7 +370,7 @@ for W_id, W_ct in enumerate(W_ct_list):
 
     for epoch in range(1,EPOCHS+1):
 
-        u_state, c_state, loss_mon, loss_cont, loss_bc, loss_ct = train_step(u_state, c_state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
+        u_state, c_state, loss_mon, loss_cont, loss_bc, loss_ct = train_step(u_state, c_state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, x_bc_n_vel)
 
         history_loss_mon.append(loss_mon)
         history_loss_cont.append(loss_cont)

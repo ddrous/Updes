@@ -31,12 +31,12 @@ make_dir(COMPFOLDER)
 
 KEY = jax.random.PRNGKey(41)     ## Use same random points for all iterations
 
-Nx = 100
+Nx = 50
 Ny = Nx
 
 BATCH_SIZE = Nx*Ny // 10
 INIT_LR = 1e-3
-EPOCHS = 10000
+EPOCHS = 50000      ## Train until PINN solution matches Control solution perfectly
 
 W_in = 1.
 W_bc = 1.
@@ -191,10 +191,6 @@ c_optimizer = optax.adam(learning_rate=c_scheduler)
 
 
 controls_folder = DATAFOLDER[:-2]+"1/"
-controls_folder
-
-os.listdir(controls_folder)
-
 
 W_ct_list = []
 control_states = []

@@ -29,7 +29,7 @@ make_dir(DATAFOLDER)
 RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 1
 
-Re = 10
+Re = 100
 Pa = 0.
 
 NB_ITER = 100

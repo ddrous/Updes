@@ -40,8 +40,8 @@ W_mo = 1.
 W_co = 1.
 # W_bc = 100.       ## See the paper !!
 W_bc = 1.
-
-Re = 100
+ 
+Re = 100.
 Pa = 0.
 
 
@@ -50,7 +50,7 @@ NORM_FACTOR = jnp.array([[1.5, 1.0]])
 
 
 INIT_LR = 1e-3
-EPOCHS = 100000
+EPOCHS = 50000
 
 
 #%%
@@ -85,11 +85,15 @@ bc_u = {"Wall":zero, "Inflow":parabolic, "Outflow":zero, "Blowing":zero, "Suctio
 bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":blowing, "Suction":suction}
 bc_p = {"Wall":zero, "Inflow":zero, "Outflow":atmospheric, "Blowing":zero, "Suction":zero}
 
+## Dirichlet boundaries
 x_bc_vel = []
 x_bc_p = []
 u_bc = []
 v_bc = []
 p_bc = []
+
+## Neumann boundaries (for veleocity) only
+x_bc_n_vel = []
 
 for f_id in cloud_vel.facet_types.keys():
 
@@ -110,9 +114,17 @@ for f_id in cloud_vel.facet_types.keys():
         x_bc_p.append(x_id_p)
         p_bc.append(p_id)
 
+    if cloud_vel.facet_types[f_id]=="n":
+        bd_node_ids = jnp.array(cloud_vel.facet_nodes[f_id])
+        x_id_vel = cloud_vel.sorted_nodes[bd_node_ids]
+        x_bc_n_vel.append(x_id_vel)
+
+
 x_bc_vel = jnp.concatenate(x_bc_vel, axis=0) / NORM_FACTOR
 u_bc = jnp.concatenate(u_bc, axis=0)
 v_bc = jnp.concatenate(v_bc, axis=0)
+
+x_bc_n_vel = jnp.concatenate(x_bc_n_vel, axis=0) / NORM_FACTOR
 
 x_bc_p = jnp.concatenate(x_bc_p, axis=0)    / NORM_FACTOR
 p_bc = jnp.concatenate(p_bc, axis=0)
@@ -131,6 +143,7 @@ for i, f_id in enumerate(cloud_vel.facet_types.keys()):
     ax[i].plot(x, bc_v[f_id](x), label=f_id)
     ax[i].set_ylim(0-1e-1,1+1e-1)
     ax[i].legend()
+
 
 #%%
 
@@ -234,23 +247,37 @@ def loss_fn_bc(params, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc):
 
     return loss_bc_u + loss_bc_v + loss_bc_p
 
-def loss_fn(params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc):
+def loss_fn_bc_n(params, x_bc_n_vel):
+    u_bc_pred = gradu(x_bc_n_vel, params)[:, 0]
+    v_bc_pred = gradv(x_bc_n_vel, params)[:, 0]
+
+    loss_bc_u = jnp.mean(optax.l2_loss(u_bc_pred))
+    loss_bc_v = jnp.mean(optax.l2_loss(v_bc_pred))
+
+    return loss_bc_u + loss_bc_v
+
+
+def loss_fn(params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, x_bc_n_vel):
     mon, cont = loss_fn_in(params, x_in_vel, x_in_p)
     bc = loss_fn_bc(params, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
-    return W_mo*mon + W_co*cont + W_bc*bc
+
+    bc_n = loss_fn_bc_n(params, x_bc_n_vel)
+
+    return W_mo*mon + W_co*cont + W_bc*bc   +     W_bc*bc_n
 
 
 #%%
 
 @jax.jit
-def train_step(state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc):
+def train_step(state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, x_bc_n_vel):
     loss_mon, loss_cont = loss_fn_in(state.params, x_in_vel, x_in_p)
     loss_bc = loss_fn_bc(state.params, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
+    loss_bc_n = loss_fn_bc_n(state.params, x_bc_n_vel)
 
-    grads = jax.grad(loss_fn)(state.params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
+    grads = jax.grad(loss_fn)(state.params, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, x_bc_n_vel)
     state = state.apply_gradients(grads=grads)
 
-    return state, loss_mon, loss_cont, loss_bc
+    return state, loss_mon, loss_cont, loss_bc+loss_bc_n
 
 
 history_loss_mon = []
@@ -270,7 +297,7 @@ else:
 
 for epoch in range(1,EPOCHS+1):
 
-    state, loss_mon, loss_cont, loss_bc = train_step(state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc)
+    state, loss_mon, loss_cont, loss_bc = train_step(state, x_in_vel, x_in_p, x_bc_vel, u_bc, v_bc, x_bc_p, p_bc, x_bc_n_vel)
 
     history_loss_mon.append(loss_mon)
     history_loss_cont.append(loss_cont)

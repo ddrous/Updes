@@ -32,7 +32,7 @@ make_dir(COMPFOLDER)
 RBF = polyharmonic
 MAX_DEGREE = 1
 
-Re = 10        ## Make sure the same constants are used for the forward problem
+Re = 100.        ## Make sure the same constants are used for the forward problem
 Pa = 0.
 
 NB_ITER = 100    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
@@ -41,7 +41,7 @@ NB_ITER = 100    ## 50 works for 360 nodes (lc=0.2, ref_io=2, ref_bs=5)
 ## Constants for gradient descent
 LR = 1e-2
 GAMMA = 0.995
-EPOCHS = 20
+EPOCHS = 10
 
 
 # %%

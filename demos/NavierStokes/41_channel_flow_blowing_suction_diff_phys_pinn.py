@@ -1,6 +1,6 @@
 # %%
 """
-Control of Navier-Stokes equation with differentiable physics
+Control of Navier-Stokes equation with differentiable physics [Initialised with best PINN control]
 """
 
 import jax
@@ -17,12 +17,15 @@ from updec import *
 
 # %%
 
+# %%
 
 # EXPERIMENET_ID = random_name()
-EXPERIMENET_ID = "ChannelDiffPhys"
+EXPERIMENET_ID = "ChannelDiffPhysPinn"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
-# make_dir(DATAFOLDER)
+make_dir(DATAFOLDER)
 
+COMPFOLDER = "./data/" + "Comparison" +"/"
+make_dir(COMPFOLDER)
 
 RBF = polyharmonic      ## Can define which rbf to use
 MAX_DEGREE = 1
@@ -34,7 +37,7 @@ NB_ITER = 4
 
 
 ## Constants for gradient descent
-LR = 1e-1
+LR = 1e-2
 # GAMMA = 0.995
 EPOCHS = 1000      ## More than enough for 50 iter and 360 nodes
 
@@ -338,6 +341,16 @@ def new_grad_loss_fn(u_inflow):
 in_nodes_vel = jnp.array(cloud_vel.facet_nodes["Inflow"])
 optimal_u_inflow = jax.vmap(parabolic)(cloud_vel.sorted_nodes[in_nodes_vel])
 
+## Use the PINN solution as initial guess
+Wj_id = 5
+pinn2_arrays = jnp.load(COMPFOLDER+"pinn_inv_2_"+str(Wj_id)+".npz")
+# print(pinn2_arrays.files)
+pinn_init_guess = pinn2_arrays["pinn_control"]
+
+optimal_u_inflow = pinn_init_guess
+
+
+
 scheduler = optax.piecewise_constant_schedule(init_value=LR,
                                             boundaries_and_scales={int(EPOCHS*0.5):0.5, int(EPOCHS*0.75):0.2})
 optimiser = optax.adam(learning_rate=scheduler)
@@ -419,7 +432,5 @@ pyvista_animation(DATAFOLDER, "p", duration=5, vmin=jnp.min(p_list[-1]), vmax=jn
 # %%
 
 ## Save data for comparison
-COMPFOLDER = "./data/" + "Comparison" +"/"
-make_dir(COMPFOLDER)
 
-jnp.savez(COMPFOLDER+"dp", objective_cost=history_cost, outflow_final_mse=parab_error, optimal_control=optimal_u_inflow, mem_time=jnp.array([mem_usage, exec_time]))
+jnp.savez(COMPFOLDER+"dp_pinn", objective_cost=history_cost, outflow_final_mse=parab_error, optimal_control=optimal_u_inflow, outlet_u=u_list[-1][out_nodes_vel], outlet_v=v_list[-1][out_nodes_vel], vel=vel_list[-1], p=p_list[-1], mem_time=jnp.array([mem_usage, exec_time]))
