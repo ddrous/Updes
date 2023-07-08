@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(context='notebook', style='ticks',
         font='sans-serif', font_scale=1, color_codes=True, rc={"lines.linewidth": 3})
+plt.style.use("dark_background")
 
 
 #%%
@@ -175,10 +176,14 @@ ax.set_xlabel("(strided) iterations")
 ax.set_ylabel(r'$ \mathcal{J} $')
 ax.set_title("Comparative cost objectives")
 
-plt.savefig(DATAFOLDER+'costs.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'costs.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
 
+print("Achieved costs:")
+print(f"DAL: {dal_cost[-1]:.2e}")
+print(f"PINN: {pinn2_cost[-1]:.2e}")
+print(f"DP: {dp_cost[-1]:.2e}")
 
 
 # %%
@@ -205,7 +210,7 @@ ax.set_xlabel("epochs")
 ax.set_ylabel("loss")
 ax.set_title("PINN training loss terms (step 1)")
 
-plt.savefig(DATAFOLDER+'pinn_losses_step_1.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'pinn_losses_step_1.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
 
@@ -235,7 +240,7 @@ ax.set_xlabel("epochs")
 ax.set_ylabel("loss")
 ax.set_title("PINN training loss terms (step 2)")
 
-plt.savefig(DATAFOLDER+'pinn_losses_step_2.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'pinn_losses_step_2.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
 
@@ -257,7 +262,7 @@ ax.set_xlabel(r"$w_{\mathcal{J}}$")
 ax.set_ylabel(r'$ \mathcal{J} $')
 ax.set_title("PINN Control Choice")
 
-plt.savefig(DATAFOLDER+'pinn_choice.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'pinn_choice.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
 
@@ -281,7 +286,7 @@ MKE = 2
 MKS = 2
 LW = 3
 
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5,5))
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6,4.8))
 ax.plot(dal_control, y_in, "x-", markevery=MKE, markersize=MKS, lw=LW, label="DAL")
 ax.plot(pinn1_control, y_in, "^-", markevery=MKE, markersize=MKS, lw=LW, label="PINN")
 ax.plot(dp_control, y_in, "*-", markevery=MKE, markersize=MKS, lw=LW, label="DP")
@@ -291,8 +296,9 @@ ax.legend()
 ax.set_xlabel(r"$x$")
 ax.set_ylabel(r"$c$")
 ax.set_title("Optimal controls")
+plt.tight_layout()
 
-plt.savefig(DATAFOLDER+'controls.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'controls.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
 
@@ -359,19 +365,21 @@ pinn_p = pinn3_arrays["p_solution"]
 ## Plot the OUTLET VELOCITIES
 
 LW=1
-ax = plot(dal_outlet_u, y_out, "bx-", label=r"DAL", y_label=r"$y$", figsize=(6,4.8), lw=LW)
-plot(dal_outlet_v, y_out, "bx-", ax=ax, lw=LW)
+ax = plot(dal_outlet_u, y_out, "bx-", label=r"DAL", y_label=r"$y$", x_label=r"$u(x=L_x), v(x=L_x)$", figsize=(6,4.8), lw=LW)
+plot(dal_outlet_v, y_out, "bx-", ax=ax, lw=LW, alpha=0.5)
 
 plot(pinn_outlet_u, y_out, ">-", color="#c94f08", label=r"PINN", ax=ax, lw=LW)
-plot(pinn_outlet_v, y_out, ">-", color="#c94f08", ax=ax, lw=LW)
+plot(pinn_outlet_v, y_out, ">-", color="#c94f08", ax=ax, lw=LW, alpha=0.5)
 
-plot(dp_outlet_u, y_out, "gx-", label=r"DP", ax=ax, lw=LW)
-plot(dp_outlet_v, y_out, "gx-", ax=ax, lw=LW)
+plot(dp_outlet_u, y_out, "g*-", label=r"DP", ax=ax, lw=LW)
+plot(dp_outlet_v, y_out, "g*-", ax=ax, lw=LW, alpha=0.5)
 
-plot(u_target, y_out, "k-", ax=ax, label=r"Target", lw=3)
-plot(v_target, y_out, "k-", ax=ax, lw=3, title="Outlet velocities");
+plot(u_target, y_out, "k-", ax=ax, label=r"target", lw=3)
+plot(v_target, y_out, "k-", ax=ax, lw=3, title="Outlet velocities", alpha=0.5);
 
-plt.savefig(DATAFOLDER+'out_vels.pdf', backend='pgf', bbox_inches='tight')
+# ax.set_ylabel(r"$u(x=L_x), v(x=L_x)$", )
+
+plt.savefig(DATAFOLDER+'out_vels.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 
 
@@ -383,23 +391,23 @@ vmax = max([pinn_vel.max(), dal_vel.max(), dp_vel.max()])
 vmax=4.3
 
 fig1, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(5.5*3,3.6), sharey=True)
-_, img1 = cloud_vel.visualize_field(dal_vel, cmap="jet", projection="2d", title="DAL", ax=ax1, vmin=0, vmax=vmax, colorbar=False)
-_, img2 = cloud_vel.visualize_field(pinn_vel, cmap="jet", projection="2d", title="PINN", ax=ax2, vmin=0, vmax=vmax, colorbar=False, ylabel=None)
-_, img3 = cloud_vel.visualize_field(dp_vel, cmap="jet", projection="2d", title="DP", ax=ax3, vmin=0, vmax=vmax, colorbar=False, ylabel=None)
+_, img1 = cloud_vel.visualize_field(dal_vel, cmap="jet", projection="2d", title="DAL velocity", ax=ax1, vmin=0, vmax=vmax, colorbar=False)
+_, img2 = cloud_vel.visualize_field(pinn_vel, cmap="jet", projection="2d", title="PINN velocity", ax=ax2, vmin=0, vmax=vmax, colorbar=False, ylabel=None)
+_, img3 = cloud_vel.visualize_field(dp_vel, cmap="jet", projection="2d", title="DP velocity", ax=ax3, vmin=0, vmax=vmax, colorbar=False, ylabel=None)
 
-fig1.suptitle("Velocity fields", y=1.05, fontsize=22)
+# fig1.suptitle("Velocity fields", y=1.05, fontsize=22)
 fig1.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax1, ax2, ax3], location="right", pad=0.025)
-plt.savefig(DATAFOLDER+'velocities.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'velocities.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 
 vmin = min([pinn_p.min(), dal_p.min(), dp_p.min()])
 vmax = max([pinn_p.max(), dal_p.max(), dp_p.max()])
 
 fig2, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(5.5*3,3.6), sharey=True)
-_, img1 = cloud_phi.visualize_field(dal_p, cmap="jet", projection="2d", title="DAL", ax=ax1, vmin=vmin, vmax=vmax, colorbar=False)
-_, img2 = cloud_phi.visualize_field(pinn_p, cmap="jet", projection="2d", title="PINN", ax=ax2, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
-_, img3 = cloud_phi.visualize_field(dp_p, cmap="jet", projection="2d", title="DP", ax=ax3, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
+_, img1 = cloud_phi.visualize_field(dal_p, cmap="jet", projection="2d", title="DAL pressure", ax=ax1, vmin=vmin, vmax=vmax, colorbar=False)
+_, img2 = cloud_phi.visualize_field(pinn_p, cmap="jet", projection="2d", title="PINN pressure", ax=ax2, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
+_, img3 = cloud_phi.visualize_field(dp_p, cmap="jet", projection="2d", title="DP pressure", ax=ax3, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
 
-fig2.suptitle("Pressure fields", y=1.05, fontsize=22)
+# fig2.suptitle("Pressure fields", y=1.05, fontsize=22)
 fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax1, ax2, ax3], location="right", pad=0.025);
-plt.savefig(DATAFOLDER+'pressures.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'pressures.pdf', backend='pgf', bbox_inches='tight', transparent=True)

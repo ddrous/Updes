@@ -27,7 +27,7 @@ Ny = Nx
 facet_types={"North":"d", "South":"d", "West":"d", "East":"d"}
 
 ## TODO: remember to use N=100 range for the final plots
-rbf_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=1)
+# rbf_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=1)
 
 #%%
 
@@ -134,7 +134,7 @@ ax.set_title(r"Regular cloud (100 $\times$ 100)")
 ax.legend(bbox_to_anchor=(1.0, 0.5), loc='center left', prop={'size': 8})
 plt.tight_layout()
 
-plt.savefig(DATAFOLDER+'grid.png', dpi=2000, bbox_inches='tight')
+plt.savefig(DATAFOLDER+'grid.png', dpi=2000, bbox_inches='tight', transparent=True)
 
 
 # %%
@@ -156,12 +156,17 @@ ax.legend()
 ax.set_yscale("log")
 ax.set_xlabel("(strided) iterations")
 # ax.set_ylabel(r"$\int_0^1 \vert \frac{\partial u}{\partial y}(x,1) - q_{d} \vert^2$ dx ")
-ax.set_ylabel("cost objective")
-ax.set_title("Comparative costs")
+ax.set_ylabel(r"$\mathcal{J}$")
+ax.set_title("Comparative cost objectives")
 
-plt.savefig(DATAFOLDER+'costs.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'costs.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
+
+print("Achieved costs:")
+print(f"DAL: {dal_cost[-1]:.2e}")
+print(f"PINN: {pinn2_cost[-1]:.2e}")
+print(f"DP: {dp_cost[-1]:.2e}")
 
 
 
@@ -187,7 +192,7 @@ ax.set_xlabel("epochs")
 ax.set_ylabel("loss")
 ax.set_title("PINN training loss terms (step 1)")
 
-plt.savefig(DATAFOLDER+'pinn_losses_step_1.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'pinn_losses_step_1.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
 
@@ -213,7 +218,7 @@ ax.set_xlabel("epochs")
 ax.set_ylabel("loss")
 ax.set_title("PINN training loss terms (step 2)")
 
-plt.savefig(DATAFOLDER+'pinn_losses_step_2.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'pinn_losses_step_2.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
 
@@ -235,9 +240,9 @@ ax.set_yscale("log")
 
 ax.set_xlabel(r"$w_{\mathcal{J}}$")
 ax.set_ylabel(r'$ \mathcal{J} $')
-ax.set_title("PINN Control Choice")
+ax.set_title("PINN choice (step 2)")
 
-plt.savefig(DATAFOLDER+'pinn_choice.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'pinn_choice.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
 
@@ -272,7 +277,7 @@ ax.set_xlabel(r"$x$")
 ax.set_ylabel(r"$c$")
 ax.set_title("Optimal controls")
 
-plt.savefig(DATAFOLDER+'controls.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'controls.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 plt.show()
 
@@ -303,18 +308,18 @@ dp_error = jnp.clip(dp_error, 0, max_errors)
 fig1, ax1 = plt.subplots(1,1, figsize=(5.8*1,5))
 rbf_cloud.visualize_field(exact_solution, cmap="jet", projection="2d", title="Analytical solution", ax=ax1, vmin=-1, vmax=1)
 
-plt.savefig(DATAFOLDER+'exact_sol.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'exact_sol.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 
 fig2, (ax2, ax3, ax4) = plt.subplots(1,3, figsize=(5.6*3,5), sharey=True)
-_, img2 = rbf_cloud.visualize_field(dal_error, cmap="magma", colorbar=False, projection="2d", title="DAL", ax=ax2, vmin=0, vmax=max_errors);
-_, img3 = rbf_cloud.visualize_field(pinn1_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="PINN", ax=ax3, vmin=0, vmax=max_errors);
-_, img4 = rbf_cloud.visualize_field(dp_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="DP", ax=ax4, vmin=0, vmax=max_errors);
+_, img2 = rbf_cloud.visualize_field(dal_error, cmap="magma", colorbar=False, projection="2d", title="DAL absolute error", ax=ax2, vmin=0, vmax=max_errors);
+_, img3 = rbf_cloud.visualize_field(pinn1_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="PINN absolute error", ax=ax3, vmin=0, vmax=max_errors);
+_, img4 = rbf_cloud.visualize_field(dp_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="DP absolute error", ax=ax4, vmin=0, vmax=max_errors);
 
-fig2.suptitle("Absolute errors", y=1.05, fontsize=22)
+# fig2.suptitle("Absolute errors", y=1.05, fontsize=22)
 fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax2, ax3, ax4], location="right", pad=0.025)
 
-plt.savefig(DATAFOLDER+'errors.pdf', backend='pgf', bbox_inches='tight')
+plt.savefig(DATAFOLDER+'errors.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 
 
