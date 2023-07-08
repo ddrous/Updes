@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(context='notebook', style='ticks',
         font='sans-serif', font_scale=1, color_codes=True, rc={"lines.linewidth": 3})
-plt.style.use("dark_background")
+# plt.style.use("dark_background")
 
 
 #%%
@@ -293,8 +293,8 @@ ax.plot(dp_control, y_in, "*-", markevery=MKE, markersize=MKS, lw=LW, label="DP"
 
 
 ax.legend()
-ax.set_xlabel(r"$x$")
-ax.set_ylabel(r"$c$")
+ax.set_xlabel(r"$c$")
+ax.set_ylabel(r"$y$")
 ax.set_title("Optimal controls")
 plt.tight_layout()
 
