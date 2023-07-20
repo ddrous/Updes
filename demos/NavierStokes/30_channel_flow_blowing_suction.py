@@ -32,7 +32,7 @@ MAX_DEGREE = 1
 Re = 100
 Pa = 0.
 
-NB_ITER = 100
+NB_ITER = 50
 
 
 # %%
@@ -134,6 +134,10 @@ def simulate_forward_navier_stokes(cloud_vel,
     bc_v = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":blowing, "Suction":suction}
     bc_phi = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}
 
+    bc_u = boundary_conditions_func_to_arr(bc_u, cloud_vel)
+    bc_v = boundary_conditions_func_to_arr(bc_v, cloud_vel)
+    bc_phi = boundary_conditions_func_to_arr(bc_phi, cloud_phi)
+
 
     u_list = [u]
     v_list = [v]
@@ -157,12 +161,12 @@ def simulate_forward_navier_stokes(cloud_vel,
 
 
     # for i in tqdm(range(NB_ITER), disable=True):
-    for i in range(NB_ITER):
+    for i in range(NB_ITER**2):
         # print("Starting iteration %d" % i)
 
         p = interpolate_field(p_, cloud_phi, cloud_vel)
 
-        usol = pde_solver_jit(diff_operator=diff_operator_u, 
+        usol = pde_solver_jit_with_bc(diff_operator=diff_operator_u, 
                         diff_args=[u, v],
                         rhs_operator = rhs_operator_u, 
                         rhs_args=[p], 
@@ -171,7 +175,7 @@ def simulate_forward_navier_stokes(cloud_vel,
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
 
-        vsol = pde_solver_jit(diff_operator=diff_operator_v,
+        vsol = pde_solver_jit_with_bc(diff_operator=diff_operator_v,
                         diff_args=[u, v],
                         rhs_operator = rhs_operator_v,
                         rhs_args=[p], 
@@ -186,7 +190,7 @@ def simulate_forward_navier_stokes(cloud_vel,
         u_ = interpolate_field(ustar, cloud_vel, cloud_phi)
         v_ = interpolate_field(vstar, cloud_vel, cloud_phi)
 
-        phisol_ = pde_solver_jit(diff_operator=diff_operator_phi,
+        phisol_ = pde_solver_jit_with_bc(diff_operator=diff_operator_phi,
                         rhs_operator = rhs_operator_phi,
                         rhs_args=[u_,v_], 
                         cloud = cloud_phi, 
@@ -212,32 +216,32 @@ def simulate_forward_navier_stokes(cloud_vel,
         p_list.append(p_)
 
 
-    grad_u = gradient_vals_vec(cloud_vel.sorted_nodes, u, cloud_vel, RBF, MAX_DEGREE)
-    grad_v = gradient_vals_vec(cloud_vel.sorted_nodes, v, cloud_vel, RBF, MAX_DEGREE)
+    # grad_u = gradient_vals_vec(cloud_vel.sorted_nodes, u, cloud_vel, RBF, MAX_DEGREE)
+    # grad_v = gradient_vals_vec(cloud_vel.sorted_nodes, v, cloud_vel, RBF, MAX_DEGREE)
 
-    # print("OLD MAX abs grad u: ", jnp.max(jnp.abs(grad_u)))
-    # print("OLD MAX abs grad v: ", jnp.max(jnp.abs(grad_v)))
+    # # print("OLD MAX abs grad u: ", jnp.max(jnp.abs(grad_u)))
+    # # print("OLD MAX abs grad v: ", jnp.max(jnp.abs(grad_v)))
 
 
-    usol = pde_solver_jit(diff_operator=diff_operator_id, 
-                    diff_args=None,
-                    rhs_operator = rhs_operator_id, 
-                    rhs_args=[u],
-                    cloud = cloud_vel,
-                    boundary_conditions = bc_u,
-                    rbf=RBF,
-                    max_degree=MAX_DEGREE)
-    vsol = pde_solver_jit(diff_operator=diff_operator_id, 
-                    diff_args=None,
-                    rhs_operator = rhs_operator_id, 
-                    rhs_args=[v],
-                    cloud = cloud_vel,
-                    boundary_conditions = bc_v,
-                    rbf=RBF,
-                    max_degree=MAX_DEGREE)
+    # usol = pde_solver_jit(diff_operator=diff_operator_id, 
+    #                 diff_args=None,
+    #                 rhs_operator = rhs_operator_id, 
+    #                 rhs_args=[u],
+    #                 cloud = cloud_vel,
+    #                 boundary_conditions = bc_u,
+    #                 rbf=RBF,
+    #                 max_degree=MAX_DEGREE)
+    # vsol = pde_solver_jit(diff_operator=diff_operator_id, 
+    #                 diff_args=None,
+    #                 rhs_operator = rhs_operator_id, 
+    #                 rhs_args=[v],
+    #                 cloud = cloud_vel,
+    #                 boundary_conditions = bc_v,
+    #                 rbf=RBF,
+    #                 max_degree=MAX_DEGREE)
 
-    grad_u = gradient_vec(cloud_vel.sorted_nodes, usol.coeffs, cloud_vel.sorted_nodes, RBF)
-    grad_v = gradient_vec(cloud_vel.sorted_nodes, vsol.coeffs, cloud_vel.sorted_nodes, RBF)
+    # grad_u = gradient_vec(cloud_vel.sorted_nodes, usol.coeffs, cloud_vel.sorted_nodes, RBF)
+    # grad_v = gradient_vec(cloud_vel.sorted_nodes, vsol.coeffs, cloud_vel.sorted_nodes, RBF)
 
     # print("MAX abs grad u: ", jnp.max(jnp.abs(grad_u)))
     # print("MAX abs grad v: ", jnp.max(jnp.abs(grad_v)))

@@ -7,7 +7,7 @@ from functools import cache, lru_cache, partial
 
 # from updec.config import RBF, MAX_DEGREE, DIM
 import updec.config as UPDEC
-from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, SteadySol, polyharmonic, gaussian, make_all_monomials, distance
+from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, SteadySol, polyharmonic, gaussian, make_all_monomials, distance, polyharmonic_grad
 from updec.cloud import Cloud
 from updec.assembly import assemble_A, assemble_invert_A, assemble_B, assemble_q, new_compute_coefficients
 
@@ -32,6 +32,7 @@ def nodal_value(x, center=None, rbf=None, monomial=None):
 @cache
 def core_gradient_rbf(rbf):
     return jax.grad(rbf)
+    # return polyharmonic_grad
 
 ## LRU cache this
 # @lru_cache(maxsize=32)
@@ -466,21 +467,14 @@ def pde_solver( diff_operator:callable,
 #                                                     "rbf",
 #                                                     "max_degree"])
 
-# pde_solver_jit_with_bc = jax.jit(pde_solver, static_argnames=["diff_operator",
-#                                                     "rhs_operator",
-#                                                     "cloud",
-#                                                     "rbf",
-#                                                     "max_degree"])
+pde_solver_jit_with_bc = jax.jit(pde_solver, static_argnames=["diff_operator",
+                                                    "rhs_operator",
+                                                    "cloud",
+                                                    "rbf",
+                                                    "max_degree"])
 
-def pde_solver_jit( diff_operator:callable,
-                rhs_operator:callable,
-                cloud:Cloud, 
-                boundary_conditions:dict, 
-                rbf:callable,
-                max_degree:int,
-                diff_args = None,
-                rhs_args = None):
-    """ Jitted PDE solver """
+
+def boundary_conditions_func_to_arr(boundary_conditions, cloud):
     boundary_conditions_arr = {}
 
     for f_id, f_bc in boundary_conditions.items():
@@ -497,11 +491,24 @@ def pde_solver_jit( diff_operator:callable,
         else:
             boundary_conditions_arr[f_id] = f_bc
 
-    pde_solver_jit_with_bc = jax.jit(pde_solver, static_argnames=["diff_operator",
-                                                        "rhs_operator",
-                                                        "cloud",
-                                                        "rbf",
-                                                        "max_degree"])
+    return boundary_conditions_arr
+
+def pde_solver_jit( diff_operator:callable,
+                rhs_operator:callable,
+                cloud:Cloud, 
+                boundary_conditions:dict, 
+                rbf:callable,
+                max_degree:int,
+                diff_args = None,
+                rhs_args = None):
+    """ Jitted PDE solver """
+    boundary_conditions_arr = boundary_conditions_func_to_arr(boundary_conditions, cloud)
+
+    # pde_solver_jit_with_bc = jax.jit(pde_solver, static_argnames=["diff_operator",
+    #                                                     "rhs_operator",
+    #                                                     "cloud",
+    #                                                     "rbf",
+    #                                                     "max_degree"])
 
     return pde_solver_jit_with_bc(diff_operator=diff_operator,
                                     rhs_operator=rhs_operator,
