@@ -34,9 +34,9 @@ NB_ITER = 3
 
 
 ## Constants for gradient descent
-LR = 1e-2
+LR = 5e-3
 # GAMMA = 0.995
-EPOCHS = 10
+EPOCHS = 1000
 
 
 # %%
@@ -72,9 +72,8 @@ def diff_operator_l1(x, center=None, rbf=None, monomial=None, fields=None):
     return jnp.dot(lambda_val, U_grad_T) - jnp.dot(U_val, lambda_grad) - lambda_lap/(Re/1)
 
 def rhs_operator_l1(x, centers=None, rbf=None, fields=None):
-    # grad_pi_x = gradient(x, fields[:, 0], centers, rbf)[0]
-    # return grad_pi_x
-    return 0.
+    grad_pi_x = gradient(x, fields[:, 0], centers, rbf)[0]
+    return grad_pi_x
 
 
 
@@ -87,9 +86,8 @@ def diff_operator_l2(x, center=None, rbf=None, monomial=None, fields=None):
     return jnp.dot(lambda_val, U_grad_T) - jnp.dot(U_val, lambda_grad) - lambda_lap/(Re/1)
 
 def rhs_operator_l2(x, centers=None, rbf=None, fields=None):
-    # grad_pi_y = gradient(x, fields[:, 0], centers, rbf)[1]
-    # return grad_pi_y
-    return 0.
+    grad_pi_y = gradient(x, fields[:, 0], centers, rbf)[1]
+    return grad_pi_y
 
 
 
@@ -239,7 +237,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
         gradmu = interpolate_field(gradmu_, cloud_mu, cloud_lamb)
 
-        L = Lstar - gradmu
+        L = Lstar + gradmu
         l1, l2 = L[:,0], L[:,1]
         lnorm = jnp.linalg.norm(L, axis=-1)
 
