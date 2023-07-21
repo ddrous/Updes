@@ -161,7 +161,7 @@ def simulate_forward_navier_stokes(cloud_vel,
 
 
     # for i in tqdm(range(NB_ITER), disable=True):
-    for i in range(NB_ITER**2):
+    for i in range(NB_ITER):
         # print("Starting iteration %d" % i)
 
         p = interpolate_field(p_, cloud_phi, cloud_vel)

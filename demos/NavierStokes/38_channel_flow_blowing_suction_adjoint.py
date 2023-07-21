@@ -112,11 +112,11 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
     l1 = jnp.zeros((cloud_lamb.N,))
     l2 = jnp.zeros((cloud_lamb.N,))
-    out_nodes_lamb = jnp.array(cloud_lamb.facet_nodes["Outflow"])
+    pi_ = jnp.zeros((cloud_mu.N,))
 
-    pi_ = jnp.zeros((cloud_mu.N,))       ## on cloud_mu        ##TODO set this to p_a on Outlet
+    out_nodes_lamb = jnp.array(cloud_lamb.facet_nodes["Outflow"])
     out_nodes_pi = jnp.array(cloud_mu.facet_nodes["Outflow"])
-    pi_ = pi_.at[out_nodes_pi].set(Pa)
+    # pi_ = pi_.at[out_nodes_pi].set(Pa)
 
 
     parabolic = jax.jit(lambda x: 4*x[1]*(1.-x[1]))
@@ -149,24 +149,12 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
     u1 = u[out_nodes_vel]
     u2 = v[out_nodes_vel]
-    pi_out = pi_[out_nodes_pi]
 
     grad_u = gradient_vals_vec(cloud_vel.sorted_nodes, u, cloud_vel, RBF, MAX_DEGREE)
     grad_v = gradient_vals_vec(cloud_vel.sorted_nodes, v, cloud_vel, RBF, MAX_DEGREE)
 
     grad_u = interpolate_field(grad_u, cloud_vel, cloud_lamb)
     grad_v = interpolate_field(grad_v, cloud_vel, cloud_lamb)
-
-    bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab-pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
-    bc_l1 = boundary_conditions_func_to_arr(bc_l1, cloud_lamb)
-
-    bc_l2 = {"Wall":zero, "Inflow":zero, "Outflow":(u2*Re, u1*Re), "Blowing":zero, "Suction":zero}
-    bc_l2 = boundary_conditions_func_to_arr(bc_l2, cloud_lamb)
-
-    out_nodes_lamb = jnp.array(cloud_lamb.facet_nodes["Outflow"])
-    bc_mu = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}
-    bc_mu = boundary_conditions_func_to_arr(bc_mu, cloud_mu)
-
 
     l1_list = [l1]
     l2_list = [l2]
@@ -179,6 +167,10 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
         ## Set pi bc
 
+        pi_out = pi_[out_nodes_pi]
+        bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab-pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
+        bc_l1 = boundary_conditions_func_to_arr(bc_l1, cloud_lamb)
+
         l1sol = pde_solver_jit_with_bc(diff_operator=diff_operator_l1,
                         diff_args=[l2, u, v, grad_u[:,0], grad_v[:,0]],
                         rhs_operator = rhs_operator_l1,
@@ -187,6 +179,9 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
                         boundary_conditions = bc_l1,
                         rbf=RBF,
                         max_degree=MAX_DEGREE)
+
+        bc_l2 = {"Wall":zero, "Inflow":zero, "Outflow":(u2*Re, u1*Re), "Blowing":zero, "Suction":zero}
+        bc_l2 = boundary_conditions_func_to_arr(bc_l2, cloud_lamb)
 
         l2sol = pde_solver_jit_with_bc(diff_operator=diff_operator_l2,
                         diff_args=[l1, u, v, grad_u[:,1], grad_v[:,1]],
@@ -210,8 +205,11 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
 
         grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[out_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
+
         new_pi_out = u1*l1[out_nodes_lamb] + u_parab - u1 + grad_l1[...,0]/Re
-        bc_mu["Outflow"] = new_pi_out
+        bc_mu = {"Wall":zero, "Inflow":zero, "Outflow":new_pi_out, "Blowing":zero, "Suction":zero}
+        bc_mu = boundary_conditions_func_to_arr(bc_mu, cloud_mu)
+
 
         # ## Small investigative plot
         # if i%1 == 0:
@@ -231,12 +229,16 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
         pi_ = pi_ + musol_.vals
 
-        pi_ = pi_.at[out_nodes_pi].set(new_pi_out)
+        ALPHA = 0.01
+        pi_ = ALPHA * pi_ + (1-ALPHA) * pi_list[-1]
+
+        # pi_ = pi_.at[out_nodes_pi].set(new_pi_out)
 
         gradmu_ = gradient_vec(cloud_mu.sorted_nodes, musol_.coeffs, cloud_mu.sorted_nodes, RBF)
 
         gradmu = interpolate_field(gradmu_, cloud_mu, cloud_lamb)
 
+        # L = Lstar
         L = Lstar + gradmu
         l1, l2 = L[:,0], L[:,1]
         lnorm = jnp.linalg.norm(L, axis=-1)
@@ -255,32 +257,34 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 # %%
 
 
+print(f"\nStarting RBF simulation with {cloud_lamb.N} nodes\n")
 
-# print(f"\nStarting RBF simulation with {cloud_lamb.N} nodes\n")
+u = jnp.load(DATAFOLDER+"u.npz")["arr_1"][-1]
+v = jnp.load(DATAFOLDER+"v.npz")["arr_1"][-1]
 
-# l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes(cloud_lamb, cloud_mu)
-# # l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes_instationnary(cloud_lamb, cloud_mu)
+l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes(cloud_lamb, cloud_mu, u=u, v=v, cloud_vel=cloud_lamb, NB_ITER=100)
+# l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes_instationnary(cloud_lamb, cloud_mu)
 
 
-# print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
+print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
 
-# renum_map_vel = jnp.array(list(cloud_lamb.renumbering_map.keys()))
-# renum_map_p = jnp.array(list(cloud_mu.renumbering_map.keys()))
+renum_map_vel = jnp.array(list(cloud_lamb.renumbering_map.keys()))
+renum_map_p = jnp.array(list(cloud_mu.renumbering_map.keys()))
 
-# jnp.savez(DATAFOLDER+'l1.npz', renum_map_vel, jnp.stack(l1_list, axis=0))
-# jnp.savez(DATAFOLDER+'l2.npz', renum_map_vel, jnp.stack(l2_list, axis=0))
-# jnp.savez(DATAFOLDER+'lnorm.npz', renum_map_vel, jnp.stack(lnorm_list, axis=0))
-# jnp.savez(DATAFOLDER+'pi.npz', renum_map_p, jnp.stack(pi_list, axis=0))
+jnp.savez(DATAFOLDER+'l1.npz', renum_map_vel, jnp.stack(l1_list, axis=0))
+jnp.savez(DATAFOLDER+'l2.npz', renum_map_vel, jnp.stack(l2_list, axis=0))
+jnp.savez(DATAFOLDER+'lnorm.npz', renum_map_vel, jnp.stack(lnorm_list, axis=0))
+jnp.savez(DATAFOLDER+'pi.npz', renum_map_p, jnp.stack(pi_list, axis=0))
 
 
 # #%%
 
-# print("\nSaving complete. Now running visualisation ...")
+print("\nSaving complete. Now running visualisation ...")
 
-# pyvista_animation(DATAFOLDER, "l1", duration=15, vmin=jnp.min(l1_list[-1]), vmax=jnp.max(l1_list[-1]))
-# pyvista_animation(DATAFOLDER, "l2", duration=15, vmin=jnp.min(l2_list[-1]), vmax=jnp.max(l2_list[-1]))
-# pyvista_animation(DATAFOLDER, "lnorm", duration=15, vmin=jnp.min(lnorm_list[-1]), vmax=jnp.max(lnorm_list[-1]))
-# pyvista_animation(DATAFOLDER, "pi", duration=15, vmin=jnp.min(pi_list[-1]), vmax=jnp.max(pi_list[-1]))
+pyvista_animation(DATAFOLDER, "l1", duration=15, vmin=jnp.min(l1_list[-1]), vmax=jnp.max(l1_list[-1]))
+pyvista_animation(DATAFOLDER, "l2", duration=15, vmin=jnp.min(l2_list[-1]), vmax=jnp.max(l2_list[-1]))
+pyvista_animation(DATAFOLDER, "lnorm", duration=15, vmin=jnp.min(lnorm_list[-1]), vmax=jnp.max(lnorm_list[-1]))
+pyvista_animation(DATAFOLDER, "pi", duration=15, vmin=jnp.min(pi_list[-1]), vmax=jnp.max(pi_list[-1]))
 
 
 
