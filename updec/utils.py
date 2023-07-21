@@ -123,7 +123,7 @@ def compute_nb_monomials(max_degree, problem_dimension):
     return math.comb(max_degree+problem_dimension, max_degree)
 
 
-SteadySol = namedtuple('PDESolution', ['vals', 'coeffs'])
+SteadySol = namedtuple('PDESolution', ['vals', 'coeffs', 'mat'])
 
 
 

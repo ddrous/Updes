@@ -32,7 +32,7 @@ MAX_DEGREE = 1
 Re = 100
 Pa = 0.
 
-NB_ITER = 50
+NB_ITER = 5
 
 
 # %%
@@ -287,6 +287,8 @@ if __name__ == "__main__":
 
     print("\nSaving complete. Now running visualisation ...")
 
+    pyvista_animation(DATAFOLDER, "u", duration=5, vmin=0.0, vmax=1.1)
+    pyvista_animation(DATAFOLDER, "v", duration=5, vmin=0.0, vmax=0.3)
     pyvista_animation(DATAFOLDER, "vel", duration=5, vmin=0.0, vmax=1.1)
     pyvista_animation(DATAFOLDER, "p", duration=5, vmin=-0.25, vmax=0.45)
 

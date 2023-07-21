@@ -90,6 +90,43 @@ def nodal_laplacian(x, center=None, rbf=None, monomial=None):     ## TODO Jitt t
 
 
 
+
+# @cache
+
+# def rbf_tmp_func(x, center, rbf, args):
+#     return jax.grad(rbf)(x, center) * args
+
+# def core_div_grad_rbf(x, center, rbf, args):  ## Args is a 2D vector
+#     return jnp.trace(jax.jacfwd(rbf_tmp_func)(x, center, rbf, args))
+
+
+# def monomial_tmp_func(x, monomial, args):
+#     return jax.grad(monomial)(x) * args
+
+# def core_div_grad_mon(x, monomial, args):
+#     return jnp.trace(jax.jacfwd(monomial_tmp_func)(x, monomial, args))
+
+# def nodal_div_grad(x, center=None, rbf=None, monomial=None, args=None):
+#     """ Computes the Div Grad of the RBF and polynomial functions """
+#     if center != None:
+#         return jnp.nan_to_num(core_div_grad_rbf(x, center, rbf, args), posinf=0., neginf=0.)
+#     elif monomial != None:
+#         return core_div_grad_mon(x, monomial, args)
+
+
+
+
+def nodal_div_grad(x, center=None, rbf=None, monomial=None, args=None):
+    """ Computes the lapalcian of the RBF and polynomial functions """
+    matrix = jnp.stack((args, args), axis=-1)
+    if center != None:
+        return jnp.nan_to_num(jnp.trace(matrix * core_laplacian_rbf(rbf)(x, center)), posinf=0., neginf=0.)
+    elif monomial != None:
+        # return jnp.nan_to_num(jnp.trace(matrix * core_laplacian_mon(monomial)(x)), posinf=0., neginf=0.)
+        return jnp.trace(matrix * core_laplacian_mon(monomial)(x))
+
+
+
 def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_degree:int):
     """ Find nodal and polynomial coefficients for scaar field s """ 
     N = cloud.N
@@ -405,9 +442,9 @@ def duplicate_robin_coeffs(cloud, boundary_conditions):
                     nodes = cloud.sorted_nodes[jnp.array(node_ids)]
                     betas = jax.vmap(betas)(nodes)
             else:
-                print("WARNING: Did not provide beta coefficients for Robin BC. Using identity ...")
+                print("WARNING: Did not provide beta coefficients for Robin BC. Using zeros ...")
                 new_boundary_conditions[f_id] = boundary_conditions[f_id]
-                betas = jnp.ones((len(node_ids)))
+                betas = jnp.zeros((len(node_ids)))
 
             for i in node_ids:
                 ii = i - node_ids[0]     ## TODO Assumes ordering. OMG fix this, as well as providing nodes as arrays.
@@ -457,7 +494,7 @@ def pde_solver( diff_operator:callable,
     # sol_vals = apply_neumann_conditions(sol_vals, boundary_conditions, cloud)
 
     # return sol_vals, jnp.concatenate(sol_coeffs)         ## TODO: return an object like solve_ivp
-    return SteadySol(sol_vals, sol_coeffs)
+    return SteadySol(sol_vals, sol_coeffs, B1)
 
 
 # pde_solver_jit_without_bc = jax.jit(pde_solver, static_argnames=["diff_operator",

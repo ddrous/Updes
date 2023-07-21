@@ -6,7 +6,7 @@ import sys
 # lc = 0.1        ## TODO Set this to 4 !
 # ref_io = 7           ## Refinement factor to account for Infow/Outflow
 # ref_bs = 4           ## Refinement factor to account for Blowing/Suction
-lc = 0.36
+lc = 0.16
 ref_io = 8
 ref_bs = 6
 
