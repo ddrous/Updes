@@ -36,7 +36,7 @@ NB_ITER = 3
 ## Constants for gradient descent
 LR = 5e-3
 # GAMMA = 0.995
-EPOCHS = 1000
+EPOCHS = 100
 
 
 # %%
@@ -73,7 +73,7 @@ def diff_operator_l1(x, center=None, rbf=None, monomial=None, fields=None):
 
 def rhs_operator_l1(x, centers=None, rbf=None, fields=None):
     grad_pi_x = gradient(x, fields[:, 0], centers, rbf)[0]
-    return grad_pi_x
+    return -grad_pi_x
 
 
 
@@ -87,7 +87,7 @@ def diff_operator_l2(x, center=None, rbf=None, monomial=None, fields=None):
 
 def rhs_operator_l2(x, centers=None, rbf=None, fields=None):
     grad_pi_y = gradient(x, fields[:, 0], centers, rbf)[1]
-    return grad_pi_y
+    return -grad_pi_y
 
 
 
@@ -168,7 +168,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
         ## Set pi bc
 
         pi_out = pi_[out_nodes_pi]
-        bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab-pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
+        bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab+pi_out)*Re, u1*Re), "Blowing":zero, "Suction":zero}
         bc_l1 = boundary_conditions_func_to_arr(bc_l1, cloud_lamb)
 
         l1sol = pde_solver_jit_with_bc(diff_operator=diff_operator_l1,
@@ -198,18 +198,11 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
         l1_ = interpolate_field(l1star, cloud_lamb, cloud_mu)
         l2_ = interpolate_field(l2star, cloud_lamb, cloud_mu)
 
-        # grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[out_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)[...,0]
-        # new_pi_out = u1*l1[out_nodes_lamb] + u_parab - u1 + grad_l1/Re
-        # new_pi_out_ = interpolate_field(new_pi_out, cloud_lamb, cloud_mu)
-        # bc_mu = {"Wall":zero, "Inflow":zero, "Outflow":new_pi_out_, "Blowing":zero, "Suction":zero}
-
-
         grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[out_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
 
-        new_pi_out = u1*l1[out_nodes_lamb] + u_parab - u1 + grad_l1[...,0]/Re
+        new_pi_out = -u1*l1[out_nodes_lamb] - u_parab + u1 - grad_l1[...,0]/Re
         bc_mu = {"Wall":zero, "Inflow":zero, "Outflow":new_pi_out, "Blowing":zero, "Suction":zero}
         bc_mu = boundary_conditions_func_to_arr(bc_mu, cloud_mu)
-
 
         # ## Small investigative plot
         # if i%1 == 0:
@@ -238,8 +231,8 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
         gradmu = interpolate_field(gradmu_, cloud_mu, cloud_lamb)
 
-        # L = Lstar
-        L = Lstar + gradmu
+        L = Lstar
+        # L = Lstar + gradmu
         l1, l2 = L[:,0], L[:,1]
         lnorm = jnp.linalg.norm(L, axis=-1)
 
@@ -257,34 +250,34 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 # %%
 
 
-print(f"\nStarting RBF simulation with {cloud_lamb.N} nodes\n")
+# print(f"\nStarting RBF simulation with {cloud_lamb.N} nodes\n")
 
-u = jnp.load(DATAFOLDER+"u.npz")["arr_1"][-1]
-v = jnp.load(DATAFOLDER+"v.npz")["arr_1"][-1]
+# u = jnp.load(DATAFOLDER+"u.npz")["arr_1"][-1]
+# v = jnp.load(DATAFOLDER+"v.npz")["arr_1"][-1]
 
-l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes(cloud_lamb, cloud_mu, u=u, v=v, cloud_vel=cloud_lamb, NB_ITER=100)
-# l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes_instationnary(cloud_lamb, cloud_mu)
+# l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes(cloud_lamb, cloud_mu, u=u, v=v, cloud_vel=cloud_lamb, NB_ITER=30)
+# # l1_list, l2_list, lnorm_list, pi_list = simulate_adjoint_navier_stokes_instationnary(cloud_lamb, cloud_mu)
 
 
-print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
+# print("\nSimulation complete. Saving all files to %s" % DATAFOLDER)
 
-renum_map_vel = jnp.array(list(cloud_lamb.renumbering_map.keys()))
-renum_map_p = jnp.array(list(cloud_mu.renumbering_map.keys()))
+# renum_map_vel = jnp.array(list(cloud_lamb.renumbering_map.keys()))
+# renum_map_p = jnp.array(list(cloud_mu.renumbering_map.keys()))
 
-jnp.savez(DATAFOLDER+'l1.npz', renum_map_vel, jnp.stack(l1_list, axis=0))
-jnp.savez(DATAFOLDER+'l2.npz', renum_map_vel, jnp.stack(l2_list, axis=0))
-jnp.savez(DATAFOLDER+'lnorm.npz', renum_map_vel, jnp.stack(lnorm_list, axis=0))
-jnp.savez(DATAFOLDER+'pi.npz', renum_map_p, jnp.stack(pi_list, axis=0))
+# jnp.savez(DATAFOLDER+'l1.npz', renum_map_vel, jnp.stack(l1_list, axis=0))
+# jnp.savez(DATAFOLDER+'l2.npz', renum_map_vel, jnp.stack(l2_list, axis=0))
+# jnp.savez(DATAFOLDER+'lnorm.npz', renum_map_vel, jnp.stack(lnorm_list, axis=0))
+# jnp.savez(DATAFOLDER+'pi.npz', renum_map_p, jnp.stack(pi_list, axis=0))
 
 
 # #%%
 
-print("\nSaving complete. Now running visualisation ...")
+# print("\nSaving complete. Now running visualisation ...")
 
-pyvista_animation(DATAFOLDER, "l1", duration=15, vmin=jnp.min(l1_list[-1]), vmax=jnp.max(l1_list[-1]))
-pyvista_animation(DATAFOLDER, "l2", duration=15, vmin=jnp.min(l2_list[-1]), vmax=jnp.max(l2_list[-1]))
-pyvista_animation(DATAFOLDER, "lnorm", duration=15, vmin=jnp.min(lnorm_list[-1]), vmax=jnp.max(lnorm_list[-1]))
-pyvista_animation(DATAFOLDER, "pi", duration=15, vmin=jnp.min(pi_list[-1]), vmax=jnp.max(pi_list[-1]))
+# pyvista_animation(DATAFOLDER, "l1", duration=15, vmin=jnp.min(l1_list[-1]), vmax=jnp.max(l1_list[-1]))
+# pyvista_animation(DATAFOLDER, "l2", duration=15, vmin=jnp.min(l2_list[-1]), vmax=jnp.max(l2_list[-1]))
+# pyvista_animation(DATAFOLDER, "lnorm", duration=15, vmin=jnp.min(lnorm_list[-1]), vmax=jnp.max(lnorm_list[-1]))
+# pyvista_animation(DATAFOLDER, "pi", duration=15, vmin=jnp.min(pi_list[-1]), vmax=jnp.max(pi_list[-1]))
 
 
 
@@ -355,14 +348,14 @@ def cost_val_fn(u, v, u_parab):
 def cost_grad_fn(l1, pi_):
     grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[in_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
     # grad_l1 = cartesian_gradient_vec(range(cloud_lamb.N), l1, cloud_lamb)
-    return pi_[in_nodes_pi] + grad_l1[:, 0]/Re
+    return +pi_[in_nodes_pi] - grad_l1[:, 0]/Re
 
 forward_sim_args = {"cloud_vel":cloud_vel,
                     "cloud_phi": cloud_phi,
                     "inflow_control":None,
                     # "Re":Re,
                     # "Pa":Pa,
-                    "NB_ITER":NB_ITER,
+                    "NB_ITER":5,
                     "RBF":RBF,
                     "MAX_DEGREE":MAX_DEGREE    
                     }
@@ -370,7 +363,7 @@ adjoint_sim_args = {"cloud_lamb":cloud_lamb,
                     "cloud_mu": cloud_mu,
                     "u":None,"v":None,
                     "cloud_vel":cloud_vel,
-                    "NB_ITER":NB_ITER,
+                    "NB_ITER":30,
                     "RBF":RBF,
                     "MAX_DEGREE":MAX_DEGREE    
                     }

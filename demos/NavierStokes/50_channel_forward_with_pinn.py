@@ -94,6 +94,7 @@ p_bc = []
 
 ## Neumann boundaries (for veleocity) only
 x_bc_n_vel = []
+x_bc_n_p = []
 
 for f_id in cloud_vel.facet_types.keys():
 
@@ -119,6 +120,11 @@ for f_id in cloud_vel.facet_types.keys():
         x_id_vel = cloud_vel.sorted_nodes[bd_node_ids]
         x_bc_n_vel.append(x_id_vel)
 
+    if cloud_p.facet_types[f_id]=="n":
+        bd_node_ids = jnp.array(cloud_p.facet_nodes[f_id])
+        x_id_vel = cloud_p.sorted_nodes[bd_node_ids]
+        x_bc_n_p.append(x_id_vel)
+
 
 x_bc_vel = jnp.concatenate(x_bc_vel, axis=0) / NORM_FACTOR
 u_bc = jnp.concatenate(u_bc, axis=0)
@@ -128,6 +134,9 @@ x_bc_n_vel = jnp.concatenate(x_bc_n_vel, axis=0) / NORM_FACTOR
 
 x_bc_p = jnp.concatenate(x_bc_p, axis=0)    / NORM_FACTOR
 p_bc = jnp.concatenate(p_bc, axis=0)
+
+x_bc_n_p = jnp.concatenate(x_bc_n_p, axis=0) / NORM_FACTOR
+
 
 fig, ax = plt.subplots(1, 5, figsize=(4*5,3))
 fig.suptitle("Boundary conditions for velocity u (ROUGHLY SPEAKING)")

@@ -414,24 +414,32 @@ tracemalloc.start()
 
 
 def diff_operator_l1(x, center=None, rbf=None, monomial=None, fields=None):
-    U_prev = jnp.array([fields[0], fields[1]])
-    u_grad = nodal_gradient(x, center, rbf, monomial)
-    u_lap = nodal_laplacian(x, center, rbf, monomial)
-    return jnp.dot(U_prev, u_grad) - u_lap/Re
+    # lambda_val = jnp.array([nodal_value(x, center, rbf, monomial), fields[0]])
+    lambda_val = jnp.array([fields[0], fields[1]])
+    U_val = jnp.array([fields[2], fields[3]])
+    U_grad_T = jnp.array([fields[4], fields[5]])
+    lambda_grad = nodal_gradient(x, center, rbf, monomial)
+    lambda_lap = nodal_laplacian(x, center, rbf, monomial)
+    return jnp.dot(lambda_val, U_grad_T) - jnp.dot(U_val, lambda_grad) - lambda_lap/Re
 
 def rhs_operator_l1(x, centers=None, rbf=None, fields=None):
-    grad_px = gradient(x, fields[:, 0], centers, rbf)[0]
-    return -grad_px
+    grad_pi_x = gradient(x, fields[:, 0], centers, rbf)[0]
+    return -grad_pi_x
+
 
 def diff_operator_l2(x, center=None, rbf=None, monomial=None, fields=None):
-    U_prev = jnp.array([fields[0], fields[1]])
-    v_grad = nodal_gradient(x, center, rbf, monomial)
-    v_lap = nodal_laplacian(x, center, rbf, monomial)
-    return jnp.dot(U_prev, v_grad) - v_lap/Re
+    # lambda_val = jnp.array([fields[0], nodal_value(x, center, rbf, monomial)])
+    lambda_val = jnp.array([fields[0], fields[1]])
+    U_val = jnp.array([fields[2], fields[3]])
+    U_grad_T = jnp.array([fields[4], fields[5]])
+    lambda_grad = nodal_gradient(x, center, rbf, monomial)
+    lambda_lap = nodal_laplacian(x, center, rbf, monomial)
+    return jnp.dot(lambda_val, U_grad_T) - jnp.dot(U_val, lambda_grad) - lambda_lap/Re
 
 def rhs_operator_l2(x, centers=None, rbf=None, fields=None):
-    grad_py = gradient(x, fields[:, 0], centers, rbf)[1]
-    return  -grad_py
+    grad_pi_y = gradient(x, fields[:, 0], centers, rbf)[1]
+    return -grad_pi_y
+
 
 def diff_operator_pi(x, center=None, rbf=None, monomial=None, fields=None):
     invA = fields[:2]
@@ -498,9 +506,9 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
 
         pi = interpolate_field(pi_, cloud_mu, cloud_lamb)
 
-        # bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab-pi_[out_nodes_pi])*Re, u1*Re), "Blowing":zero, "Suction":zero}
-        bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab-pi[out_nodes_lamb])*Re, u1*Re), "Blowing":zero, "Suction":zero}
+        bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab+pi[out_nodes_lamb])*Re, u1*Re), "Blowing":zero, "Suction":zero}
         # bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab)*Re, u1*Re), "Blowing":zero, "Suction":zero}
+        # bc_l1 = {"Wall":zero, "Inflow":zero, "Outflow":((u1-u_parab+pi[out_nodes_lamb])*Re, u1*Re), "Blowing":zero, "Suction":zero}
         bc_l1 = boundary_conditions_func_to_arr(bc_l1, cloud_lamb)
 
         # bc_l1 = ((u1-u_parab-pi_[out_nodes_pi])*Re, u1*Re)
@@ -516,6 +524,7 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
                         max_degree=MAX_DEGREE)
 
         bc_l2 = {"Wall":zero, "Inflow":zero, "Outflow":(u2*Re, u1*Re), "Blowing":zero, "Suction":zero}
+        # bc_l2 = {"Wall":zero, "Inflow":zero, "Outflow":(u2*Re*0, u1*Re), "Blowing":zero, "Suction":zero}
         bc_l2 = boundary_conditions_func_to_arr(bc_l2, cloud_lamb)
 
         l2sol = pde_solver_jit_with_bc(diff_operator=diff_operator_l2,
@@ -547,9 +556,9 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
         l2star_ = interpolate_field(l2star, cloud_lamb, cloud_mu)
 
         grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[out_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
-        new_pi_out = -u1*l1[out_nodes_lamb] - u_parab + u1 - grad_l1[...,0]/Re
+        new_pi_out = u1*l1[out_nodes_lamb] + u_parab - u1 + grad_l1[...,0]/Re
         bc_pi = {"Wall":zero, "Inflow":zero, "Outflow":new_pi_out, "Blowing":zero, "Suction":zero}
-        # bc_pi = {"Wall":zero, "Inflow":zero, "Outflow":zero, "Blowing":zero, "Suction":zero}
+        # bc_pi = {"Wall":zero, "Inflow":zero, "Outflow":new_pi_out*0, "Blowing":zero, "Suction":zero}
         bc_pi = boundary_conditions_func_to_arr(bc_pi, cloud_mu)
 
 
@@ -567,11 +576,11 @@ def simulate_adjoint_navier_stokes(cloud_lamb,
         gradpiprime_ = gradient_vec(cloud_mu.sorted_nodes, piprimesol_.coeffs, cloud_mu.sorted_nodes, RBF)
         gradpiprime = interpolate_field(gradpiprime_, cloud_mu, cloud_lamb)
 
-        l1 = l1star
-        l2 = l2star
+        # l1 = l1star
+        # l2 = l2star
 
-        # l1 = l1star - jnp.diag(diagInvA1)@gradpiprime[:,0]
-        # l2 = l2star - jnp.diag(diagInvA2)@gradpiprime[:,1]
+        l1 = l1star - jnp.diag(diagInvA1)@gradpiprime[:,0]
+        l2 = l2star - jnp.diag(diagInvA2)@gradpiprime[:,1]
 
         # l1 = ALPHA * l1 + (1-ALPHA) * l1_list[-1]
         # l2 = ALPHA * l2 + (1-ALPHA) * l2_list[-1]

@@ -283,19 +283,27 @@ print(y_in.shape)
 print(pinn1_control.shape)
 
 MKE = 2
-MKS = 2
+MKS = 0
 LW = 3
 
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6,4.8))
 ax.plot(dal_control, y_in, "x-", markevery=MKE, markersize=MKS, lw=LW, label="DAL")
 ax.plot(pinn1_control, y_in, "^-", markevery=MKE, markersize=MKS, lw=LW, label="PINN")
-ax.plot(dp_control, y_in, "*-", markevery=MKE, markersize=MKS, lw=LW, label="DP")
+# ax.plot(dp_control, y_in, "*-", markevery=MKE, markersize=MKS, lw=LW, label="DP")
+
+from scipy import interpolate
+y_new = jnp.linspace(y_in.min(), y_in.max(), 10000)
+# print(y_new)
+bspline = interpolate.make_interp_spline(y_in[::-1], dp_control[::-1], k=3)
+dp_smooth = bspline(y_new)
+
+ax.plot(dp_smooth, y_new, "*-", markevery=MKE, markersize=MKS, lw=LW, label="DP")
 
 
 ax.legend()
 ax.set_xlabel(r"$c$")
 ax.set_ylabel(r"$y$")
-ax.set_title("Optimal controls")
+# ax.set_title("Optimal controls")
 plt.tight_layout()
 
 plt.savefig(DATAFOLDER+'controls.pdf', backend='pgf', bbox_inches='tight', transparent=True)
@@ -374,9 +382,13 @@ plot(pinn_outlet_v, y_out, ">-", color="#c94f08", ax=ax, lw=LW, alpha=0.5)
 plot(dp_outlet_u, y_out, "g*-", label=r"DP", ax=ax, lw=LW)
 plot(dp_outlet_v, y_out, "g*-", ax=ax, lw=LW, alpha=0.5)
 
-plot(u_target, y_out, "k-", ax=ax, label=r"target", lw=3)
-plot(v_target, y_out, "k-", ax=ax, lw=3, title="Outlet velocities", alpha=0.5);
+plot(u_target, y_out, "k-", ax=ax, label=r"targets", lw=3)
+# plot(v_target, y_out, "k-", ax=ax, lw=3, title="Outlet velocities", alpha=0.5);
+plot(v_target, y_out, "k-", ax=ax, lw=3);
 
+ax.annotate(r"$u$", xy=(0.5, 0.5), xycoords="axes fraction", xytext=(0.92, 0.5), textcoords="axes fraction", fontsize=22, color="k", rotation=-90)
+
+ax.annotate(r"$v$", xy=(0.5, 0.5), xycoords="axes fraction", xytext=(0.24, 0.5), textcoords="axes fraction", fontsize=22, color="k", rotation=-90)
 # ax.set_ylabel(r"$u(x=L_x), v(x=L_x)$", )
 
 plt.savefig(DATAFOLDER+'out_vels.pdf', backend='pgf', bbox_inches='tight', transparent=True)
@@ -387,27 +399,43 @@ plt.savefig(DATAFOLDER+'out_vels.pdf', backend='pgf', bbox_inches='tight', trans
 
 ## Plot the COMPLETE VELOCITIES
 
-vmax = max([pinn_vel.max(), dal_vel.max(), dp_vel.max()])
-vmax=4.3
+# vmax = max([pinn_vel.max(), dal_vel.max(), dp_vel.max()])
+# vmax=4.3
 
-fig1, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(5.5*3,3.6), sharey=True)
-_, img1 = cloud_vel.visualize_field(dal_vel, cmap="jet", projection="2d", title="DAL velocity", ax=ax1, vmin=0, vmax=vmax, colorbar=False)
-_, img2 = cloud_vel.visualize_field(pinn_vel, cmap="jet", projection="2d", title="PINN velocity", ax=ax2, vmin=0, vmax=vmax, colorbar=False, ylabel=None)
-_, img3 = cloud_vel.visualize_field(dp_vel, cmap="jet", projection="2d", title="DP velocity", ax=ax3, vmin=0, vmax=vmax, colorbar=False, ylabel=None)
+vmin = min([pinn_vel.min(), dal_vel.min(), dp_vel.min()])
+vmax = max([pinn_vel.max(), dal_vel.max(), dp_vel.max()])
+vmax = 2.95
+
+cmap = "nipy_spectral"
+extend = "both"
+
+fig1, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(6.5*3,3.6), sharey=True)
+_, img1 = cloud_vel.visualize_field(dal_vel, cmap=cmap, projection="2d", title="DAL velocity", ax=ax1, vmin=0, vmax=vmax, colorbar=False, xlabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
+_, img2 = cloud_vel.visualize_field(pinn_vel, cmap=cmap, projection="2d", title="PINN velocity", ax=ax2, vmin=0, vmax=vmax, colorbar=False, xlabel=None, ylabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
+_, img3 = cloud_vel.visualize_field(dp_vel, cmap=cmap, projection="2d", title="DP velocity", ax=ax3, vmin=0, vmax=vmax, colorbar=False, xlabel=None, ylabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
+
+ax1.set_xticklabels([])
+ax2.set_xticklabels([])
+ax3.set_xticklabels([])
 
 # fig1.suptitle("Velocity fields", y=1.05, fontsize=22)
-fig1.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax1, ax2, ax3], location="right", pad=0.025)
-plt.savefig(DATAFOLDER+'velocities.pdf', backend='pgf', bbox_inches='tight', transparent=True)
+m = ScalarMappable(norm=img3.norm, cmap=img3.cmap)
+img = fig1.colorbar(m, ax=[ax1, ax2, ax3], location="right", pad=0.025, extend="both", extendfrac="auto");
+img.cmap.set_over('m')
 
+# fig1.colorbar(img3, ax=[ax1, ax2, ax3], location="right", pad=0.025, extend=extend, extendfrac="auto");
+
+plt.savefig(DATAFOLDER+'velocities.pdf', backend='pgf',bbox_inches='tight', transparent=True)
 
 vmin = min([pinn_p.min(), dal_p.min(), dp_p.min()])
 vmax = max([pinn_p.max(), dal_p.max(), dp_p.max()])
+cmap="coolwarm"
 
-fig2, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(5.5*3,3.6), sharey=True)
-_, img1 = cloud_phi.visualize_field(dal_p, cmap="jet", projection="2d", title="DAL pressure", ax=ax1, vmin=vmin, vmax=vmax, colorbar=False)
-_, img2 = cloud_phi.visualize_field(pinn_p, cmap="jet", projection="2d", title="PINN pressure", ax=ax2, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
-_, img3 = cloud_phi.visualize_field(dp_p, cmap="jet", projection="2d", title="DP pressure", ax=ax3, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
+fig2, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(6.5*3,3.6), sharey=True)
+_, img1 = cloud_phi.visualize_field(dal_p, cmap=cmap, projection="2d", title="DAL pressure", ax=ax1, vmin=vmin, vmax=vmax, colorbar=False)
+_, img2 = cloud_phi.visualize_field(pinn_p, cmap=cmap, projection="2d", title="PINN pressure", ax=ax2, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
+_, img3 = cloud_phi.visualize_field(dp_p, cmap=cmap, projection="2d", title="DP pressure", ax=ax3, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
 
 # fig2.suptitle("Pressure fields", y=1.05, fontsize=22)
-fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax1, ax2, ax3], location="right", pad=0.025);
+fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax1, ax2, ax3], location="right", pad=0.02, extend="both", extendfrac="auto");
 plt.savefig(DATAFOLDER+'pressures.pdf', backend='pgf', bbox_inches='tight', transparent=True)

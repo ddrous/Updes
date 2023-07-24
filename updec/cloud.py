@@ -212,7 +212,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         return ax
 
 
-    def visualize_field(self, field, projection="2d", title="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, colorbar=True, ax=None, figsize=(6,5), **kwargs):
+    def visualize_field(self, field, projection="2d", title="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, colorbar=True, ax=None, figsize=(6,5), extend="both", **kwargs):
         import matplotlib.pyplot as plt
 
         # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
@@ -229,10 +229,10 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
                 ax = fig.add_subplot(1, 1, 1, projection='3d')
 
         if projection == "2d":
-            img = ax.tricontourf(x, y, field, levels=levels, **kwargs)
+            img = ax.tricontourf(x, y, field, levels=levels, extend=extend, **kwargs)
             if colorbar == True:
                 plt.sca(ax)
-                plt.colorbar(img)
+                plt.colorbar(img, extend=extend)
 
         elif projection == "3d":
             img = ax.plot_trisurf(x, y, field, **kwargs)

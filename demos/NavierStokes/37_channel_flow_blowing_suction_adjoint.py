@@ -358,9 +358,7 @@ def cost_grad_fn(l1, pi_):
 forward_sim_args = {"cloud_vel":cloud_vel,
                     "cloud_phi": cloud_phi,
                     "inflow_control":None,
-                    # "Re":Re,
-                    # "Pa":Pa,
-                    "NB_ITER":NB_ITER,
+                    "NB_ITER":5,
                     "RBF":RBF,
                     "MAX_DEGREE":MAX_DEGREE    
                     }
@@ -368,7 +366,7 @@ adjoint_sim_args = {"cloud_lamb":cloud_lamb,
                     "cloud_mu": cloud_mu,
                     "u":None,"v":None,
                     "cloud_vel":cloud_vel,
-                    "NB_ITER":NB_ITER,
+                    "NB_ITER":3,
                     "RBF":RBF,
                     "MAX_DEGREE":MAX_DEGREE    
                     }
@@ -405,7 +403,7 @@ for step in range(1, EPOCHS+1):
 
     ### Optimsation start ###
     loss = cost_val_fn(u_list[-1], v_list[-1], u_parab)
-    grad = cost_grad_fn(l1_list[-1], pi_list[-1])
+    grad = -cost_grad_fn(l1_list[-1], pi_list[-1])
 
     # learning_rate = LR * (GAMMA**step)
     # optimal_u_inflow = optimal_u_inflow - grad * learning_rate          ## Gradient descent !
