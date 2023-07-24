@@ -436,6 +436,20 @@ _, img1 = cloud_phi.visualize_field(dal_p, cmap=cmap, projection="2d", title="DA
 _, img2 = cloud_phi.visualize_field(pinn_p, cmap=cmap, projection="2d", title="PINN pressure", ax=ax2, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
 _, img3 = cloud_phi.visualize_field(dp_p, cmap=cmap, projection="2d", title="DP pressure", ax=ax3, vmin=vmin, vmax=vmax, colorbar=False, ylabel=None)
 
+# ax1.set_xticks(jnp.arange(0, 1.5+0.25, 0.25))
+x_list = [0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5]
+
+ax1.set_xticks(x_list)
+ax1.set_xticklabels(x_list)
+ax2.set_xticks(x_list)
+ax2.set_xticklabels(x_list)
+ax3.set_xticks(x_list)
+ax3.set_xticklabels(x_list)
+
+# y_list = [0, 0.2, 0.4, 0.6, 0.8, 1]
+# ax1.set_yticks(y_list)
+# ax1.set_yticklabels(y_list)
+
 # fig2.suptitle("Pressure fields", y=1.05, fontsize=22)
 fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax1, ax2, ax3], location="right", pad=0.02, extend="both", extendfrac="auto");
 plt.savefig(DATAFOLDER+'pressures.pdf', backend='pgf', bbox_inches='tight', transparent=True)
