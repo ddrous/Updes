@@ -25,10 +25,10 @@ DT = 1e-4
 Pa = 0.
 
 NB_ITER = 10
-NB_REFINEMENTS = 100
+NB_REFINEMENTS = 4
 
 EXPERIMENET_ID = "CilynderFlow"
-DATAFOLDER = "../data/" + EXPERIMENET_ID +"/"
+DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
 # make_dir(DATAFOLDER)
 
 
@@ -41,7 +41,7 @@ facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d"}
 # facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n", "Cilynder":"d"}
 # facet_types_phi = {"Wall":"n", "Inflow":"n", "Outflow":"d", "Cilynder":"n"}
 
-cloud_vel = GmshCloud(filename="../meshes/channel_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
+cloud_vel = GmshCloud(filename="./meshes/channel_2.py", facet_types=facet_types_vel, mesh_save_location=DATAFOLDER)    ## TODO Pass the savelocation here
 cloud_phi = GmshCloud(filename=DATAFOLDER+"mesh.msh", facet_types=facet_types_phi)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5,1.4*2), sharex=True)

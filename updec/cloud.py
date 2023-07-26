@@ -212,7 +212,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         return ax
 
 
-    def visualize_field(self, field, projection="2d", title="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, colorbar=True, ax=None, figsize=(6,5), extend="both", **kwargs):
+    def visualize_field(self, field, projection="2d", title="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, colorbar=True, ax=None, figsize=(6,5), extend="neither", **kwargs):
         import matplotlib.pyplot as plt
 
         # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])

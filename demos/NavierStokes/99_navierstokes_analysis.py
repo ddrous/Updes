@@ -172,9 +172,9 @@ ax.plot(dp_cost, label="DP")
 
 ax.legend()
 ax.set_yscale("log")
-ax.set_xlabel("(strided) iterations")
-ax.set_ylabel(r'$ \mathcal{J} $')
-ax.set_title("Comparative cost objectives")
+ax.set_xlabel("(strided) iterations", fontdict={"fontsize":18})
+ax.set_ylabel(r'$ \mathcal{J} $', fontdict={"fontsize":28})
+# ax.set_title("Comparative cost objectives")
 
 plt.savefig(DATAFOLDER+'costs.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
@@ -301,8 +301,8 @@ ax.plot(dp_smooth, y_new, "*-", markevery=MKE, markersize=MKS, lw=LW, label="DP"
 
 
 ax.legend()
-ax.set_xlabel(r"$c$")
-ax.set_ylabel(r"$y$")
+ax.set_xlabel(r"$c$", fontdict={"fontsize":28})
+ax.set_ylabel(r"$y$", fontdict={"fontsize":28})
 # ax.set_title("Optimal controls")
 plt.tight_layout()
 
@@ -386,6 +386,9 @@ plot(u_target, y_out, "k-", ax=ax, label=r"targets", lw=3)
 # plot(v_target, y_out, "k-", ax=ax, lw=3, title="Outlet velocities", alpha=0.5);
 plot(v_target, y_out, "k-", ax=ax, lw=3);
 
+ax.set_xlabel(r"$u(x=L_x), v(x=L_x)$", fontdict={"fontsize":28})
+ax.set_ylabel(r"$y$", fontdict={"fontsize":28})
+
 ax.annotate(r"$u$", xy=(0.5, 0.5), xycoords="axes fraction", xytext=(0.92, 0.5), textcoords="axes fraction", fontsize=22, color="k", rotation=-90)
 
 ax.annotate(r"$v$", xy=(0.5, 0.5), xycoords="axes fraction", xytext=(0.24, 0.5), textcoords="axes fraction", fontsize=22, color="k", rotation=-90)
@@ -414,6 +417,7 @@ _, img1 = cloud_vel.visualize_field(dal_vel, cmap=cmap, projection="2d", title="
 _, img2 = cloud_vel.visualize_field(pinn_vel, cmap=cmap, projection="2d", title="PINN velocity", ax=ax2, vmin=0, vmax=vmax, colorbar=False, xlabel=None, ylabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
 _, img3 = cloud_vel.visualize_field(dp_vel, cmap=cmap, projection="2d", title="DP velocity", ax=ax3, vmin=0, vmax=vmax, colorbar=False, xlabel=None, ylabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
 
+ax1.set_ylabel(r"$y$", fontdict={"fontsize":16})
 ax1.set_xticklabels([])
 ax2.set_xticklabels([])
 ax3.set_xticklabels([])
@@ -438,6 +442,11 @@ _, img3 = cloud_phi.visualize_field(dp_p, cmap=cmap, projection="2d", title="DP 
 
 # ax1.set_xticks(jnp.arange(0, 1.5+0.25, 0.25))
 x_list = [0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5]
+
+ax1.set_xlabel(r"$x$", fontdict={"fontsize":16})
+ax1.set_ylabel(r"$y$", fontdict={"fontsize":16})
+ax2.set_xlabel(r"$x$", fontdict={"fontsize":16})
+ax3.set_xlabel(r"$x$", fontdict={"fontsize":16})
 
 ax1.set_xticks(x_list)
 ax1.set_xticklabels(x_list)

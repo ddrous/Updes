@@ -27,7 +27,7 @@ Ny = Nx
 facet_types={"North":"d", "South":"d", "West":"d", "East":"d"}
 
 ## TODO: remember to use N=100 range for the final plots
-# rbf_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=1)
+rbf_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=1)
 
 #%%
 
@@ -154,10 +154,10 @@ ax.plot(dp_cost, label="DP")
 
 ax.legend()
 ax.set_yscale("log")
-ax.set_xlabel("(strided) iterations")
+ax.set_xlabel("(strided) iterations", fontdict={"size": 16})
 # ax.set_ylabel(r"$\int_0^1 \vert \frac{\partial u}{\partial y}(x,1) - q_{d} \vert^2$ dx ")
-ax.set_ylabel(r"$\mathcal{J}$")
-ax.set_title("Comparative cost objectives")
+ax.set_ylabel(r"$\mathcal{J}$", fontdict={"size": 20})
+# ax.set_title("Comparative cost objectives")
 
 plt.savefig(DATAFOLDER+'costs.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
@@ -273,9 +273,9 @@ ax.plot(x_north, dp_control, "*-", markevery=MKE, markersize=MKS, lw=LW, label="
 ax.plot(x_north, exact_control, "k-", lw=3, label="Analytical")
 
 ax.legend()
-ax.set_xlabel(r"$x$")
-ax.set_ylabel(r"$c$")
-ax.set_title("Optimal controls")
+ax.set_xlabel(r"$x$", fontdict={"size": 20})
+ax.set_ylabel(r"$c$", fontdict={"size": 20})
+# ax.set_title("Optimal controls")
 
 plt.savefig(DATAFOLDER+'controls.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
@@ -305,16 +305,28 @@ max_errors = 0.0225
 pinn1_error = jnp.clip(pinn1_error, 0, max_errors)
 dp_error = jnp.clip(dp_error, 0, max_errors)
 
-fig1, ax1 = plt.subplots(1,1, figsize=(5.8*1,5))
-rbf_cloud.visualize_field(exact_solution, cmap="jet", projection="2d", title="Analytical solution", ax=ax1, vmin=-1, vmax=1)
+fig1, ax1 = plt.subplots(1,1, figsize=(6.2*1,5))
+rbf_cloud.visualize_field(exact_solution, cmap="jet", projection="2d", ax=ax1, vmin=-1, vmax=1, title="")
+
+ax1.set_xlabel(r"$x$", fontdict={"size": 36})
+ax1.set_ylabel(r"$y$", fontdict={"size": 36})
 
 plt.savefig(DATAFOLDER+'exact_sol.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 
 fig2, (ax2, ax3, ax4) = plt.subplots(1,3, figsize=(5.6*3,5), sharey=True)
-_, img2 = rbf_cloud.visualize_field(dal_error, cmap="magma", colorbar=False, projection="2d", title="DAL absolute error", ax=ax2, vmin=0, vmax=max_errors);
-_, img3 = rbf_cloud.visualize_field(pinn1_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="PINN absolute error", ax=ax3, vmin=0, vmax=max_errors);
-_, img4 = rbf_cloud.visualize_field(dp_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="DP absolute error", ax=ax4, vmin=0, vmax=max_errors);
+_, img2 = rbf_cloud.visualize_field(dal_error, cmap="magma", colorbar=False, projection="2d", title="DAL", ax=ax2, vmin=0, vmax=max_errors);
+_, img3 = rbf_cloud.visualize_field(pinn1_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="PINN", ax=ax3, vmin=0, vmax=max_errors);
+_, img4 = rbf_cloud.visualize_field(dp_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="DP", ax=ax4, vmin=0, vmax=max_errors);
+
+ax2.set_title("DAL", fontsize=22)
+ax3.set_title("PINN", fontsize=22)
+ax4.set_title("DP", fontsize=22)
+
+ax2.set_xlabel(r"$x$", fontdict={"size": 36})
+ax3.set_xlabel(r"$x$", fontdict={"size": 36})
+ax4.set_xlabel(r"$x$", fontdict={"size": 36})
+ax2.set_ylabel(r"$y$", fontdict={"size": 36})
 
 # fig2.suptitle("Absolute errors", y=1.05, fontsize=22)
 fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax2, ax3, ax4], location="right", pad=0.025)
