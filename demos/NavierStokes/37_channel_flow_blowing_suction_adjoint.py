@@ -34,9 +34,9 @@ NB_ITER = 3
 
 
 ## Constants for gradient descent
-LR = 1e-2
+LR = 1e-1
 # GAMMA = 0.995
-EPOCHS = 10
+EPOCHS = 350
 
 
 # %%
@@ -353,7 +353,7 @@ def cost_val_fn(u, v, u_parab):
 def cost_grad_fn(l1, pi_):
     grad_l1 = gradient_vals_vec(cloud_lamb.sorted_nodes[in_nodes_lamb], l1, cloud_lamb, RBF, MAX_DEGREE)
     # grad_l1 = cartesian_gradient_vec(range(cloud_lamb.N), l1, cloud_lamb)
-    return pi_[in_nodes_pi] + grad_l1[:, 0]/Re
+    return -pi_[in_nodes_pi] - grad_l1[:, 0]/Re
 
 forward_sim_args = {"cloud_vel":cloud_vel,
                     "cloud_phi": cloud_phi,
@@ -493,4 +493,4 @@ pyvista_animation(DATAFOLDER, "pi", duration=5)
 
 # %%
 
-jnp.savez(COMPFOLDER+"dal", objective_cost=history_cost, outflow_mse=parab_out_mse, optimal_control=optimal_u_inflow, mem_time=jnp.array([mem_usage, exec_time]))
+jnp.savez(COMPFOLDER+"dal", objective_cost=history_cost, outflow_mse=parab_out_mse, optimal_control=optimal_u_inflow, mem_time=jnp.array([mem_usage, exec_time]), u_sol=u_list[-1], v_sol=v_list[-1], vel_sol=vel_list[-1], p_sol=p_list[-1])

@@ -161,14 +161,16 @@ dp_cost = dp_arrays["objective_cost"]
 pinn1_cost = pinn1_arrays["objective_cost"]
 pinn2_cost = pinn2_arrays["objective_cost"]
 
-dal_list = list(dal_cost) + [dal_cost[-1]]*(len(dp_cost)-len(dal_cost))
-dal_cost = jnp.array(dal_list)
+# dal_list = list(dal_cost) + [dal_cost[-1]]*(len(dp_cost)-len(dal_cost))
+# dal_cost = jnp.array(dal_list)
 
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5,5))
-ax.plot(dal_cost, "--", label="DAL")
+ax.plot(dal_cost[::len(dal_cost)//len(dp_cost)], "-", label="DAL")
 # ax.plot(pinn1_cost[::len(pinn1_cost)//len(dal_cost)], label="PINN")
 ax.plot(pinn2_cost[::len(pinn2_cost)//len(dp_cost)], label="PINN")
 ax.plot(dp_cost, label="DP")
+
+ax.set_ylim([1e-4, 1e-0])
 
 ax.legend()
 ax.set_yscale("log")
@@ -314,50 +316,81 @@ plt.show()
 
 # %%
 
-## LOAD or MAKE SOLS and OUTLET VELS
+# ## LOAD or MAKE SOLS and OUTLET VELS
 
-# simulate_forward_navier_stokes = __import__('30_channel_flow_blowing_suction').simulate_forward_navier_stokes
+# # simulate_forward_navier_stokes = __import__('30_channel_flow_blowing_suction').simulate_forward_navier_stokes
 
-# forward_sim_args = {"cloud_vel":cloud_vel,
-#                     "cloud_phi": cloud_phi,
-#                     "inflow_control":None,
-#                     "NB_ITER":100,
-#                     "RBF":polyharmonic,
-#                     "MAX_DEGREE":1    
-#                     }
+# # forward_sim_args = {"cloud_vel":cloud_vel,
+# #                     "cloud_phi": cloud_phi,
+# #                     "inflow_control":None,
+# #                     "NB_ITER":100,
+# #                     "RBF":polyharmonic,
+# #                     "MAX_DEGREE":1    
+# #                     }
+
+# out_ids = jnp.array(cloud_vel.facet_nodes["Outflow"])
+# y_out = cloud_vel.sorted_nodes[out_ids, 1]
+
+
+# # forward_sim_args["inflow_control"] = dal_control
+# # u_list, v_list, vel_list, p_list = simulate_forward_navier_stokes(**forward_sim_args)
+# # dal_outlet_u = u_list[-1][out_ids]
+# # dal_outlet_v = v_list[-1][out_ids]
+# # dal_vel = vel_list[-1]
+# # dal_p = p_list[-1]
+# # jnp.savez(DATAFOLDER+"dal_sol", outlet_u=dal_outlet_u, outlet_v=dal_outlet_v, vel=dal_vel, p=dal_p)
+
+# dals_sol_array = jnp.load(DATAFOLDER+"dal_sol.npz")
+# dal_outlet_u = dals_sol_array["outlet_u"]
+# dal_outlet_v = dals_sol_array["outlet_v"]
+# dal_vel = dals_sol_array["vel"]
+# dal_p = dals_sol_array["p"]
+
+# # forward_sim_args["inflow_control"] = dp_control
+# # forward_sim_args["NB_ITER"] = 4
+# # u_list, v_list, vel_list, p_list = simulate_forward_navier_stokes(**forward_sim_args)
+# # dp_outlet_u = u_list[-1][out_ids]
+# # dp_outlet_v = v_list[-1][out_ids]
+# # dp_vel = vel_list[-1]
+# # dp_p = p_list[-1]
+# # jnp.savez(DATAFOLDER+"dp_sol", outlet_u=dp_outlet_u, outlet_v=dp_outlet_v, vel=dp_vel, p=dp_p)
+
+# dp_sol_arrays = jnp.load(DATAFOLDER+"dp_sol.npz")
+# # dp_outlet_u = dp_sol_arrays["outlet_u"]
+# dp_outlet_u = dp_sol_arrays["vel_sol"][out_ids]
+
+# dp_outlet_v = dp_sol_arrays["outlet_v"]
+# dp_vel = dp_sol_arrays["vel"]
+# dp_p = dp_sol_arrays["p"]
+
+# u_target = pinn3_arrays["u_target"]
+# v_target = pinn3_arrays["v_target"]
+# pinn_outlet_u = pinn3_arrays["u_outlet"]
+# pinn_outlet_v = pinn3_arrays["v_outlet"]
+# pinn_vel = pinn3_arrays["vel_solution"]
+# pinn_p = pinn3_arrays["p_solution"]
+
+
+
+# %%
+
+## Plot the OUTLET VELOCITIES
+
 
 out_ids = jnp.array(cloud_vel.facet_nodes["Outflow"])
 y_out = cloud_vel.sorted_nodes[out_ids, 1]
 
+dal_outlet_u = dal_arrays["u_sol"][out_ids]
+dal_outlet_v = dal_arrays["v_sol"][out_ids]
+dal_u = dal_arrays["u_sol"]
+dal_vel = dal_arrays["vel_sol"]
+dal_p = dal_arrays["p_sol"]
 
-# forward_sim_args["inflow_control"] = dal_control
-# u_list, v_list, vel_list, p_list = simulate_forward_navier_stokes(**forward_sim_args)
-# dal_outlet_u = u_list[-1][out_ids]
-# dal_outlet_v = v_list[-1][out_ids]
-# dal_vel = vel_list[-1]
-# dal_p = p_list[-1]
-# jnp.savez(DATAFOLDER+"dal_sol", outlet_u=dal_outlet_u, outlet_v=dal_outlet_v, vel=dal_vel, p=dal_p)
-
-dals_sol_array = jnp.load(DATAFOLDER+"dal_sol.npz")
-dal_outlet_u = dals_sol_array["outlet_u"]
-dal_outlet_v = dals_sol_array["outlet_v"]
-dal_vel = dals_sol_array["vel"]
-dal_p = dals_sol_array["p"]
-
-# forward_sim_args["inflow_control"] = dp_control
-# forward_sim_args["NB_ITER"] = 4
-# u_list, v_list, vel_list, p_list = simulate_forward_navier_stokes(**forward_sim_args)
-# dp_outlet_u = u_list[-1][out_ids]
-# dp_outlet_v = v_list[-1][out_ids]
-# dp_vel = vel_list[-1]
-# dp_p = p_list[-1]
-# jnp.savez(DATAFOLDER+"dp_sol", outlet_u=dp_outlet_u, outlet_v=dp_outlet_v, vel=dp_vel, p=dp_p)
-
-dp_sol_arrays = jnp.load(DATAFOLDER+"dp_sol.npz")
-dp_outlet_u = dp_sol_arrays["outlet_u"]
-dp_outlet_v = dp_sol_arrays["outlet_v"]
-dp_vel = dp_sol_arrays["vel"]
-dp_p = dp_sol_arrays["p"]
+dp_outlet_u = dp_arrays["u_sol"][out_ids]
+dp_outlet_v = dp_arrays["v_sol"][out_ids]
+dp_u = dp_arrays["u_sol"]
+dp_vel = dp_arrays["vel_sol"]
+dp_p = dp_arrays["p_sol"]
 
 u_target = pinn3_arrays["u_target"]
 v_target = pinn3_arrays["v_target"]
@@ -366,11 +399,6 @@ pinn_outlet_v = pinn3_arrays["v_outlet"]
 pinn_vel = pinn3_arrays["vel_solution"]
 pinn_p = pinn3_arrays["p_solution"]
 
-
-
-# %%
-
-## Plot the OUTLET VELOCITIES
 
 LW=1
 ax = plot(dal_outlet_u, y_out, "bx-", label=r"DAL", y_label=r"$y$", x_label=r"$u(x=L_x), v(x=L_x)$", figsize=(6,4.8), lw=LW)
@@ -389,7 +417,7 @@ plot(v_target, y_out, "k-", ax=ax, lw=3);
 ax.set_xlabel(r"$u(x=L_x), v(x=L_x)$", fontdict={"fontsize":28})
 ax.set_ylabel(r"$y$", fontdict={"fontsize":28})
 
-ax.annotate(r"$u$", xy=(0.5, 0.5), xycoords="axes fraction", xytext=(0.92, 0.5), textcoords="axes fraction", fontsize=22, color="k", rotation=-90)
+ax.annotate(r"$u$", xy=(0.5, 0.5), xycoords="axes fraction", xytext=(0.84, 0.5), textcoords="axes fraction", fontsize=22, color="k", rotation=-90)
 
 ax.annotate(r"$v$", xy=(0.5, 0.5), xycoords="axes fraction", xytext=(0.24, 0.5), textcoords="axes fraction", fontsize=22, color="k", rotation=-90)
 # ax.set_ylabel(r"$u(x=L_x), v(x=L_x)$", )
@@ -407,15 +435,16 @@ plt.savefig(DATAFOLDER+'out_vels.pdf', backend='pgf', bbox_inches='tight', trans
 
 vmin = min([pinn_vel.min(), dal_vel.min(), dp_vel.min()])
 vmax = max([pinn_vel.max(), dal_vel.max(), dp_vel.max()])
-vmax = 2.95
+vmin = 0
+vmax = 2.5
 
 cmap = "nipy_spectral"
 extend = "both"
 
 fig1, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(6.5*3,3.6), sharey=True)
-_, img1 = cloud_vel.visualize_field(dal_vel, cmap=cmap, projection="2d", title="DAL velocity", ax=ax1, vmin=0, vmax=vmax, colorbar=False, xlabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
-_, img2 = cloud_vel.visualize_field(pinn_vel, cmap=cmap, projection="2d", title="PINN velocity", ax=ax2, vmin=0, vmax=vmax, colorbar=False, xlabel=None, ylabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
-_, img3 = cloud_vel.visualize_field(dp_vel, cmap=cmap, projection="2d", title="DP velocity", ax=ax3, vmin=0, vmax=vmax, colorbar=False, xlabel=None, ylabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
+_, img1 = cloud_vel.visualize_field(dal_vel, cmap=cmap, projection="2d", title="DAL velocity", ax=ax1, vmin=vmin, vmax=vmax, colorbar=False, xlabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
+_, img2 = cloud_vel.visualize_field(pinn_vel, cmap=cmap, projection="2d", title="PINN velocity", ax=ax2, vmin=vmin, vmax=vmax, colorbar=False, xlabel=None, ylabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
+_, img3 = cloud_vel.visualize_field(dp_vel, cmap=cmap, projection="2d", title="DP velocity", ax=ax3, vmin=vmin, vmax=vmax, colorbar=False, xlabel=None, ylabel=None, extend=extend, levels=jnp.linspace(vmin,vmax,100))
 
 ax1.set_ylabel(r"$y$", fontdict={"fontsize":16})
 ax1.set_xticklabels([])
@@ -424,7 +453,7 @@ ax3.set_xticklabels([])
 
 # fig1.suptitle("Velocity fields", y=1.05, fontsize=22)
 m = ScalarMappable(norm=img3.norm, cmap=img3.cmap)
-img = fig1.colorbar(m, ax=[ax1, ax2, ax3], location="right", pad=0.025, extend="both", extendfrac="auto");
+img = fig1.colorbar(m, ax=[ax1, ax2, ax3], location="right", pad=0.025, extend="both", extendfrac="auto", label=r"$\Vert \mathbf{u} \Vert_2$");
 img.cmap.set_over('m')
 
 # fig1.colorbar(img3, ax=[ax1, ax2, ax3], location="right", pad=0.025, extend=extend, extendfrac="auto");
@@ -433,6 +462,10 @@ plt.savefig(DATAFOLDER+'velocities.pdf', backend='pgf',bbox_inches='tight', tran
 
 vmin = min([pinn_p.min(), dal_p.min(), dp_p.min()])
 vmax = max([pinn_p.max(), dal_p.max(), dp_p.max()])
+
+vmin = -0.4
+vmax = 0.4
+
 cmap="coolwarm"
 
 fig2, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(6.5*3,3.6), sharey=True)
@@ -460,5 +493,5 @@ ax3.set_xticklabels(x_list)
 # ax1.set_yticklabels(y_list)
 
 # fig2.suptitle("Pressure fields", y=1.05, fontsize=22)
-fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax1, ax2, ax3], location="right", pad=0.02, extend="both", extendfrac="auto");
+fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax1, ax2, ax3], location="right", pad=0.02, extend="both", extendfrac="auto", label=r"$p$");
 plt.savefig(DATAFOLDER+'pressures.pdf', backend='pgf', bbox_inches='tight', transparent=True)

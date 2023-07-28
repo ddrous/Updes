@@ -199,7 +199,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         ax.quiverkey(q, X=0.5, Y=1.1, U=1, label='Normals', labelpos='E')
         ax.scatter(x=coords[:, 0], y=coords[:, 1], c="m", **kwargs)
 
-        if xlabel:
+        if xlabel: 
             ax.set_xlabel(xlabel)
         if ylabel:
             ax.set_ylabel(ylabel)

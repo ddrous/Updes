@@ -30,13 +30,13 @@ MAX_DEGREE = 1
 Re = 100
 Pa = 0.
 
-NB_ITER = 4
+NB_ITER = 10
 
 
 ## Constants for gradient descent
 LR = 1e-1
 # GAMMA = 0.995
-EPOCHS = 1000      ## More than enough for 50 iter and 360 nodes
+EPOCHS = 350      ## More than enough for 50 iter and 360 nodes
 
 
 # %%
@@ -422,4 +422,4 @@ pyvista_animation(DATAFOLDER, "p", duration=5, vmin=jnp.min(p_list[-1]), vmax=jn
 COMPFOLDER = "./data/" + "Comparison" +"/"
 make_dir(COMPFOLDER)
 
-jnp.savez(COMPFOLDER+"dp", objective_cost=history_cost, outflow_final_mse=parab_error, optimal_control=optimal_u_inflow, mem_time=jnp.array([mem_usage, exec_time]))
+jnp.savez(COMPFOLDER+"dp", objective_cost=history_cost, outflow_final_mse=parab_error, optimal_control=optimal_u_inflow, mem_time=jnp.array([mem_usage, exec_time]), u_sol=u_list[-1], v_sol=v_list[-1], vel_sol=vel_list[-1], p_sol=p_list[-1])
