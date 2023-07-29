@@ -32,6 +32,7 @@ Check out the example notebooks and scripts in the folder [`demos`](./demos)!
 - Publish to social media (and to my website)
 - Research dynamic point clouds for time-dependent problems
 - Parallelise time-dependent problems in time
+- Add support for USD files
 
 
 ## Dependencies
