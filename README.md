@@ -26,8 +26,8 @@ Check out the example notebooks and scripts in the folder [`demos`](./demos)!
 - Setup automated tests via GitHub actions CI/CD
 - Add comments and generate Documentation (like [Equinox](https://docs.kidger.site/equinox/))
 - Code more demos and animations of PDEs: 
-    - diffusion and other cool linear equation 
-    - the Navier-Stokes in a channel with a step, 
+    - [advection-diffusion](https://en.wikipedia.org/wiki/Convection%E2%80%93diffusion_equation) and other cool linear equations 
+    - the Navier-Stokes in a channel with a step 
     - etc.
 - Publish to social media (and to my website)
 - Research dynamic point clouds for time-dependent problems
