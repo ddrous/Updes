@@ -39,7 +39,7 @@ Check out the example notebooks and scripts in the folder [`demos`](./demos)!
 - JAX
 - GMSH
 - PyVista
-
+- FFMPEG
 
 ## Cite us
 If you use this software, please cite us 
