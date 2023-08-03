@@ -28,15 +28,15 @@ RBF = partial(polyharmonic, a=1)
 MAX_DEGREE = 1
 
 DT = 1e-4
-NB_TIMESTEPS = 10
+NB_TIMESTEPS = 100
 PLOT_EVERY = 10
 
 VEL = jnp.array([100.0, 0.0])
 ## Diffusive constant
 K = 0.08
 
-Nx = 30
-Ny = Nx
+Nx = 40
+Ny = 20
 SUPPORT_SIZE = "max"
 
 facet_types={"South":"d", "West":"d", "North":"d", "East":"n"}
@@ -64,8 +64,8 @@ boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_zero, "East":d_z
 
 ## u0 is zero everywhere except at a point in the middle
 u0 = jnp.zeros(cloud.N)
-source_id = int(cloud.N*0.05)
-source_neighbors = jnp.array(cloud.local_supports[source_id][:cloud.N//50])
+source_id = int(cloud.N*0.01)
+source_neighbors = jnp.array(cloud.local_supports[source_id][:cloud.N//60])
 u0 = u0.at[source_neighbors].set(0.95)
 
 ## Begin timestepping for 100 steps
@@ -112,8 +112,8 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 # %%
 
 ax = plt.gca()
-filename = DATAFOLDER + "advection_diffusion_rbf.png"
-cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(6,3),colorbar=False, title=["Implicit Advection-Diffusion with RBFs"])
+filename = DATAFOLDER + "advection_diffusion_rbf.gif"
+cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(6,3),colorbar=False, titles=["Implicit scheme for Advection-Diffusion with RBFs"])
 
 
 
