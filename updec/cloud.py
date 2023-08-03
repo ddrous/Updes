@@ -261,6 +261,11 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         x, y = self.sorted_nodes[:, 0], self.sorted_nodes[:, 1]
 
         fig, ax = plt.subplots(nb_signals, 1, figsize=figsize, sharex=True)
+        if nb_signals == 1:
+            ax = [ax]
+
+        if not isinstance(cmaps, list):
+            cmaps = [cmaps]*nb_signals
 
         ## Setup animation and colorbars
         imgs = []
