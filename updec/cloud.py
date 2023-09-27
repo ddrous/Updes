@@ -306,7 +306,8 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         ### Save the video
         if filename:
             fps = step_count / duration
-            anim.save(filename, writer='ffmpeg', fps=fps)
+            # anim.save(filename, writer='ffmpeg', fps=fps)
+            anim.save(filename, writer='pillow', fps=fps)
             os.system("open "+filename)
 
         return ax

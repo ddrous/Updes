@@ -28,3 +28,8 @@ demos/NavierStokes/data/*
 !demos/NavierStokes/data/README.md
 !demos/NavierStokes/data/Comparison
 !demos/NavierStokes/data/TempFolder/*
+
+demos/Advection/data/*
+!demos/Advection/data/README.md
+!demos/Advection/data/Comparison
+!demos/Advection/data/TempFolder/*
