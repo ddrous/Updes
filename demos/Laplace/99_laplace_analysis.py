@@ -27,7 +27,7 @@ Ny = Nx
 facet_types={"North":"d", "South":"d", "West":"d", "East":"d"}
 
 ## TODO: remember to use N=100 range for the final plots
-rbf_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=1)
+# rbf_cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=None, support_size=1)
 
 #%%
 
@@ -109,32 +109,32 @@ print(pinn_final_names)
 
 # %%
 
-## Plot the regular grid
-## Set control location
+# ## Plot the regular grid
+# ## Set control location
 
-fig = plt.figure(figsize=(5.8, 5))
-ax = fig.add_subplot(1, 1, 1)
+# fig = plt.figure(figsize=(5.8, 5))
+# ax = fig.add_subplot(1, 1, 1)
 
-coords = rbf_cloud.sorted_nodes
-bd_size = 4
+# coords = rbf_cloud.sorted_nodes
+# bd_size = 4
 
-Ni, Nd, Nn = rbf_cloud.Ni, rbf_cloud.Nd, rbf_cloud.Nn
-if Ni > 0:
-        ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", label="internal", s=0.1)
-if Nd > 0:
-        ax.scatter(x=coords[Ni:Ni+Nd, 0], y=coords[Ni:Ni+Nd, 1], c="r", label="dirichlet", s=bd_size)
-if Nn > 0:
-        ax.scatter(x=coords[Ni+Nd:Ni+Nd+Nn, 0], y=coords[Ni+Nd:Ni+Nd+Nn, 1], c="g", label="neumann", s=bd_size)
-if Ni+Nd+Nn < rbf_cloud.N:
-        ax.scatter(x=coords[Ni+Nd+Nn:, 0], y=coords[Ni+Nd+Nn:, 1], c="b", label="robin", s=bd_size)
+# Ni, Nd, Nn = rbf_cloud.Ni, rbf_cloud.Nd, rbf_cloud.Nn
+# if Ni > 0:
+#         ax.scatter(x=coords[:Ni, 0], y=coords[:Ni, 1], c="k", label="internal", s=0.1)
+# if Nd > 0:
+#         ax.scatter(x=coords[Ni:Ni+Nd, 0], y=coords[Ni:Ni+Nd, 1], c="r", label="dirichlet", s=bd_size)
+# if Nn > 0:
+#         ax.scatter(x=coords[Ni+Nd:Ni+Nd+Nn, 0], y=coords[Ni+Nd:Ni+Nd+Nn, 1], c="g", label="neumann", s=bd_size)
+# if Ni+Nd+Nn < rbf_cloud.N:
+#         ax.scatter(x=coords[Ni+Nd+Nn:, 0], y=coords[Ni+Nd+Nn:, 1], c="b", label="robin", s=bd_size)
 
-ax.set_xlabel(r"$x$")
-ax.set_ylabel(r"$y$")
-ax.set_title(r"Regular cloud (100 $\times$ 100)")
-ax.legend(bbox_to_anchor=(1.0, 0.5), loc='center left', prop={'size': 8})
-plt.tight_layout()
+# ax.set_xlabel(r"$x$")
+# ax.set_ylabel(r"$y$")
+# ax.set_title(r"Regular cloud (100 $\times$ 100)")
+# ax.legend(bbox_to_anchor=(1.0, 0.5), loc='center left', prop={'size': 8})
+# plt.tight_layout()
 
-plt.savefig(DATAFOLDER+'grid.png', dpi=2000, bbox_inches='tight', transparent=True)
+# plt.savefig(DATAFOLDER+'grid.png', dpi=2000, bbox_inches='tight', transparent=True)
 
 
 # %%
@@ -188,9 +188,9 @@ ax.xaxis.set_major_formatter(ticker.EngFormatter())
 
 ax.legend()
 ax.set_yscale("log")
-ax.set_xlabel("epochs")
-ax.set_ylabel("loss")
-ax.set_title("PINN training loss terms (step 1)")
+ax.set_xlabel("epochs", fontdict={"size": 16})
+ax.set_ylabel("loss", fontdict={"size": 20})
+# ax.set_title("PINN training loss terms (step 1)", fontdict={"size": 17})
 
 plt.savefig(DATAFOLDER+'pinn_losses_step_1.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
@@ -214,9 +214,9 @@ ax.xaxis.set_major_formatter(ticker.EngFormatter())
 
 ax.legend()
 ax.set_yscale("log")
-ax.set_xlabel("epochs")
-ax.set_ylabel("loss")
-ax.set_title("PINN training loss terms (step 2)")
+ax.set_xlabel("epochs", fontdict={"size": 16})
+ax.set_ylabel("loss", fontdict={"size": 20})
+# ax.set_title("PINN training loss terms (step 2)", fontdict={"size": 17})
 
 plt.savefig(DATAFOLDER+'pinn_losses_step_2.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
@@ -238,9 +238,9 @@ ax.plot(weights[2], costs[2], "ro", markersize=8)
 ax.set_xscale("log")
 ax.set_yscale("log")
 
-ax.set_xlabel(r"$w_{\mathcal{J}}$")
-ax.set_ylabel(r'$ \mathcal{J} $')
-ax.set_title("PINN choice (step 2)")
+ax.set_xlabel(r"$\omega$", fontdict={"size": 16})
+ax.set_ylabel(r'$ \mathcal{J} $', fontdict={"size": 20})
+# ax.set_title("PINN choice (step 2)", fontdict={"size": 17})
 
 plt.savefig(DATAFOLDER+'pinn_choice.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
@@ -287,51 +287,51 @@ plt.show()
 
 ## Plot the Exact solution and its error
 
-exact_solution = dal_arrays["exact_solution"]
-dal_solution = dal_arrays["optimal_solution"]
-pinn1_solution = pinn1_arrays["optimal_solution"]
-pinn2_solution = pinn2_arrays["optimal_solution"]
-dp_solution = dp_arrays["optimal_solution"]
+# exact_solution = dal_arrays["exact_solution"]
+# dal_solution = dal_arrays["optimal_solution"]
+# pinn1_solution = pinn1_arrays["optimal_solution"]
+# pinn2_solution = pinn2_arrays["optimal_solution"]
+# dp_solution = dp_arrays["optimal_solution"]
 
-dal_error = jnp.abs(dal_solution-exact_solution)
-pinn1_error = jnp.abs(pinn1_solution-exact_solution)
-# pinn2_error = jnp.abs(pinn2_solution-exact_solution)
-dp_error = jnp.abs(dp_solution-exact_solution)
+# dal_error = jnp.abs(dal_solution-exact_solution)
+# pinn1_error = jnp.abs(pinn1_solution-exact_solution)
+# # pinn2_error = jnp.abs(pinn2_solution-exact_solution)
+# dp_error = jnp.abs(dp_solution-exact_solution)
 
-max_errors = max([dal_error.max(), pinn1_error.max(), dp_error.max()])
-print(max_errors)
-max_errors = 0.0225
+# max_errors = max([dal_error.max(), pinn1_error.max(), dp_error.max()])
+# print(max_errors)
+# max_errors = 0.0225
 
-pinn1_error = jnp.clip(pinn1_error, 0, max_errors)
-dp_error = jnp.clip(dp_error, 0, max_errors)
+# pinn1_error = jnp.clip(pinn1_error, 0, max_errors)
+# dp_error = jnp.clip(dp_error, 0, max_errors)
 
-fig1, ax1 = plt.subplots(1,1, figsize=(6.2*1,5))
-rbf_cloud.visualize_field(exact_solution, cmap="jet", projection="2d", ax=ax1, vmin=-1, vmax=1, title="")
+# fig1, ax1 = plt.subplots(1,1, figsize=(6.2*1,5))
+# rbf_cloud.visualize_field(exact_solution, cmap="jet", projection="2d", ax=ax1, vmin=-1, vmax=1, title="")
 
-ax1.set_xlabel(r"$x$", fontdict={"size": 36})
-ax1.set_ylabel(r"$y$", fontdict={"size": 36})
+# ax1.set_xlabel(r"$x$", fontdict={"size": 36})
+# ax1.set_ylabel(r"$y$", fontdict={"size": 36})
 
-plt.savefig(DATAFOLDER+'exact_sol.pdf', backend='pgf', bbox_inches='tight', transparent=True)
+# plt.savefig(DATAFOLDER+'exact_sol.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 
-fig2, (ax2, ax3, ax4) = plt.subplots(1,3, figsize=(5.6*3,5), sharey=True)
-_, img2 = rbf_cloud.visualize_field(dal_error, cmap="magma", colorbar=False, projection="2d", title="DAL", ax=ax2, vmin=0, vmax=max_errors);
-_, img3 = rbf_cloud.visualize_field(pinn1_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="PINN", ax=ax3, vmin=0, vmax=max_errors);
-_, img4 = rbf_cloud.visualize_field(dp_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="DP", ax=ax4, vmin=0, vmax=max_errors);
+# fig2, (ax2, ax3, ax4) = plt.subplots(1,3, figsize=(5.6*3,5), sharey=True)
+# _, img2 = rbf_cloud.visualize_field(dal_error, cmap="magma", colorbar=False, projection="2d", title="DAL", ax=ax2, vmin=0, vmax=max_errors);
+# _, img3 = rbf_cloud.visualize_field(pinn1_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="PINN", ax=ax3, vmin=0, vmax=max_errors);
+# _, img4 = rbf_cloud.visualize_field(dp_error, cmap="magma", ylabel=None, colorbar=False, projection="2d", title="DP", ax=ax4, vmin=0, vmax=max_errors);
 
-ax2.set_title("DAL", fontsize=22)
-ax3.set_title("PINN", fontsize=22)
-ax4.set_title("DP", fontsize=22)
+# ax2.set_title("DAL", fontsize=22)
+# ax3.set_title("PINN", fontsize=22)
+# ax4.set_title("DP", fontsize=22)
 
-ax2.set_xlabel(r"$x$", fontdict={"size": 36})
-ax3.set_xlabel(r"$x$", fontdict={"size": 36})
-ax4.set_xlabel(r"$x$", fontdict={"size": 36})
-ax2.set_ylabel(r"$y$", fontdict={"size": 36})
+# ax2.set_xlabel(r"$x$", fontdict={"size": 36})
+# ax3.set_xlabel(r"$x$", fontdict={"size": 36})
+# ax4.set_xlabel(r"$x$", fontdict={"size": 36})
+# ax2.set_ylabel(r"$y$", fontdict={"size": 36})
 
-# fig2.suptitle("Absolute errors", y=1.05, fontsize=22)
-fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax2, ax3, ax4], location="right", pad=0.025)
+# # fig2.suptitle("Absolute errors", y=1.05, fontsize=22)
+# fig2.colorbar(ScalarMappable(norm=img3.norm, cmap=img3.cmap), ax=[ax2, ax3, ax4], location="right", pad=0.025)
 
-plt.savefig(DATAFOLDER+'errors.pdf', backend='pgf', bbox_inches='tight', transparent=True)
+# plt.savefig(DATAFOLDER+'errors.pdf', backend='pgf', bbox_inches='tight', transparent=True)
 
 
 

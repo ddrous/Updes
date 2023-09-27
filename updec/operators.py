@@ -127,7 +127,7 @@ def nodal_div_grad(x, center=None, rbf=None, monomial=None, args=None):
 
 
 
-def compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, max_degree:int):
+def compute_coefficients(field:jnp.ndarray, cloud:Cloud, rbf:callable, max_degree:int):
     """ Find nodal and polynomial coefficients for scaar field s """ 
     N = cloud.N
     M = compute_nb_monomials(max_degree, 2)     ## Carefull with the problem dimension: 2

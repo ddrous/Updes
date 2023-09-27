@@ -373,7 +373,7 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, nb_monomials:int, d
     return B[:, :N]
 
 
-def new_compute_coefficients(field:jnp.DeviceArray, cloud:Cloud, rbf:callable, nb_monomials:int):
+def new_compute_coefficients(field:jnp.ndarray, cloud:Cloud, rbf:callable, nb_monomials:int):
     """ Find nodal and polynomial coefficients for scalar field """ 
 
     rhs = jnp.concatenate((field, jnp.zeros((nb_monomials))))
