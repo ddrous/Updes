@@ -1,4 +1,8 @@
 # %%
+%load_ext autoreload
+%autoreload 2
+
+# %%
 
 """
 Test of the Updec package on the Advection-Diffusion equation with RBFs: 
@@ -35,17 +39,20 @@ VEL = jnp.array([100.0, 0.0])
 ## Diffusive constant
 K = 0.08
 
-Nx = 40
-Ny = 20
+Nx = 10
+Ny = 5
 SUPPORT_SIZE = "max"
 
-facet_types={"South":"p1", "West":"p2", "North":"p1", "East":"p2"}
+facet_types={"South":"p1", "North":"p1", "West":"p2", "East":"p2"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
 
 cloud.visualize_cloud(s=0.1, figsize=(7,3));
 
+cloud.facet_types
+# cloud.facet_nodes
 # print("Local supports:", cloud.local_supports[0])
-
+cloud.Np
+cloud.global_indices
 
 # %%
 

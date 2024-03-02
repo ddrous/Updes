@@ -25,6 +25,9 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         # self.facet_names = {}
         self.facet_precedence = {k:i for i,(k,v) in enumerate(facet_types.items())}        ## Facet order of precedence usefull for corner nodes membership
 
+        ## For each periodic facet type we encounter, we append a letter of the alphabet to it. This is useful for renumbering nodes; and clean for the user.
+        self.facet_types = {k:v+str(i) for i,(k,v) in enumerate(facet_types.items())}
+
 
     def average_spacing(self):
         spacings = []
@@ -102,6 +105,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         d_nodes = []
         n_nodes = []
         r_nodes = []
+        p_nodes = {}
         for i in range(self.N):         
             if self.node_types[i] == "i":
                 i_nodes.append(i)
@@ -111,8 +115,20 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
                 n_nodes.append(i)
             elif self.node_types[i] == "r":
                 r_nodes.append(i)
+            elif self.node_types[i][0] == "p":
+                p_id = self.node_types[i]
+                p_nodes[p_id] = p_nodes.get(p_id, [])+[i]
+            else:
+                raise ValueError("Unknown node type")
 
-        new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes+r_nodes)}       ## Reads as: node v is now node k
+        ## Sort the keys of p_nodes before adding the values back to back 
+        all_p_nodes = []
+        for k in sorted(p_nodes.keys()):
+            all_p_nodes += p_nodes[k]
+
+        new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes+r_nodes+all_p_nodes)}       ## Reads as: node v is now node k
+
+        print(self.global_indices)
 
         if hasattr(self, "global_indices_rev"):
             self.global_indices_rev = {new_numb[k]: v for k, v in self.global_indices_rev.items()}
@@ -398,21 +414,23 @@ class SquareCloud(Cloud):
             if l == self.Ny-1:
                 self.facet_nodes["North"].append(i)
                 self.node_types[i] = self.facet_types["North"]
+            elif l == 0:
+                self.facet_nodes["South"].append(i)
+                self.node_types[i] = self.facet_types["South"]
             elif k == self.Nx-1:
                 self.facet_nodes["East"].append(i)
                 self.node_types[i] = self.facet_types["East"]
             elif k == 0:
                 self.facet_nodes["West"].append(i)
                 self.node_types[i] = self.facet_types["West"]
-            elif l == 0:
-                self.facet_nodes["South"].append(i)
-                self.node_types[i] = self.facet_types["South"]
             else:
                 self.node_types[i] = "i"       ## Internal node (not a boundary). But very very important!
 
         self.Nd = 0
         self.Nn = 0
         self.Nr = 0
+        self.Np = {v[:-1]:0 for v in self.facet_types.values()}    ## Number of nodes per periodic boundary
+
         for f_id, f_type in self.facet_types.items():
             if f_type == "d":
                 self.Nd += len(self.facet_nodes[f_id])
@@ -420,8 +438,12 @@ class SquareCloud(Cloud):
                 self.Nn += len(self.facet_nodes[f_id])
             if f_type == "r":
                 self.Nr += len(self.facet_nodes[f_id])
+            if f_type[0] == "p":
+                self.Np[f_type[:-1]] += len(self.facet_nodes[f_id])
+        ## Get periodic count as a list sorted by keys
+        self.Np = [self.Np[k] for k in sorted(self.Np.keys())]
 
-        self.Ni = self.N - self.Nd - self.Nn - self.Nr
+        self.Ni = self.N - self.Nd - self.Nn - self.Nr - sum(self.Np)
 
     def define_outward_normals(self):
         ## Makes the outward normal vectors to boundaries
