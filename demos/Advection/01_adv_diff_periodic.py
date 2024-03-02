@@ -39,7 +39,7 @@ Nx = 40
 Ny = 20
 SUPPORT_SIZE = "max"
 
-facet_types={"South":"d", "West":"d", "North":"d", "East":"n"}
+facet_types={"South":"p1", "West":"p2", "North":"p1", "East":"p2"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
 
 cloud.visualize_cloud(s=0.1, figsize=(7,3));
@@ -111,8 +111,7 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 
 # %%
 
-# ax = plt.gca()
-filename = DATAFOLDER + "advection_diffusion_rbf.gif"
+filename = DATAFOLDER + "adv_diff_periodic.gif"
 cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), titles=["Advection-Diffusion with RBFs"])
 
 
@@ -120,14 +119,3 @@ cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), tit
 # %%
 
 
-## Write stuff to tensorboard
-# run_name = str(datetime.datetime.now())[:19]        ##For tensorboard
-# writer = SummaryWriter("runs/"+run_name, comment='-Laplace')
-# hparams_dict = {"rbf":RBF.__name__, "max_degree":MAX_DEGREE, "nb_nodes":Nx*Ny, "support_size":SUPPORT_SIZE}
-# metrics_dict = {"metrics/mse_error":float(error), "metrics/wall_time":walltime}
-# writer.add_hparams(hparams_dict, metrics_dict, run_name="hp_params")
-# writer.add_figure("plots", fig)
-# writer.flush()
-# writer.close()
-
-# %%

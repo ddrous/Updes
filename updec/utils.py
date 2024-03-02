@@ -15,11 +15,24 @@ plt.style.use("dark_background")
 import math
 import random
 
+
+# def periodic_distance_squre(node1, node2, W, H):
+#     dx = jnp.abs(node1[0] - node2[0])
+#     dy = jnp.abs(node1[1] - node2[1])
+#     # dx = jnp.where(dx > W/2, W - dx, dx)
+#     # dy = jnp.where(dy > H/2, H - dy, dy)
+#     dx = jnp.minimum(dx, W - dx)
+#     dy = jnp.minimum(dy, H - dy)
+#     return jnp.sqrt(dx**2 + dy**2)
+
+
 ## Euclidian distance
 def distance(node1, node2):
     # diff = node1 - node2
-    # return jnp.sum(diff*diff)      ## TODO Squared distance !!!!!!!!
+    # return jnp.sum(diff*diff)      ## Squared distance
     return jnp.linalg.norm(node1 - node2)       ## Carefull: not differentiable at 0
+    # return periodic_distance_squre(node1, node2, 1., 1.)
+
 
 
 def print_line_by_line(dictionary):
