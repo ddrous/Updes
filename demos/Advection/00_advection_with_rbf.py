@@ -10,7 +10,7 @@ import time
 import jax
 import jax.numpy as jnp
 
-jax.config.update('jax_platform_name', 'cpu')
+# jax.config.update('jax_platform_name', 'cpu')
 jax.config.update("jax_enable_x64", True)
 
 from updec import *
@@ -65,7 +65,7 @@ boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_zero, "East":d_z
 ## u0 is zero everywhere except at a point in the middle
 u0 = jnp.zeros(cloud.N)
 source_id = int(cloud.N*0.01)
-source_neighbors = jnp.array(cloud.local_supports[source_id][:cloud.N//60])
+source_neighbors = jnp.array(cloud.local_supports[source_id][:cloud.N//40])
 u0 = u0.at[source_neighbors].set(0.95)
 
 ## Begin timestepping for 100 steps
@@ -111,9 +111,9 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 
 # %%
 
-ax = plt.gca()
+# ax = plt.gca()
 filename = DATAFOLDER + "advection_diffusion_rbf.gif"
-cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(6,3),colorbar=False, titles=["Implicit scheme for Advection-Diffusion with RBFs"])
+cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), titles=["Advection-Diffusion with RBFs"])
 
 
 

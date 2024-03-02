@@ -248,7 +248,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         return ax, img
 
 
-    def animate_fields(self, fields, filename=None, titles="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, figsize=(6,5), cmaps="jet", cbarsplit=7, duration=5, **kwargs):
+    def animate_fields(self, fields, filename=None, titles="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, figsize=(6,5), cmaps="jet", cbarsplit=50, duration=5, **kwargs):
         import matplotlib.pyplot as plt
         from matplotlib.animation import FuncAnimation
         import os
@@ -281,6 +281,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             m = plt.cm.ScalarMappable(cmap=cmaps[i])
             m.set_array(signals[i])
             m.set_clim(minmax[0], minmax[1])
+            # m.set_norm(plt.Normalize(vmin=minmax[0], vmax=minmax[1]))
             plt.colorbar(m, boundaries=boundaries, shrink=1.0, aspect=10, ax=ax[i])
 
             try:
@@ -295,7 +296,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
         ## ANimation function
         def animate(frame):
-            imgs = [ax[i].tricontourf(x, y, signals[i][frame], levels=levels, vmin=minmaxs[i][0], vmax=minmaxs[i][1], cmap=cmaps[i], extend='min', **kwargs) for i in range(nb_signals)]
+            imgs = [ax[i].tricontour(x, y, signals[i][frame], levels=levels, vmin=minmaxs[i][0], vmax=minmaxs[i][1], cmap=cmaps[i], extend='min', **kwargs) for i in range(nb_signals)]
             # plt.suptitle("iter = "+str(i), size="large", y=0.95)      ## TODO doesn't work well with tight layout
             return imgs
 
@@ -308,7 +309,8 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             fps = step_count / duration
             # anim.save(filename, writer='ffmpeg', fps=fps)
             anim.save(filename, writer='pillow', fps=fps)
-            os.system("open "+filename)
+            # os.system("open "+filename)
+            print("Animation saved as", filename)
 
         return ax
 
