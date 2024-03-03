@@ -26,33 +26,40 @@ key = None
 
 RUN_NAME = "TempFolder"
 DATAFOLDER = "./data/" + RUN_NAME +"/"
+# DATAFOLDER = "demos/Advection/data/"+RUN_NAME+"/"
 make_dir(DATAFOLDER)
 
 RBF = partial(polyharmonic, a=1)
-MAX_DEGREE = 1
+# RBF = gaussian
+MAX_DEGREE = 0
 
 DT = 1e-4
-NB_TIMESTEPS = 100
+NB_TIMESTEPS = 50
 PLOT_EVERY = 10
 
-VEL = jnp.array([100.0, 0.0])
 ## Diffusive constant
 K = 0.08
+VEL = jnp.array([100.0, 0.0])
 
-Nx = 10
-Ny = 5
+Nx = 25
+Ny = 25
 SUPPORT_SIZE = "max"
 
+# facet_types={"South":"p1", "North":"p1", "West":"p2", "East":"p2"}
 facet_types={"South":"p1", "North":"p1", "West":"p2", "East":"p2"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
 
 cloud.visualize_cloud(s=0.1, figsize=(7,3));
 
-cloud.facet_types
+# cloud.facet_types
 # cloud.facet_nodes
 # print("Local supports:", cloud.local_supports[0])
-cloud.Np
-cloud.global_indices
+print(cloud.Np)
+# print(jnp.flip(cloud.global_indices.T, axis=0))
+# cloud.print_global_indices()
+# print(cloud.sorted_nodes)
+# cloud.sorted_outward_normals
+# cloud.outward_normals
 
 # %%
 
@@ -71,8 +78,10 @@ boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_zero, "East":d_z
 
 ## u0 is zero everywhere except at a point in the middle
 u0 = jnp.zeros(cloud.N)
-source_id = int(cloud.N*0.01)
+source_id = int(cloud.N*0.71)
 source_neighbors = jnp.array(cloud.local_supports[source_id][:cloud.N//40])
+# source_id = 0
+# source_neighbors = jnp.array(cloud.local_supports[source_id][:1])
 u0 = u0.at[source_neighbors].set(0.95)
 
 ## Begin timestepping for 100 steps
@@ -88,14 +97,14 @@ ulist = [u]
 start = time.time()
 
 for i in range(1, NB_TIMESTEPS+1):
-    ufield = pde_solver_jit(diff_operator=my_diff_operator,
+    ufield = pde_solver(diff_operator=my_diff_operator,
                         rhs_operator = my_rhs_operator,
                         rhs_args=[u],
                         cloud = cloud,
                         boundary_conditions = boundary_conditions, 
                         rbf=RBF,
                         max_degree=MAX_DEGREE,)
-    
+
     u = ufield.vals
     ulist.append(u)
 
@@ -119,7 +128,7 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 # %%
 
 filename = DATAFOLDER + "adv_diff_periodic.gif"
-cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), titles=["Advection-Diffusion with RBFs"])
+cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), titles=["Advection-Diffusion with RBFs"]);
 
 
 

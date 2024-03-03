@@ -28,6 +28,8 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         ## For each periodic facet type we encounter, we append a letter of the alphabet to it. This is useful for renumbering nodes; and clean for the user.
         self.facet_types = {k:v+str(i) for i,(k,v) in enumerate(facet_types.items())}
 
+    def print_global_indices(self):
+        print(jnp.flip(self.global_indices.T, axis=0))
 
     def average_spacing(self):
         spacings = []
@@ -127,8 +129,6 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
             all_p_nodes += p_nodes[k]
 
         new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes+r_nodes+all_p_nodes)}       ## Reads as: node v is now node k
-
-        print(self.global_indices)
 
         if hasattr(self, "global_indices_rev"):
             self.global_indices_rev = {new_numb[k]: v for k, v in self.global_indices_rev.items()}
@@ -447,19 +447,20 @@ class SquareCloud(Cloud):
 
     def define_outward_normals(self):
         ## Makes the outward normal vectors to boundaries
-        bd_nodes = [k for k,v in self.node_types.items() if v in ["n", "r"]]   ## Neumann or Robin nodes
+        bd_nodes = [k for k,v in self.node_types.items() if v[0] in ["n", "r", "p"]]   ## Neumann or Robin nodes
         self.outward_normals = {}
 
         for i in bd_nodes:
             k, l = self.global_indices_rev[i]
-            if k==0:
-                n = jnp.array([-1., 0.])
-            elif k==self.Nx-1:
-                n = jnp.array([1., 0.])
+            if l==self.Ny-1:
+                n = jnp.array([0., 1.])
             elif l==0:
                 n = jnp.array([0., -1.])
-            elif l==self.Ny-1:
-                n = jnp.array([0., 1.])
+            elif k==self.Nx-1:
+                n = jnp.array([1., 0.])
+            elif k==0:
+                n = jnp.array([-1., 0.])
+
 
             # self.outward_normals[int(self.global_indices[k,l])] = jnp.array([nx, ny])
             self.outward_normals[int(self.global_indices[k,l])] = n
@@ -636,7 +637,7 @@ class GmshCloud(Cloud):
 
         for f_tag, f_nodes in self.facet_tag_nodes.items():
 
-            if self.facet_types[self.facet_names[f_tag]] in ["n", "r"]:      ### Only Neuman and Robin need normals !
+            if self.facet_types[self.facet_names[f_tag]][0] in ["n", "r", "p"]:      ### Only Neuman and Robin need normals !
                 assert len(f_nodes) >= 2, " Mesh not fine enough for normal computation "
 
                 ## Sort the nodes in this facet

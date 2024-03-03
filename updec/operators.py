@@ -457,6 +457,23 @@ def duplicate_robin_coeffs(cloud, boundary_conditions):
 
 
 
+
+def zerofy_periodic_cond(cloud, boundary_conditions):
+    for f_id, f_type in cloud.facet_types.items():
+
+        if f_type[0] == "p":
+            """ Check that no periodic condition is given """ ## If this was done, it would amoun to setting the difference from one boundary to another, plus the differential as well... Tricky !
+
+            # if f_id in boundary_conditions:
+            #     print(f"WARNING: Values given for periodic boundary condition at facet {f_id}. Ignoring it ...")
+
+            node_ids = cloud.facet_nodes[f_id]
+            boundary_conditions[f_id] = jnp.zeros((len(node_ids)))
+
+    return boundary_conditions
+
+
+
 ## Devise different LU, LDL decomposition strategies make functions here
 def pde_solver( diff_operator:callable,
                 rhs_operator:callable,
@@ -472,14 +489,17 @@ def pde_solver( diff_operator:callable,
     diff_operator = jax.jit(diff_operator, static_argnums=[2,3])
     rhs_operator = jax.jit(rhs_operator, static_argnums=2)
 
+    UPDEC.RBF = rbf
     ### For rememmering purposes
-    UPDEC.BRF = rbf
     UPDEC.MAX_DEGREE = max_degree
     UPDEC.DIM = cloud.dim
 
 
     ## Build robin coeffs
     robin_coeffs, boundary_conditions = duplicate_robin_coeffs(cloud, boundary_conditions)
+
+    ## Zero out periodic conditions
+    boundary_conditions = zerofy_periodic_cond(cloud, boundary_conditions)
 
     # TODO Here
     nb_monomials = compute_nb_monomials(max_degree, cloud.dim)
