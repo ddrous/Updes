@@ -9,7 +9,7 @@ seed = 12
 
 # EXPERIMENET_ID = random_name()
 EXPERIMENET_ID = "TempFolder"
-DATAFOLDER = "demos/data/" + EXPERIMENET_ID + "/"
+DATAFOLDER = "demos/NavierStokes/data/" + EXPERIMENET_ID + "/"
 # make_dir(DATAFOLDER)
 
 

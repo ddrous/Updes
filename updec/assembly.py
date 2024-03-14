@@ -184,6 +184,7 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, robin_coeffs:
     M = nb_monomials
     bdPhi = jnp.zeros((Nd+Nn+Nr+sum(Np), N))
     bdP = jnp.zeros((Nd+Nn+Nr+sum(Np), M))
+    # print("SHapes:", Nd, Nn, Nr, sum(Np), bdPhi.shape, bdP.shape)
 
     # rbf = Partial(make_rbf, rbf=rbf)                    ## TODO JIT THIS, and Use the prexisting rbf func
     grad_rbf = jax.grad(rbf)
@@ -475,6 +476,7 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, nb_monomials:int, d
     full_opPhi = full_opPhi.at[:Ni, :].set(opPhi[:, :])
     full_opP = full_opP.at[:Ni, :].set(opP[:, :])
 
+    # print("Shapes:", Ni, full_opPhi.shape, bdPhi.shape)
     full_opPhi = full_opPhi.at[Ni:, :].set(bdPhi[:, :])
     full_opP = full_opP.at[Ni:, :].set(bdP[:, :])
 

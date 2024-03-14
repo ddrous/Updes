@@ -15,6 +15,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         self.Nd = 0
         self.Nr = 0
         self.Nn = 0
+        self.Np = []
         self.nodes = {}
         self.outward_normals = {}
         self.node_types = {}
@@ -109,13 +110,13 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         r_nodes = []
         p_nodes = {}
         for i in range(self.N):         
-            if self.node_types[i] == "i":
+            if self.node_types[i][0] == "i":
                 i_nodes.append(i)
-            elif self.node_types[i] == "d":
+            elif self.node_types[i][0] == "d":
                 d_nodes.append(i)
-            elif self.node_types[i] == "n":
+            elif self.node_types[i][0] == "n":
                 n_nodes.append(i)
-            elif self.node_types[i] == "r":
+            elif self.node_types[i][0] == "r":
                 r_nodes.append(i)
             elif self.node_types[i][0] == "p":
                 p_id = self.node_types[i]
@@ -439,11 +440,14 @@ class SquareCloud(Cloud):
             if f_type == "r":
                 self.Nr += len(self.facet_nodes[f_id])
             if f_type[0] == "p":
+                # print("Details here:", f_type, self.facet_nodes[f_id])
                 self.Np[f_type[:-1]] += len(self.facet_nodes[f_id])
         ## Get periodic count as a list sorted by keys
         self.Np = [self.Np[k] for k in sorted(self.Np.keys())]
 
         self.Ni = self.N - self.Nd - self.Nn - self.Nr - sum(self.Np)
+
+        # print("All counts:", self.N, self.Ni, self.Nd, self.Nn, self.Nr, self.Np)
 
     def define_outward_normals(self):
         ## Makes the outward normal vectors to boundaries
@@ -620,10 +624,12 @@ class GmshCloud(Cloud):
             self.facet_tag_nodes[choosen_facet_id].append(c_id)
 
 
-        self.Ni = len({k:v for k,v in self.node_types.items() if v=="i"})
-        self.Nd = len({k:v for k,v in self.node_types.items() if v=="d"})
-        self.Nr = len({k:v for k,v in self.node_types.items() if v=="r"})
-        self.Nn = len({k:v for k,v in self.node_types.items() if v=="n"})
+        self.Ni = len({k:v for k,v in self.node_types.items() if v[0]=="i"})
+        self.Nd = len({k:v for k,v in self.node_types.items() if v[0]=="d"})
+        self.Nr = len({k:v for k,v in self.node_types.items() if v[0]=="r"})
+        self.Nn = len({k:v for k,v in self.node_types.items() if v[0]=="n"})
+
+        # print("All counts:", self.N, self.Ni, self.Nd, self.Nn, self.Nr, self.Np, self.node_types)
 
 
 
