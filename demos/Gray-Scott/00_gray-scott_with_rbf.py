@@ -1,8 +1,4 @@
 # %%
-# %load_ext autoreload
-# %autoreload 2
-
-# %%
 
 """
 Test of the Updec package on the Advection-Diffusion equation with RBFs: 
@@ -26,42 +22,41 @@ key = None
 
 RUN_NAME = "TempFolder"
 DATAFOLDER = "./data/" + RUN_NAME +"/"
-# DATAFOLDER = "demos/Advection/data/"+RUN_NAME+"/"
 make_dir(DATAFOLDER)
 
 RBF = partial(polyharmonic, a=1)
-# RBF = gaussian
-MAX_DEGREE = 0
+MAX_DEGREE = 1
 
 DT = 1e-4
-NB_TIMESTEPS = 50
+NB_TIMESTEPS = 100
 PLOT_EVERY = 10
 
+VEL = jnp.array([100.0, 0.0])
 ## Diffusive constant
 K = 0.08
-VEL = jnp.array([100.0, 0.0])
 
-Nx = 25
-Ny = 25
+Nx = 40
+Ny = 20
 SUPPORT_SIZE = "max"
 
-# facet_types={"South":"p1", "North":"p1", "West":"p2", "East":"p2"}
-facet_types={"South":"p1", "North":"p1", "West":"p2", "East":"p2"}
+facet_types={"South":"p0", "North":"p0", "West":"p1", "East":"p1"}
 cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, noise_key=key, support_size=SUPPORT_SIZE)
 
 cloud.visualize_cloud(s=0.1, figsize=(7,3));
 
-# cloud.facet_types
-# cloud.facet_nodes
 # print("Local supports:", cloud.local_supports[0])
-print(cloud.Np)
-# print(jnp.flip(cloud.global_indices.T, axis=0))
-# cloud.print_global_indices()
-# print(cloud.sorted_nodes)
-# cloud.sorted_outward_normals
-# cloud.outward_normals
+
 
 # %%
+
+# def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
+#     val = nodal_value(x, center, rbf, monomial)
+#     return val
+
+# def my_rhs_operator(x, centers=None, rbf=None, fields=None):
+#     lap = value(x, fields[:,0], centers, rbf)
+#     return lap
+
 
 def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
     val = nodal_value(x, center, rbf, monomial)
@@ -72,17 +67,20 @@ def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
 def my_rhs_operator(x, centers=None, rbf=None, fields=None):
     return value(x, fields[:,0], centers, RBF) / DT     ## TODO value ?
 
+
+
 d_zero = lambda x: 0.
 boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_zero, "East":d_zero}
 
 
 ## u0 is zero everywhere except at a point in the middle
 u0 = jnp.zeros(cloud.N)
-source_id = int(cloud.N*0.71)
+source_id = int(cloud.N*0.5)
 source_neighbors = jnp.array(cloud.local_supports[source_id][:cloud.N//40])
-# source_id = 0
-# source_neighbors = jnp.array(cloud.local_supports[source_id][:1])
 u0 = u0.at[source_neighbors].set(0.95)
+
+
+## 
 
 ## Begin timestepping for 100 steps
 
@@ -97,14 +95,14 @@ ulist = [u]
 start = time.time()
 
 for i in range(1, NB_TIMESTEPS+1):
-    ufield = pde_solver(diff_operator=my_diff_operator,
+    ufield = pde_solver_jit(diff_operator=my_diff_operator,
                         rhs_operator = my_rhs_operator,
                         rhs_args=[u],
                         cloud = cloud,
                         boundary_conditions = boundary_conditions, 
                         rbf=RBF,
                         max_degree=MAX_DEGREE,)
-
+    
     u = ufield.vals
     ulist.append(u)
 
@@ -127,11 +125,23 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 
 # %%
 
-filename = DATAFOLDER + "adv_diff_periodic.gif"
-cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), titles=["Advection-Diffusion with RBFs"]);
+# ax = plt.gca()
+filename = DATAFOLDER + "advection_diffusion_rbf.gif"
+cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), titles=["Advection-Diffusion with RBFs"])
 
 
 
 # %%
 
 
+## Write stuff to tensorboard
+# run_name = str(datetime.datetime.now())[:19]        ##For tensorboard
+# writer = SummaryWriter("runs/"+run_name, comment='-Laplace')
+# hparams_dict = {"rbf":RBF.__name__, "max_degree":MAX_DEGREE, "nb_nodes":Nx*Ny, "support_size":SUPPORT_SIZE}
+# metrics_dict = {"metrics/mse_error":float(error), "metrics/wall_time":walltime}
+# writer.add_hparams(hparams_dict, metrics_dict, run_name="hp_params")
+# writer.add_figure("plots", fig)
+# writer.flush()
+# writer.close()
+
+# %%
