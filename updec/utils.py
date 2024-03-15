@@ -28,11 +28,11 @@ import random
 
 ## Euclidian distance
 def distance(node1, node2):
-    # diff = node1 - node2
+    diff = node1 - node2
     # return jnp.sum(diff*diff)      ## Squared distance
-    return jnp.linalg.norm(node1 - node2)       ## Carefull: not differentiable at 0
     # return periodic_distance_squre(node1, node2, 1., 1.)
-
+    # return jnp.linalg.norm(node1 - node2)       ## Carefull: not differentiable at 0
+    return jnp.sqrt(diff.T @ diff)
 
 
 def print_line_by_line(dictionary):

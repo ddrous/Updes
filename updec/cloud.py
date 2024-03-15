@@ -27,7 +27,17 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         self.facet_precedence = {k:i for i,(k,v) in enumerate(facet_types.items())}        ## Facet order of precedence usefull for corner nodes membership
 
         ## For each periodic facet type we encounter, we append a letter of the alphabet to it. This is useful for renumbering nodes; and clean for the user.
-        self.facet_types = {k:v+str(i) for i,(k,v) in enumerate(facet_types.items())}
+        # self.facet_types = {k:v+str(i) for i,(k,v) in enumerate(facet_types.items()) if v[0]=="p" else k:v}
+        ## Use for look here
+        new_facet_types = {}
+        for i, (k,v) in enumerate(facet_types.items()):
+            if v[0]=="p":
+                new_facet_types[k] = v+str(i)
+            else:
+                new_facet_types[k] = v
+        self.facet_types = new_facet_types
+
+        print("Facet types:", self.facet_types)
 
     def print_global_indices(self):
         print(jnp.flip(self.global_indices.T, axis=0))
@@ -336,6 +346,19 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SquareCloud(Cloud):
     def __init__(self, Nx=7, Ny=5, noise_key=None, **kwargs):
         super().__init__(**kwargs)
@@ -430,7 +453,8 @@ class SquareCloud(Cloud):
         self.Nd = 0
         self.Nn = 0
         self.Nr = 0
-        self.Np = {v[:-1]:0 for v in self.facet_types.values()}    ## Number of nodes per periodic boundary
+        self.Np = {v[:-1]:0 for v in self.facet_types.values() if v[0]=="p"}    ## Number of nodes per periodic boundary
+        # print("I got here:", self.Np)
 
         for f_id, f_type in self.facet_types.items():
             if f_type == "d":
@@ -440,9 +464,11 @@ class SquareCloud(Cloud):
             if f_type == "r":
                 self.Nr += len(self.facet_nodes[f_id])
             if f_type[0] == "p":
+                # print("I got here:", f_type, self.facet_nodes[f_id])
                 # print("Details here:", f_type, self.facet_nodes[f_id])
                 self.Np[f_type[:-1]] += len(self.facet_nodes[f_id])
         ## Get periodic count as a list sorted by keys
+        # print("I got here:", self.Np)
         self.Np = [self.Np[k] for k in sorted(self.Np.keys())]
 
         self.Ni = self.N - self.Nd - self.Nn - self.Nr - sum(self.Np)
@@ -468,6 +494,16 @@ class SquareCloud(Cloud):
 
             # self.outward_normals[int(self.global_indices[k,l])] = jnp.array([nx, ny])
             self.outward_normals[int(self.global_indices[k,l])] = n
+
+
+
+
+
+
+
+
+
+
 
 
 

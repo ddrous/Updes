@@ -34,12 +34,12 @@ RBF = partial(polyharmonic, a=1)
 MAX_DEGREE = 0
 
 DT = 1e-4
-NB_TIMESTEPS = 50
+NB_TIMESTEPS = 100
 PLOT_EVERY = 10
 
 ## Diffusive constant
 K = 0.08
-VEL = jnp.array([100.0, 0.0])
+VEL = jnp.array([-100.0, 0.0])
 
 Nx = 25
 Ny = 25
@@ -77,12 +77,19 @@ boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_zero, "East":d_z
 
 
 ## u0 is zero everywhere except at a point in the middle
-u0 = jnp.zeros(cloud.N)
-source_id = int(cloud.N*0.71)
-source_neighbors = jnp.array(cloud.local_supports[source_id][:cloud.N//40])
-# source_id = 0
-# source_neighbors = jnp.array(cloud.local_supports[source_id][:1])
-u0 = u0.at[source_neighbors].set(0.95)
+# u0 = jnp.zeros(cloud.N)
+# source_id = int(cloud.N*0.71)
+# source_neighbors = jnp.array(cloud.local_supports[source_id][:cloud.N//40])
+# # source_id = 0
+# # source_neighbors = jnp.array(cloud.local_supports[source_id][:1])
+# u0 = u0.at[source_neighbors].set(0.95)
+
+def gaussian(x, y, x0, y0, sigma):
+    return jnp.exp(-((x-x0)**2 + (y-y0)**2) / (2*sigma**2))
+xy = cloud.sorted_nodes
+u0 = gaussian(xy[:,0], xy[:,1], 0.75, 0.5, 1/10)
+
+
 
 ## Begin timestepping for 100 steps
 

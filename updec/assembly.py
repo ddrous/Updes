@@ -272,7 +272,7 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, robin_coeffs:
     # print("BdPhi:", bdPhi)
 
     def bdPhi_pd_body_func(i, vals):
-        bdPhi, nb_conds = vals
+        bdPhi, nb_conds, jump_points = vals
 
         support1 = cloud.sorted_local_supports[i]
         support2 = cloud.sorted_local_supports[i+nb_conds]
@@ -280,56 +280,112 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, robin_coeffs:
 
         vals1 = rbf_vec(nodes[i], nodes[support])
         vals2 = rbf_vec(nodes[i+nb_conds], nodes[support])
+        # jax.debug.print("Nodes 1 and 2: \n {} {} \n", nodes[i], nodes[i+nb_conds])
 
-        return bdPhi.at[i-Ni, support].set(vals1-vals2), nb_conds
+        return bdPhi.at[i-Ni-jump_points, support].set(vals1-vals2), nb_conds, jump_points
 
     Np_ = Ni+Nd+Nn+Nr
+    jump_points = 0
     for nb_p_points in Np:
         nb_conds = nb_p_points//2
-        bdPhi, _ = jax.lax.fori_loop(Np_, Np_+nb_conds, bdPhi_pd_body_func, (bdPhi, nb_conds))
-        # print("BdPhi:", bdPhi)
-        Np_ += nb_conds
+        bdPhi, _, _ = jax.lax.fori_loop(Np_, Np_+nb_conds, bdPhi_pd_body_func, (bdPhi, nb_conds, jump_points))
+        Np_ += nb_p_points
+        jump_points += nb_conds
 
-
-
+    # print("BdPhi:", bdPhi)
 
 
 
     def bdPhi_pn_body_func(i, vals):
-        bdPhi, nb_conds, jump_normals = vals
+        bdPhi, nb_conds, jump_points = vals
 
-        support1 = cloud.sorted_local_supports[i+jump_normals-sum(Np)//2]
-        support2 = cloud.sorted_local_supports[i+nb_conds+jump_normals-sum(Np)//2]
+        support1 = cloud.sorted_local_supports[i]
+        support2 = cloud.sorted_local_supports[i+nb_conds]
         support = jnp.concatenate((support1, support2))
 
-        grads1 = jnp.nan_to_num(grad_rbf_vec(nodes[i+jump_normals-sum(Np)//2], nodes[support]), neginf=0., posinf=0.)
-        grads2 = jnp.nan_to_num(grad_rbf_vec(nodes[i+nb_conds+jump_normals-sum(Np)//2], nodes[support]), neginf=0., posinf=0.)
+        grads1 = jnp.nan_to_num(grad_rbf_vec(nodes[i], nodes[support]), neginf=0., posinf=0.)
+        grads2 = jnp.nan_to_num(grad_rbf_vec(nodes[i+nb_conds], nodes[support]), neginf=0., posinf=0.)
+
+        # jax.debug.print("Nodes 1 and 2: \n {} {} \n", nodes[i+jump_normals-sum(Np)//2], nodes[i+nb_conds+jump_normals-sum(Np)//2])
 
         # grads1 = grad_rbf_vec(nodes[i], nodes[support])
         # grads2 = grad_rbf_vec(nodes[i+nb_conds], nodes[support])
 
         if hasattr(cloud, "sorted_outward_normals"):
-            normals1 = cloud.sorted_outward_normals[i-Ni-Nd+jump_normals-sum(Np)//2]
-            normals2 = cloud.sorted_outward_normals[i-Ni-Nd+jump_normals-sum(Np)//2+nb_conds]
+            normals1 = cloud.sorted_outward_normals[i-Ni-Nd]
+            normals2 = cloud.sorted_outward_normals[i-Ni-Nd+nb_conds]
             # normals1 = cloud.outward_normals[i]
             # normals2 = cloud.outward_normals[i+nb_conds]
+            # jax.debug.print("Normals 1 and 2: {} {} \n", normals1, normals2)
         else:
             normals1 = jnp.zeros((DIM,))
             normals2 = jnp.zeros((DIM,))
 
+        # print("Shapes before dot:", grads1.shape, normals1.shape, grads2.shape, normals2.shape)
         diff_grads = jnp.dot(grads1, normals1) - jnp.dot(grads2, -normals2)
-        # diff_grads = jnp.zeros_like(jnp.dot(grads1, normals1))
-        return bdPhi.at[i-Ni, support].set(diff_grads), nb_conds, jump_normals
+        # jax.debug.print("Dots 1 and 2: {}\n {} \n", i-Ni-jump_points+sum(Np)//2, jnp.dot(grads1, normals1)-jnp.dot(grads2, -normals2))
 
-    Np_ = Ni+Nd+Nn+Nr + sum(Np)//2
-    jump_normals = 0
+        # print("SHupport shape", support.shape)
+        # jax.debug.print("Support: \n {} \n", support)
+
+        # diff_grads = jnp.zeros_like(jnp.dot(grads1, normals1))
+        # diff_grads = diff_grads / 10.
+        # diff_grads = jnp.clip(diff_grads, -2., 2.)
+        # jax.debug.print("Current positions to fill: {} \n {} \n", i-Ni-jump_normals+sum(Np)//2)
+        return bdPhi.at[i-Ni-jump_points+sum(Np)//2, support].set(diff_grads), nb_conds, jump_points
+
+
+    Np_ = Ni+Nd+Nn+Nr
+    jump_points = 0
     for nb_p_points in Np:
         nb_conds = nb_p_points//2
-        bdPhi, _, _ = jax.lax.fori_loop(Np_, Np_+nb_conds, bdPhi_pn_body_func, (bdPhi, nb_conds, jump_normals))
-        Np_ += nb_conds
-        jump_normals += nb_p_points
+        bdPhi, _, _ = jax.lax.fori_loop(Np_, Np_+nb_conds, bdPhi_pn_body_func, (bdPhi, nb_conds, jump_points))
+        Np_ += nb_p_points
+        jump_points += nb_conds
     # print("Final value of Np_:", Np_)
-    # print("BdPhi:", bdPhi)
+        # print("BdPhi:", bdPhi)
+
+
+
+    # def bdPhi_pn_body_func(i, vals):
+    #     bdPhi, nb_conds, jump_normals = vals
+
+    #     support1 = cloud.sorted_local_supports[i+jump_normals-sum(Np)//2]
+    #     support2 = cloud.sorted_local_supports[i+nb_conds+jump_normals-sum(Np)//2]
+    #     support = jnp.concatenate((support1, support2))
+
+    #     grads1 = jnp.nan_to_num(grad_rbf_vec(nodes[i+jump_normals-sum(Np)//2], nodes[support]), neginf=0., posinf=0.)
+    #     grads2 = jnp.nan_to_num(grad_rbf_vec(nodes[i+nb_conds+jump_normals-sum(Np)//2], nodes[support]), neginf=0., posinf=0.)
+
+    #     # jax.debug.print("Nodes 1 and 2: \n {} {} \n", nodes[i+jump_normals-sum(Np)//2], nodes[i+nb_conds+jump_normals-sum(Np)//2])
+
+    #     # grads1 = grad_rbf_vec(nodes[i], nodes[support])
+    #     # grads2 = grad_rbf_vec(nodes[i+nb_conds], nodes[support])
+
+    #     if hasattr(cloud, "sorted_outward_normals"):
+    #         normals1 = cloud.sorted_outward_normals[i-Ni-Nd+jump_normals-sum(Np)//2]
+    #         normals2 = cloud.sorted_outward_normals[i-Ni-Nd+jump_normals-sum(Np)//2+nb_conds]
+    #         # normals1 = cloud.outward_normals[i]
+    #         # normals2 = cloud.outward_normals[i+nb_conds]
+    #     else:
+    #         normals1 = jnp.zeros((DIM,))
+    #         normals2 = jnp.zeros((DIM,))
+
+    #     diff_grads = jnp.dot(grads1, normals1) - jnp.dot(grads2, -normals2)
+    #     # diff_grads = jnp.zeros_like(jnp.dot(grads1, normals1))
+    #     # diff_grads = diff_grads / 10.
+    #     # diff_grads = jnp.clip(diff_grads, -2., 2.)
+    #     return bdPhi.at[i-Ni, support].set(diff_grads), nb_conds, jump_normals
+
+    # Np_ = Ni+Nd+Nn+Nr + sum(Np)//2
+    # jump_normals = 0
+    # for nb_p_points in Np:
+    #     nb_conds = nb_p_points//2
+    #     bdPhi, _, _ = jax.lax.fori_loop(Np_, Np_+nb_conds, bdPhi_pn_body_func, (bdPhi, nb_conds, jump_normals))
+    #     Np_ += nb_conds
+    #     jump_normals += nb_p_points
+    # # print("Final value of Np_:", Np_)
+    # # print("BdPhi:", bdPhi)
 
 
 
@@ -405,33 +461,107 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, robin_coeffs:
 
     # print("BdP:\n", bdP)
 
+    # print("All boundary nodes:", nodes[16:, :])
+
+
+
+
+
+
+    # if len(Np) > 0:
+    #     Np_ = Ni+Nd+Nn+Nr
+    #     for nb_p_points in Np:
+
+    #         # node_ids_pd1 = [k for k,v in cloud.node_types.items() if v[:-1] == n_type]
+
+    #         nb_conds = nb_p_points//2
+    #         node_ids_pd1 = jnp.arange(Np_, Np_+nb_conds)
+    #         node_ids_pd2 = jnp.arange(Np_+nb_conds, Np_+nb_p_points)
+
+    #         # print("These are the nodes 1:", nodes[node_ids_pd1])
+    #         # print("These are the nodes 2:", nodes[node_ids_pd2])
+
+    #         for j in range(M):
+    #             monomial_vec = jax.vmap(monomials[j], in_axes=(0,), out_axes=0)
+    #             diff = monomial_vec(nodes[node_ids_pd1]) - monomial_vec(nodes[node_ids_pd2])
+    #             bdP = bdP.at[node_ids_pd1-Ni, j].set(diff)
+    #             # print("BdP:\n", bdP)
+
+    #         Np_ += nb_p_points
+
+    #     jax.debug.print("BdP: \n {} \n", bdP)
+
+    #     half_Np = sum(Np)//2
+    #     Np_ = Ni+Nd+Nn+Nr + half_Np
+    #     for nb_p_points in Np:
+    #         nb_conds = nb_p_points//2
+    #         node_ids_pn1 = range(Np_-half_Np, Np_+nb_conds-half_Np)
+    #         node_ids_pn2 = range(Np_+nb_conds-half_Np, Np_+nb_p_points-half_Np)
+
+    #         # print("These are the nodes 1:", nodes[jnp.array(node_ids_pn1)])
+    #         # print("These are the nodes 2:", nodes[jnp.array(node_ids_pn2)])
+
+    #         normals_pn1 = jnp.stack([cloud.outward_normals[i] for i in node_ids_pn1], axis=0)
+    #         normals_pn2 = jnp.stack([cloud.outward_normals[i] for i in node_ids_pn2], axis=0)
+
+    #         node_ids_pn1 = jnp.array(node_ids_pn1)
+    #         node_ids_pn2 = jnp.array(node_ids_pn2)
+
+    #         dot_vec = jax.vmap(jnp.dot, in_axes=(0,0), out_axes=0)
+    #         for j in range(M):
+    #             grad_monomial = jax.grad(monomials[j])
+    #             grad_monomial_vec = jax.vmap(grad_monomial, in_axes=(0,), out_axes=0)
+    #             grads1 = grad_monomial_vec(nodes[node_ids_pn1])
+    #             grads2 = grad_monomial_vec(nodes[node_ids_pn2])
+    #             diff_grads = dot_vec(grads1, normals_pn1) - dot_vec(grads2, -normals_pn2)
+    #             bdP = bdP.at[node_ids_pn1-Ni+nb_conds, j].set(diff_grads)
+
+    #         Np_ += nb_p_points
+    # # print("BdP:\n", bdP)
+
+    # # print("Numper of nodes of each type:", Nd, Nn, Nr, Np)
+    # jax.debug.print("BdP: \n {} \n", bdP)
+
+
+
+
+
+
     if len(Np) > 0:
+        jump_points = Ni+Nd+Nn+Nr
         Np_ = Ni+Nd+Nn+Nr
         for nb_p_points in Np:
 
             # node_ids_pd1 = [k for k,v in cloud.node_types.items() if v[:-1] == n_type]
 
             nb_conds = nb_p_points//2
-            node_ids_pd1 = jnp.arange(Np_, Np_+nb_conds)
-            node_ids_pd2 = jnp.arange(Np_+nb_conds, Np_+nb_p_points)
+            node_ids_pd1 = jnp.arange(jump_points, jump_points+nb_conds)
+            node_ids_pd2 = jnp.arange(jump_points+nb_conds, jump_points+nb_p_points)
+
+            # print("These are the nodes 1:", nodes[node_ids_pd1])
+            # print("These are the nodes 2:", nodes[node_ids_pd2])
 
             for j in range(M):
                 monomial_vec = jax.vmap(monomials[j], in_axes=(0,), out_axes=0)
                 diff = monomial_vec(nodes[node_ids_pd1]) - monomial_vec(nodes[node_ids_pd2])
-                bdP = bdP.at[node_ids_pd1-Ni, j].set(diff)
+                bdP = bdP.at[jnp.arange(Np_,Np_+nb_conds)-Ni, j].set(diff)
                 # print("BdP:\n", bdP)
 
             Np_ += nb_conds
+            jump_points += nb_p_points
+
+        # jax.debug.print("BdP: \n {} \n", bdP)
 
         half_Np = sum(Np)//2
-        Np_ = Ni+Nd+Nn+Nr + half_Np
+        jump_points = Ni+Nd+Nn+Nr
+        Np_ = Ni+Nd+Nn+Nr
         for nb_p_points in Np:
             nb_conds = nb_p_points//2
-            node_ids_pn1 = range(Np_-half_Np, Np_+nb_conds-half_Np)
-            node_ids_pn2 = range(Np_+nb_conds-half_Np, Np_+nb_p_points-half_Np)
+            node_ids_pn1 = range(jump_points, jump_points+nb_conds)
+            node_ids_pn2 = range(jump_points+nb_conds, jump_points+nb_p_points)
 
-            # print("Node ids pn1:", node_ids_pn1)
-            # print("Node ids pn2:", node_ids_pn2)
+            # print("These are the nodes 1:", nodes[jnp.array(node_ids_pn1)])
+            # print("These are the nodes 2:", nodes[jnp.array(node_ids_pn2)])
 
             normals_pn1 = jnp.stack([cloud.outward_normals[i] for i in node_ids_pn1], axis=0)
             normals_pn2 = jnp.stack([cloud.outward_normals[i] for i in node_ids_pn2], axis=0)
@@ -445,11 +575,20 @@ def assemble_bd_Phi_P(cloud:Cloud, rbf:callable, nb_monomials:int, robin_coeffs:
                 grad_monomial_vec = jax.vmap(grad_monomial, in_axes=(0,), out_axes=0)
                 grads1 = grad_monomial_vec(nodes[node_ids_pn1])
                 grads2 = grad_monomial_vec(nodes[node_ids_pn2])
-                diff_grads = dot_vec(grads1, normals_pn1) - dot_vec(grads2, normals_pn2)
-                bdP = bdP.at[node_ids_pn1-Ni+half_Np, j].set(diff_grads)
+                diff_grads = dot_vec(grads1, normals_pn1) - dot_vec(grads2, -normals_pn2)
+                bdP = bdP.at[jnp.arange(Np_,Np_+nb_conds)-Ni+half_Np, j].set(diff_grads)
 
             Np_ += nb_conds
+            jump_points += nb_p_points
     # print("BdP:\n", bdP)
+
+    # print("Numper of nodes of each type:", Nd, Nn, Nr, Np)
+    # jax.debug.print("BdP again: \n {} \n", bdP)
+
+
+
+
+
 
     return bdPhi, bdP
 
