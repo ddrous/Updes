@@ -426,7 +426,7 @@ def apply_neumann_conditions(field, boundary_conditions, cloud:Cloud):
     return field
 
 
-def duplicate_robin_coeffs(cloud, boundary_conditions):
+def duplicate_robin_coeffs(boundary_conditions, cloud):
     robin_coeffs = {}
     new_boundary_conditions = {}
 
@@ -458,7 +458,7 @@ def duplicate_robin_coeffs(cloud, boundary_conditions):
 
 
 
-def zerofy_periodic_cond(cloud, boundary_conditions):
+def zerofy_periodic_cond(boundary_conditions, cloud):
     for f_id, f_type in cloud.facet_types.items():
 
         if f_type[0] == "p":
@@ -496,10 +496,10 @@ def pde_solver( diff_operator:callable,
 
 
     ## Build robin coeffs
-    robin_coeffs, boundary_conditions = duplicate_robin_coeffs(cloud, boundary_conditions)
+    robin_coeffs, boundary_conditions = duplicate_robin_coeffs(boundary_conditions, cloud)
 
     ## Zero out periodic conditions
-    boundary_conditions = zerofy_periodic_cond(cloud, boundary_conditions)
+    boundary_conditions = zerofy_periodic_cond(boundary_conditions, cloud)
 
     # TODO Here
     nb_monomials = compute_nb_monomials(max_degree, cloud.dim)
@@ -577,65 +577,96 @@ def pde_solver_jit( diff_operator:callable,
                                     rhs_args = rhs_args)
 
 
-# def jit_bc(pde_solver):
-#     @functools.wraps(pde_solver)
-#     def clocked(diff_operator,
-#                 rhs_operator,
-#                 cloud, 
-#                 boundary_conditions, 
-#                 rbf,
-#                 max_degree,
-#                 diff_args=None,
-#                 rhs_args=None):
-
-#         boundary_conditions_arr = {}
-
-#         for f_id, f_bc in boundary_conditions.items():
-#             if callable(f_bc):
-#                 f_nodes = cloud.sorted_nodes[jnp.array(cloud.facet_nodes[f_id])]
-#                 boundary_conditions_arr[f_id] = jax.vmap(f_bc)(f_nodes)
-#             elif type(f_bc) == tuple:
-#                 f_nodes = cloud.sorted_nodes[jnp.array(cloud.facet_nodes[f_id])]
-#                 boundary_conditions_arr[f_id] = f_bc
-#                 if callable(f_bc[0]):
-#                     boundary_conditions_arr[f_id] = (jax.vmap(f_bc[0])(f_nodes), f_bc[1])
-#                 if callable(f_bc[1]):
-#                     boundary_conditions_arr[f_id] = (f_bc[0], jax.vmap(f_bc[1])(f_nodes))
-#             else:
-#                 boundary_conditions_arr[f_id] = f_bc
-
-#         result = jax.jit(pde_solver, static_argnames=["diff_operator",
-#                                                     "rhs_operator",
-#                                                     "cloud",
-#                                                     "rbf",
-#                                                     "max_degree"])(
-#                         diff_operator=diff_operator,
-#                         diff_args = diff_args,
-#                         rhs_operator=rhs_operator,
-#                         rhs_args = rhs_args,
-#                         cloud=cloud, 
-#                         boundary_conditions=boundary_conditions_arr, 
-#                         rbf=rbf,
-#                         max_degree=max_degree)
-
-#         name = pde_solver.__name__+"_jit"
-
-#         return result
-#     return clocked
 
 
 
-    # @jax.jit
-    # def compiled_pde_solver_with_bc(u_inflow, diff_args, rhs_args):
-    #     bc_u = {"Wall":zero, "Inflow":u_inflow, "Outflow":zero, "Cylinder":zero, "Blowing":zero, "Suction":zero}
-    #     return pde_solver(diff_operator=diff_operator_u, 
-    #                     diff_args=diff_args,
-    #                     rhs_operator = rhs_operator_u, 
-    #                     rhs_args=rhs_args, 
-    #                     cloud = cloud_vel, 
-    #                     boundary_conditions = bc_u,
-    #                     rbf=RBF,
-    #                     max_degree=MAX_DEGREE)
+
+
+
+
+
+
+
+## Solve a non-scalar PDE via iteration
+def pde_multi_solver( diff_operators:list,
+                rhs_operators:list,
+                cloud:Cloud, 
+                boundary_conditions:list, 
+                rbf:callable,
+                max_degree:int,
+                nb_iters:int=10,
+                tol:float=1e-6,
+                diff_args:list=None,
+                rhs_args:list=None):
+    """ Solve a PDE """
+
+    ## One conditions to use this function: in diff args and rhs args, the first n arguments must be the scalar fields we are solving for
+
+
+    # Number of scalar fields in the PDE
+    n = len(diff_operators)
+    assert n == len(rhs_operators) == len(boundary_conditions), "The number of differential operators must match the number of right-hand side operators"
+
+    diff_operators = [jax.jit(diff_op, static_argnums=[2,3]) for diff_op in diff_operators]
+    rhs_operators = [jax.jit(rhs_op, static_argnums=2) for rhs_op in rhs_operators]
+
+    UPDEC.RBF = rbf
+    ### For rememmering purposes
+    UPDEC.MAX_DEGREE = max_degree
+    UPDEC.DIM = cloud.dim
+
+
+    ## Build robin coeffs
+    new_boundary_conditions = []
+    robin_coefs = []
+    for bcs in boundary_conditions:
+        rcs, new_bcs = duplicate_robin_coeffs(bcs, cloud)
+        new_bcs = zerofy_periodic_cond(new_bcs, cloud)
+        new_bcs = boundary_conditions_func_to_arr(new_bcs, cloud)
+
+        robin_coefs.append(rcs)
+        new_boundary_conditions.append(new_bcs)
+
+    boundary_conditions = new_boundary_conditions
+
+
+    sols_vals = [u for u in diff_args[0][:n]]
+    for k in range(nb_iters):
+        sols = [pde_solver_jit_with_bc(diff_operators[i],
+                                        rhs_operators[i],
+                                        cloud, 
+                                        boundary_conditions[i], 
+                                        rbf,
+                                        max_degree,
+                                        diff_args = sols_vals + diff_args[i][n:],
+                                        rhs_args = rhs_args[i]) for i in range(n)]
+        total_error = 0.
+        for i in range(n):
+            total_error += jnp.linalg.norm(sols[i].vals - sols_vals[i]) / (jnp.linalg.norm(sols_vals[i]) + 1e-14)
+
+        if total_error < tol:
+            break
+
+        sols_vals = [s.vals for s in sols]
+
+    return sols
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 dot_vec = jax.jit(jax.vmap(jnp.dot, in_axes=(0, 0), out_axes=0))

@@ -37,7 +37,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
                 new_facet_types[k] = v
         self.facet_types = new_facet_types
 
-        print("Facet types:", self.facet_types)
+        # print("Facet types:", self.facet_types)
 
     def print_global_indices(self):
         print(jnp.flip(self.global_indices.T, axis=0))
