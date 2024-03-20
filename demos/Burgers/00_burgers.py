@@ -1,6 +1,6 @@
 # %%
-# %load_ext autoreload
-# %autoreload 2
+%load_ext autoreload
+%autoreload 2
 
 # %%
 
@@ -33,9 +33,9 @@ RBF = partial(polyharmonic, a=3)
 # RBF = gaussian
 MAX_DEGREE = 2
 
-DT = 5e-4
-NB_TIMESTEPS = 15
-PLOT_EVERY = 5
+DT = 1e-3
+NB_TIMESTEPS = 200
+PLOT_EVERY = 20
 
 ## Diffusive constant
 
@@ -127,7 +127,7 @@ for i in range(1, NB_TIMESTEPS+1):
         rhs_args=[sol_prev, sol_prev],
         cloud=cloud,
         boundary_conditions=[boundary_conditions_u, boundary_conditions_v],
-        nb_iters=10,
+        nb_iters=5,
         tol=1e-10,
         rbf=RBF,
         max_degree=MAX_DEGREE,
@@ -155,12 +155,12 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 # %%
 
 ulist = [sol[0] for sol in sol_list]
-filename = DATAFOLDER + "burgers_u.gif"
-cloud.animate_fields([ulist], cmaps="coolwarm", filename=filename, levels=100, duration=10, figsize=(7.5,6), titles=["Burgers with RBFs - u"]);
+filename = DATAFOLDER + "burgers_u.mp4"
+cloud.animate_fields([ulist], cmaps="coolwarm", filename=filename, levels=200, duration=10, figsize=(7.5,6), titles=["Burgers with RBFs - u"]);
 
 normlist = [jnp.sqrt(sol[0]**2 + sol[1]**2) for sol in sol_list]
-filename = DATAFOLDER + "burgers_norm.gif"
-cloud.animate_fields([normlist], cmaps="coolwarm", filename=filename, levels=100, duration=10, figsize=(7.5,6), titles=["Burgers with RBFs - norm"]);
+filename = DATAFOLDER + "burgers_norm.mp4"
+cloud.animate_fields([normlist], cmaps="coolwarm", filename=filename, levels=200, duration=10, figsize=(7.5,6), titles=["Burgers with RBFs - norm"]);
 
 
 # %%

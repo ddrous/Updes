@@ -276,6 +276,8 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
 
     def animate_fields(self, fields, filename=None, titles="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, figsize=(6,5), cmaps="jet", cbarsplit=50, duration=5, **kwargs):
+        import matplotlib
+        matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         from matplotlib.animation import FuncAnimation
         import os
@@ -323,7 +325,7 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
 
         ## ANimation function
         def animate(frame):
-            imgs = [ax[i].tricontour(x, y, signals[i][frame], levels=levels, vmin=minmaxs[i][0], vmax=minmaxs[i][1], cmap=cmaps[i], extend='min', **kwargs) for i in range(nb_signals)]
+            imgs = [ax[i].tricontourf(x, y, signals[i][frame], levels=levels, vmin=minmaxs[i][0], vmax=minmaxs[i][1], cmap=cmaps[i], extend='min', **kwargs) for i in range(nb_signals)]
             # plt.suptitle("iter = "+str(i), size="large", y=0.95)      ## TODO doesn't work well with tight layout
             return imgs
 
@@ -334,10 +336,9 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         ### Save the video
         if filename:
             fps = step_count / duration
-            # anim.save(filename, writer='ffmpeg', fps=fps)
-            anim.save(filename, writer='pillow', fps=fps)
-            # os.system("open "+filename)
-            print("Animation saved as", filename)
+            writer = 'ffmpeg' if filename.endswith('.mp4') else 'pillow'
+            anim.save(filename, writer=writer, fps=fps)
+            print("Animation sucessfully saved at:", filename)
 
         return ax
 
