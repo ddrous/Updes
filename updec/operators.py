@@ -172,6 +172,7 @@ def value(x, field, centers, rbf=None):
     # final_val = jax.lax.fori_loop(0, gammas.shape[0], mon_val_body, final_val)
 
     return final_val
+    # return jnp.clip(final_val, -1, 1)
 
 value_vec_ = jax.vmap(value, in_axes=(0, None, None, None), out_axes=0)
 value_vec = jax.jit(value_vec_, static_argnums=[3])
@@ -214,6 +215,7 @@ def gradient(x, field, centers, rbf=None):
     # final_grad = jax.lax.fori_loop(0, gammas.shape[0], mon_grad_body, final_grad)
 
     return final_grad
+    # return jnp.clip(final_grad, -1, 1)
 
 gradient_vec_ = jax.vmap(gradient, in_axes=(0, None, None, None), out_axes=0)
 gradient_vec = jax.jit(gradient_vec_, static_argnums=[3])
@@ -353,7 +355,8 @@ def laplacian(x, field, centers, rbf=None):
     #     return lap + jnp.nan_to_num(gammas[j] * poly_lap, posinf=0., neginf=0.)
     # mon_lap = jax.lax.fori_loop(0, gammas.shape[0], mon_lap_body, jnp.array([0.]))
 
-    return rbf_lap + mon_lap[0]
+    # return rbf_lap + mon_lap[0]
+    return jnp.clip(rbf_lap + mon_lap[0], -5e-1, 5e-1)
 
 laplacian_vec = jax.vmap(laplacian, in_axes=(0, None, None, None), out_axes=0)
 
@@ -793,6 +796,71 @@ def pde_multi_solver( diff_operators:list,
 
     return sols
 
+
+
+
+
+
+## Solve a non-scalar PDE via iteration
+def pde_multi_solver_unbounded( diff_operators:list,
+                rhs_operators:list,
+                cloud:Cloud, 
+                boundary_conditions:list, 
+                rbf:callable,
+                max_degree:int,
+                nb_iters:int=10,
+                tol:float=1e-6,
+                diff_args:list=None,
+                rhs_args:list=None):
+    """ Solve a PDE """
+
+    ## One conditions to use this function: in diff args and rhs args, the first n arguments must be the scalar fields we are solving for
+
+
+    # Number of scalar fields in the PDE
+    n = len(diff_operators)
+    assert n == len(rhs_operators) == len(boundary_conditions), "The number of differential operators must match the number of right-hand side operators"
+
+    diff_operators = [jax.jit(diff_op, static_argnums=[2,3]) for diff_op in diff_operators]
+    rhs_operators = [jax.jit(rhs_op, static_argnums=2) for rhs_op in rhs_operators]
+
+    UPDEC.RBF = rbf
+    ### For rememmering purposes
+    UPDEC.MAX_DEGREE = max_degree
+    UPDEC.DIM = cloud.dim
+
+
+    ## Build robin coeffs
+    new_boundary_conditions = []
+    robin_coefs = []
+    for bcs in boundary_conditions:
+        rcs, new_bcs = duplicate_robin_coeffs(bcs, cloud)
+        new_bcs = zerofy_periodic_cond(new_bcs, cloud)
+        new_bcs = boundary_conditions_func_to_arr(new_bcs, cloud)
+
+        robin_coefs.append(rcs)
+        new_boundary_conditions.append(new_bcs)
+
+    boundary_conditions = new_boundary_conditions
+
+
+    sols_vals = [u for u in diff_args[0][:n]]
+    for k in range(nb_iters):
+        sols = [pde_solver_jit_with_bc(diff_operators[i],
+                                        rhs_operators[i],
+                                        cloud, 
+                                        boundary_conditions[i], 
+                                        rbf,
+                                        max_degree,
+                                        diff_args = sols_vals + diff_args[i][n:],
+                                        rhs_args = rhs_args[i]) for i in range(n)]
+        total_error = 0.
+        for i in range(n):
+            total_error += jnp.linalg.norm(sols[i].vals - sols_vals[i]) / (jnp.linalg.norm(sols_vals[i]) + 1e-14)
+
+        sols_vals = [s.vals for s in sols]
+
+    return sols
 
 
 

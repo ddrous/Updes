@@ -194,3 +194,34 @@ def dataloader(array, batch_size, key):
         yield array[batch_perm]
         start = end
         end = start + batch_size
+
+
+
+def RK4(fun, t_span, y0, *args, t_eval=None, subdivisions=1, **kwargs):
+    """ Perform numerical integration with a time step divided by the evaluation subdivision factor (Not necessarily equally spaced). If we get NaNs, we can try to increasing the subdivision factor for finer time steps."""
+    if t_eval is None:
+        if t_span[0] is None:
+            t_eval = jnp.array([t_span[1]])
+            raise Warning("t_span[0] is None. Setting t_span[0] to 0.")
+        elif t_span[1] is None:
+            raise ValueError("t_span[1] must be provided if t_eval is not.")
+        else:
+            t_eval = jnp.array(t_span)
+
+    hs = t_eval[1:] - t_eval[:-1]
+    t_ = t_eval[:-1, None] + jnp.arange(subdivisions)[None, :]*hs[:, None]/subdivisions
+    t_solve = jnp.concatenate([t_.flatten(), t_eval[-1:]])
+    eval_indices = jnp.arange(0, t_solve.size, subdivisions)
+
+    def step(state, t):
+        t_prev, y_prev = state
+        h = t - t_prev
+        k1 = h * fun(t_prev, y_prev, *args)
+        k2 = h * fun(t_prev + h/2., y_prev + k1/2., *args)
+        k3 = h * fun(t_prev + h/2., y_prev + k2/2., *args)
+        k4 = h * fun(t + h, y_prev + k3, *args)
+        y = y_prev + (k1 + 2*k2 + 2*k3 + k4) / 6.
+        return (t, y), y
+
+    _, ys = jax.lax.scan(step, (t_solve[0], y0), t_solve[:])
+    return ys[eval_indices, :]

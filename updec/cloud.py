@@ -284,7 +284,14 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         """ Animation of signals """
 
         ## If not array already
-        signals = [jnp.stack(field, axis=0) for field in fields]
+        # signals = [jnp.stack(field, axis=0) for field in fields if isinstance(field, list)]
+        signals = []
+        for field in fields:
+            if isinstance(field, list):
+                signals.append(jnp.stack(field, axis=0))
+            else:
+                signals.append(field)
+
         nb_signals = len(signals)
 
         x, y = self.sorted_nodes[:, 0], self.sorted_nodes[:, 1]
@@ -302,6 +309,11 @@ class Cloud(object):        ## TODO: implemtn len, get_item, etc.
         minmaxs = []
         for i in range(nb_signals):
             minmax = jnp.min(signals[i]), jnp.max(signals[i])
+
+            ## To avoid crashing
+            if minmax[1] <= minmax[0]:
+                minmax = minmax[0], minmax[0]+1e-3
+
             minmaxs.append(minmax)
             boundaries = jnp.linspace(minmax[0], minmax[1], cbarsplit)
 
