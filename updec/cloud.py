@@ -540,6 +540,10 @@ class GmshCloud(Cloud):
 
 
     def get_meshfile(self, filename, mesh_save_location):
+        ## If None, the mesh is saved in the same directory as the filename
+        if mesh_save_location is None:
+            mesh_save_location = os.path.dirname(filename)+"/"
+
         _, extension = filename.rsplit('.', maxsplit=1)
         if extension == "msh":   ## Gmsh Geo file
             self.filename = filename
