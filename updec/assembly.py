@@ -639,6 +639,16 @@ def new_compute_coefficients(field:jnp.ndarray, cloud:Cloud, rbf:callable, nb_mo
     return inv_A@rhs
 
 
+def get_field_coefficients(field:jnp.ndarray, cloud:Cloud, rbf:callable, max_degree:int):
+    """ Find nodal and polynomial coefficients for scalar field """ 
+    nb_monomials = compute_nb_monomials(max_degree, cloud.dim)
+
+    rhs = jnp.concatenate((field, jnp.zeros((nb_monomials))))
+    inv_A = assemble_invert_A(cloud, rbf, nb_monomials)
+
+    return inv_A@rhs
+
+
 
 def assemble_q(operator:callable, boundary_conditions:dict, cloud:Cloud, rbf:callable, nb_monomials:int, rhs_args:list):
     """ Assemble the right hand side q using the operator """

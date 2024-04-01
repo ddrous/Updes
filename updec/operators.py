@@ -8,7 +8,7 @@ from functools import cache, lru_cache, partial
 # from updec.config import RBF, MAX_DEGREE, DIM
 import updec.config as UPDEC
 from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, SteadySol, polyharmonic, gaussian, make_all_monomials, distance, polyharmonic_grad
-from updec.cloud import Cloud
+from updec.cloud import Cloud, SquareCloud
 from updec.assembly import assemble_A, assemble_invert_A, assemble_B, assemble_q, new_compute_coefficients
 
 
@@ -173,7 +173,8 @@ def value(x, field, centers, rbf=None):
 
     return final_val
 
-
+value_vec_ = jax.vmap(value, in_axes=(0, None, None, None), out_axes=0)
+value_vec = jax.jit(value_vec_, static_argnums=[3])
 
 
 _nodal_gradient_rbf_vec = jax.vmap(nodal_gradient, in_axes=(None, 0, None, None), out_axes=0)
@@ -368,6 +369,147 @@ def laplacian_vals(x, field, cloud, rbf, max_degree):
 
 laplacian_vals_vec_ = jax.vmap(laplacian_vals, in_axes=(0, None, None, None, None), out_axes=0)
 laplacian_vals_vec = jax.jit(laplacian_vals_vec_, static_argnums=[2,3,4])
+
+
+# def integrate_field(field, cloud, rbf, max_degree):
+#     """ Integrate over the 2D square cloud domain, using the midpoint rule 
+#     1. Identify the small squares in the domain (all identical)
+#     2. Get the field value at the center of each square
+#     3. Compute the approximate integral
+
+#     NB: the fiel is defined by its coefficients in the RBF basis
+#     """
+
+#     ## Assert we have a SquareCloud instance
+#     assert isinstance(cloud, SquareCloud), "The cloud must be a SquareCloud instance"
+
+#     ## Compute the number of squares in the domain
+#     nb_squares = (cloud.Nx - 1) * (cloud.Ny - 1)
+#     # print("Number of squares:", nb_squares)
+
+#     ## Compute the size of a square
+#     area = (1 / (cloud.Nx-1)) * (1 / (cloud.Ny-1))
+#     # print("Area of a square:", area)
+
+#     ## Get the coordinates of the centers of the squares
+#     # quad_points_x = jnp.arange(1/(2*(cloud.Nx-1)), 1, 1/(cloud.Nx-1))
+#     # quad_points_y = jnp.arange(1/(2*(cloud.Ny-1)), 1, 1/(cloud.Ny-1))
+
+#     # quad_points_x = jnp.arange(0, 1-1/(2*(cloud.Nx-1)), 1/(cloud.Nx-1))
+#     # quad_points_y = jnp.arange(0, 1-1/(2*(cloud.Ny-1)), 1/(cloud.Ny-1))
+
+#     # quad_points_x = jnp.linspace(0, 1-1/(1*(cloud.Nx-1)), cloud.Nx-1)
+#     # quad_points_y = jnp.linspace(0, 1-1/(1*(cloud.Ny-1)), cloud.Ny-1)
+
+#     ## Get quad_points on the right and up
+#     quad_points_x = jnp.linspace(1/(2*(cloud.Nx-1)), 1-1/(2*(cloud.Nx-1)), cloud.Nx-1)
+#     quad_points_y = jnp.linspace(1/(2*(cloud.Ny-1)), 1-1/(2*(cloud.Ny-1)), cloud.Ny-1)
+#     quad_points = jnp.array(jnp.meshgrid(quad_points_x, quad_points_y)).reshape(nb_squares, 2)
+#     field_vals_ru = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
+
+#     ## Get quad_points on the left and down
+#     quad_points_x = jnp.linspace(0, 1-1/(1*(cloud.Nx-1)), cloud.Nx-1)
+#     quad_points_y = jnp.linspace(0, 1-1/(1*(cloud.Ny-1)), cloud.Ny-1)
+#     quad_points = jnp.array(jnp.meshgrid(quad_points_x, quad_points_y)).reshape(nb_squares, 2)
+#     field_vals_ld = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
+
+#     ## Get quad_points on the right and down
+#     quad_points_x = jnp.linspace(1/(2*(cloud.Nx-1)), 1-1/(2*(cloud.Nx-1)), cloud.Nx-1)
+#     quad_points_y = jnp.linspace(0, 1-1/(1*(cloud.Ny-1)), cloud.Ny-1)
+#     quad_points = jnp.array(jnp.meshgrid(quad_points_x, quad_points_y)).reshape(nb_squares, 2)
+#     field_vals_rd = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
+
+#     ## Get quad_points on the left and up
+#     quad_points_x = jnp.linspace(0, 1-1/(1*(cloud.Nx-1)), cloud.Nx-1)
+#     quad_points_y = jnp.linspace(1/(2*(cloud.Ny-1)), 1-1/(2*(cloud.Ny-1)), cloud.Ny-1)
+#     quad_points = jnp.array(jnp.meshgrid(quad_points_x, quad_points_y)).reshape(nb_squares, 2)
+#     field_vals_lu = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
+
+#     ## Average the field values (internals)
+#     field_vals = (field_vals_ru + field_vals_ld + field_vals_rd + field_vals_lu) / 4.
+
+#     return jnp.sum(field_vals) * area
+
+
+
+
+
+
+
+
+def integrate_field(field, cloud, rbf, max_degree):
+    """ Integrate over the 2D square cloud domain, using the midpoint rule 
+    1. Identify the small squares in the domain (all identical)
+    2. Get the field value at the center of each square
+    4. Account for border and corner values: https://stackoverflow.com/a/62991037/8140182
+    3. Compute the approximate integral
+
+    NB: the fiel is defined by its coefficients in the RBF basis
+    """
+
+    ## Assert we have a SquareCloud instance
+    assert isinstance(cloud, SquareCloud), "The cloud must be a SquareCloud instance"
+
+    ## Compute the number of squares in the domain
+    nb_squares = (cloud.Nx - 1) * (cloud.Ny - 1)
+    # print("Number of squares:", nb_squares)
+
+    ## Compute the size of a square
+    area = (1 / (cloud.Nx-1)) * (1 / (cloud.Ny-1))
+
+    ## Get quad_points inside the domain
+    quad_points_x = jnp.linspace(1/(1*(cloud.Nx-1)), 1-1/(1*(cloud.Nx-1)), cloud.Nx-1)
+    quad_points_y = jnp.linspace(1/(1*(cloud.Ny-1)), 1-1/(1*(cloud.Ny-1)), cloud.Ny-1)
+    quad_points = jnp.array(jnp.meshgrid(quad_points_x, quad_points_y)).reshape(nb_squares, 2)
+    field_vals_in = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
+
+    ## Get quad_points exclusively on the left boundary
+    quad_points_x = jnp.zeros((cloud.Ny-2))
+    quad_points_y = jnp.linspace(1/(1*(cloud.Ny-1)), 1-1/(1*(cloud.Ny-1)), cloud.Ny-2)
+    quad_points = jnp.stack((quad_points_x, quad_points_y), axis=-1)
+    field_vals_left = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
+
+    ## Get quad_points exclusively on the right boundary
+    quad_points_x = jnp.ones((cloud.Ny-2))
+    quad_points_y = jnp.linspace(1/(1*(cloud.Ny-1)), 1-1/(1*(cloud.Ny-1)), cloud.Ny-2)
+    quad_points = jnp.stack((quad_points_x, quad_points_y), axis=-1)
+    field_vals_right = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
+
+    ## Get quad_points exclusively on the bottom boundary
+    quad_points_x = jnp.linspace(1/(1*(cloud.Nx-1)), 1-1/(1*(cloud.Nx-1)), cloud.Nx-2)
+    quad_points_y = jnp.zeros((cloud.Nx-2))
+    quad_points = jnp.stack((quad_points_x, quad_points_y), axis=-1)
+    field_vals_bottom = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
+
+    ## Get quad_points exclusively on the top boundary
+    quad_points_x = jnp.linspace(1/(1*(cloud.Nx-1)), 1-1/(1*(cloud.Nx-1)), cloud.Nx-2)
+    quad_points_y = jnp.ones((cloud.Nx-2))
+    quad_points = jnp.stack((quad_points_x, quad_points_y), axis=-1)
+    field_vals_top = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
+
+    ## Get the bottom left corner
+    quad_points = jnp.array([0., 0.])
+    field_vals_bl = value(quad_points, field, cloud.sorted_nodes, rbf)
+
+    ## Get the bottom right corner
+    quad_points = jnp.array([1., 0.])
+    field_vals_br = value(quad_points, field, cloud.sorted_nodes, rbf)
+
+    ## Get the top left corner
+    quad_point = jnp.array([0., 1.])
+    field_vals_tl = value(quad_points, field, cloud.sorted_nodes, rbf)
+
+    ## Get the top right corner
+    quad_point = jnp.array([1., 1.])
+    field_vals_tr = value(quad_point, field, cloud.sorted_nodes, rbf)
+
+    ## Average the field 
+    field_avg = jnp.sum(field_vals_in) + 0.5*(jnp.sum(field_vals_left) + jnp.sum(field_vals_right) + jnp.sum(field_vals_bottom) + jnp.sum(field_vals_top)) + 0.25*(field_vals_bl + field_vals_br + field_vals_tl + field_vals_tr)
+
+    return field_avg * area
+
+
+
 
 
 
