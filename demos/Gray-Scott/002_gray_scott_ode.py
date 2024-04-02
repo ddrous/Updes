@@ -30,6 +30,7 @@ import time
 
 import jax
 import jax.numpy as jnp
+import diffrax
 
 # jax.config.update('jax_platform_name', 'cpu')
 jax.config.update("jax_enable_x64", True)
@@ -158,8 +159,26 @@ U0 = jnp.concatenate([u0, v0])
 
 t_span = [0, 400]
 t_eval = jnp.linspace(t_span[0], t_span[1], NB_TIMESTEPS+1)
-subdivisions = 5
-Us = RK4(gray_scott_vector_field, t_span=t_span, y0=U0, t_eval=t_eval, subdivisions=subdivisions)
+
+# subdivisions = 5
+# Us = RK4(gray_scott_vector_field, t_span=t_span, y0=U0, t_eval=t_eval, subdivisions=subdivisions)
+
+
+
+# use diffrax instead, with the DoPri5 integrator
+solution = diffrax.diffeqsolve(diffrax.ODETerm(gray_scott_vector_field),
+                               diffrax.Tsit5(),
+                            #    args=(selected_params),
+                               t0=t_span[0],
+                               t1=t_span[1],
+                               dt0=1e-1,
+                               y0=U0,
+                               stepsize_controller=diffrax.PIDController(rtol=1e-1, atol=1e-2),
+                               saveat=diffrax.SaveAt(ts=t_eval),
+                               max_steps=4096*1)
+Us = solution.ys
+
+
 
 walltime = time.time() - start
 
@@ -171,7 +190,7 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 
 
 # %%
-ulist = Us[::NB_TIMESTEPS*subdivisions//100, :Nx*Ny]
+ulist = Us[::NB_TIMESTEPS//100, :Nx*Ny]
 filename = DATAFOLDER + "gray_scott_rk4_u.mp4"
 cloud.animate_fields([ulist], cmaps="gist_ncar", filename=filename, levels=100, duration=10, figsize=(7.5,6), titles=["Gray-Scott with RBFs - u"]);
 
