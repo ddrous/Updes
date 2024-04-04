@@ -7,9 +7,9 @@ from functools import cache, lru_cache, partial
 
 # from updec.config import RBF, MAX_DEGREE, DIM
 import updec.config as UPDEC
-from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, SteadySol, polyharmonic, gaussian, make_all_monomials, distance, polyharmonic_grad
+from updec.utils import compute_nb_monomials, SteadySol,  make_all_monomials
 from updec.cloud import Cloud, SquareCloud
-from updec.assembly import assemble_A, assemble_invert_A, assemble_B, assemble_q, new_compute_coefficients
+from updec.assembly import assemble_B, assemble_q, core_compute_coefficients
 
 
 @Partial(jax.jit, static_argnums=[2,3])
@@ -91,31 +91,6 @@ def nodal_laplacian(x, center=None, rbf=None, monomial=None):     ## TODO Jitt t
 
 
 
-# @cache
-
-# def rbf_tmp_func(x, center, rbf, args):
-#     return jax.grad(rbf)(x, center) * args
-
-# def core_div_grad_rbf(x, center, rbf, args):  ## Args is a 2D vector
-#     return jnp.trace(jax.jacfwd(rbf_tmp_func)(x, center, rbf, args))
-
-
-# def monomial_tmp_func(x, monomial, args):
-#     return jax.grad(monomial)(x) * args
-
-# def core_div_grad_mon(x, monomial, args):
-#     return jnp.trace(jax.jacfwd(monomial_tmp_func)(x, monomial, args))
-
-# def nodal_div_grad(x, center=None, rbf=None, monomial=None, args=None):
-#     """ Computes the Div Grad of the RBF and polynomial functions """
-#     if center != None:
-#         return jnp.nan_to_num(core_div_grad_rbf(x, center, rbf, args), posinf=0., neginf=0.)
-#     elif monomial != None:
-#         return core_div_grad_mon(x, monomial, args)
-
-
-
-
 def nodal_div_grad(x, center=None, rbf=None, monomial=None, args=None):
     """ Computes the lapalcian of the RBF and polynomial functions """
     matrix = jnp.stack((args, args), axis=-1)
@@ -126,32 +101,14 @@ def nodal_div_grad(x, center=None, rbf=None, monomial=None, args=None):
         return jnp.trace(matrix * core_laplacian_mon(monomial)(x))
 
 
-
-def compute_coefficients(field:jnp.ndarray, cloud:Cloud, rbf:callable, max_degree:int):
-    """ Find nodal and polynomial coefficients for scaar field s """ 
-    N = cloud.N
-    M = compute_nb_monomials(max_degree, 2)     ## Carefull with the problem dimension: 2
-
-    ##TODO solve the linear system quicker (store and cache LU decomp) 
-    # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
-
-    rhs = jnp.concatenate((field, jnp.zeros((M))))
-    # A = assemble_A(cloud, nodal_rbf, M)
-    inv_A = assemble_invert_A(cloud, rbf, M)
-    # coefficients = jnp.linalg.solve(A, rhs)
-    coefficients = inv_A@rhs
-
-    lambdas = coefficients[:N]
-    gammas = coefficients[N:]
-
-    return lambdas[:, jnp.newaxis], gammas[:, jnp.newaxis]
-
 _nodal_value_rbf_vec = jax.vmap(nodal_value, in_axes=(None, 0, None, None), out_axes=0)
 
 
-def value(x, field, centers, rbf=None):
+def value(x, field, centers, rbf=None, clip_val=None):
     """ Computes the value of field quantity s at position x """
     ## Find coefficients for s on the cloud
+    # if field.shpae[0] == centers.shape[0]:   ## If the field is defined by its values - get its coefficients
+
 
     ## Now, compute the value of the field
     N = centers.shape[0]
@@ -171,8 +128,12 @@ def value(x, field, centers, rbf=None):
     #     return val + jnp.nan_to_num(gammas[j] * polynomial_val, posinf=0., neginf=0.)
     # final_val = jax.lax.fori_loop(0, gammas.shape[0], mon_val_body, final_val)
 
-    return final_val
+    # return final_val
     # return jnp.clip(final_val, -1, 1)
+    if clip_val:
+        return jnp.clip(final_val, -clip_val, clip_val)
+    else:
+        return final_val
 
 value_vec_ = jax.vmap(value, in_axes=(0, None, None, None), out_axes=0)
 value_vec = jax.jit(value_vec_, static_argnums=[3])
@@ -191,7 +152,7 @@ _nodal_gradient_rbf_vec = jax.vmap(nodal_gradient, in_axes=(None, 0, None, None)
 
 
 # @Partial(jax.jit, static_argnums=3)
-def gradient(x, field, centers, rbf=None):
+def gradient(x, field, centers, rbf=None, clip_val=None):
     """ Computes the gradient of field quantity at position x 
         The field is defined by its _coefficients_ in the RBF basis """
 
@@ -214,8 +175,13 @@ def gradient(x, field, centers, rbf=None):
     #     return grad + jnp.nan_to_num(gammas[j] * polynomial_grad, posinf=0., neginf=0.)
     # final_grad = jax.lax.fori_loop(0, gammas.shape[0], mon_grad_body, final_grad)
 
-    return final_grad
+    # return final_grad
     # return jnp.clip(final_grad, -1, 1)
+        
+    if clip_val:
+        return jnp.clip(final_grad, -clip_val, clip_val)
+    else:
+        return final_grad
 
 gradient_vec_ = jax.vmap(gradient, in_axes=(0, None, None, None), out_axes=0)
 gradient_vec = jax.jit(gradient_vec_, static_argnums=[3])
@@ -226,7 +192,7 @@ def gradient_vals(x, field, cloud, rbf, max_degree):
         The field is defined by its _values_ in the RBF basis """
 
     nb_monomials = compute_nb_monomials(max_degree, cloud.dim)
-    coeffs = new_compute_coefficients(field, cloud, rbf, nb_monomials)
+    coeffs = core_compute_coefficients(field, cloud, rbf, nb_monomials)
 
     return gradient(x, coeffs, cloud.sorted_nodes, rbf)
 
@@ -234,7 +200,7 @@ gradient_vals_vec_ = jax.vmap(gradient_vals, in_axes=(0, None, None, None, None)
 gradient_vals_vec = jax.jit(gradient_vals_vec_, static_argnums=[2,3,4])
 
 
-def cartesian_gradient(node_id, field, cloud:Cloud):
+def cartesian_gradient(node_id, field, cloud:Cloud, clip_val=None):
     """ Computes the gradient of field quantity at position x """
 
     N = field.shape[0]
@@ -269,7 +235,11 @@ def cartesian_gradient(node_id, field, cloud:Cloud):
 
         final_grad = final_grad.at[d].set((field[i] - field[closest_neighbour]) / vec_norm)
 
-    return final_grad
+    # return final_grad
+    if clip_val:
+        return jnp.clip(final_grad, -clip_val, clip_val)
+    else:
+        return final_grad
 
 
 # cartesian_gradient_vec = jax.jit(jax.vmap(cartesian_gradient, in_axes=(0, None, None), out_axes=0), static_argnums=0)
@@ -284,7 +254,7 @@ def cartesian_gradient_vec(node_ids, field, cloud:Cloud):       ## TODO beacause
     return grad
 
 
-def enforce_cartesian_gradient_neumann(field, grads, boundary_conditions, cloud):
+def enforce_cartesian_gradient_neumann(field, grads, boundary_conditions, cloud, clip_val=None):
     """ Set the gradient at every neumann node using catesian grid """
 
     for facet_id, facet_type in cloud.facet_types.items():
@@ -314,24 +284,31 @@ def enforce_cartesian_gradient_neumann(field, grads, boundary_conditions, cloud)
 
                 grads = grads.at[i].set((field[i] - field[closest_neighbour]) / closest_distance)
 
-    return grads
+    # return grads
+    if clip_val:
+        return jnp.clip(grads, -clip_val, clip_val)
+    else:
+        return grads
 
-def divergence(x, field, centers, rbf=None):
+
+def divergence(x, field, centers, rbf=None, clip_val=None):
     """ Computes the divergence of vector quantity s at position x """
     dfieldx_dx = gradient(x, field[...,0], centers, rbf)[0]
     dfieldy_dy = gradient(x, field[...,1], centers, rbf)[1]
 
-    return dfieldx_dx + dfieldy_dy
+    # return dfieldx_dx + dfieldy_dy
+    if clip_val:
+        return jnp.clip(dfieldx_dx + dfieldy_dy, -clip_val, clip_val)
+    else:
+        return dfieldx_dx + dfieldy_dy
 
 divergence_vec = jax.vmap(divergence, in_axes=(0, None, None, None), out_axes=0)
 
 
 _nodal_laplacian_rbf_vec = jax.vmap(nodal_laplacian, in_axes=(None, 0, None, None), out_axes=0)
 
-def laplacian(x, field, centers, rbf=None):
+def laplacian(x, field, centers, rbf=None, clip_val=None):
     """ Computes the laplacian of quantity field at position x """
-    ## Find coefficients for s
-    # lambdas, gammas = compute_coefficients(field, cloud, rbf, max_degree)
 
     ## Now, compute the laplacian of the field
 
@@ -356,7 +333,12 @@ def laplacian(x, field, centers, rbf=None):
     # mon_lap = jax.lax.fori_loop(0, gammas.shape[0], mon_lap_body, jnp.array([0.]))
 
     # return rbf_lap + mon_lap[0]
-    return jnp.clip(rbf_lap + mon_lap[0], -5e-1, 5e-1)
+    # return jnp.clip(rbf_lap + mon_lap[0], -5e-1, 5e-1)
+    if clip_val:
+        return jnp.clip(rbf_lap + mon_lap[0], -clip_val, clip_val)
+    else:
+        return rbf_lap + mon_lap[0]
+
 
 laplacian_vec = jax.vmap(laplacian, in_axes=(0, None, None, None), out_axes=0)
 
@@ -366,72 +348,13 @@ def laplacian_vals(x, field, cloud, rbf, max_degree):
         The field is defined by its _values_ in the RBF basis """
 
     nb_monomials = compute_nb_monomials(max_degree, cloud.dim)
-    coeffs = new_compute_coefficients(field, cloud, rbf, nb_monomials)
+    coeffs = core_compute_coefficients(field, cloud, rbf, nb_monomials)
 
     return laplacian(x, coeffs, cloud.sorted_nodes, rbf)
 
 laplacian_vals_vec_ = jax.vmap(laplacian_vals, in_axes=(0, None, None, None, None), out_axes=0)
 laplacian_vals_vec = jax.jit(laplacian_vals_vec_, static_argnums=[2,3,4])
 
-
-# def integrate_field(field, cloud, rbf, max_degree):
-#     """ Integrate over the 2D square cloud domain, using the midpoint rule 
-#     1. Identify the small squares in the domain (all identical)
-#     2. Get the field value at the center of each square
-#     3. Compute the approximate integral
-
-#     NB: the fiel is defined by its coefficients in the RBF basis
-#     """
-
-#     ## Assert we have a SquareCloud instance
-#     assert isinstance(cloud, SquareCloud), "The cloud must be a SquareCloud instance"
-
-#     ## Compute the number of squares in the domain
-#     nb_squares = (cloud.Nx - 1) * (cloud.Ny - 1)
-#     # print("Number of squares:", nb_squares)
-
-#     ## Compute the size of a square
-#     area = (1 / (cloud.Nx-1)) * (1 / (cloud.Ny-1))
-#     # print("Area of a square:", area)
-
-#     ## Get the coordinates of the centers of the squares
-#     # quad_points_x = jnp.arange(1/(2*(cloud.Nx-1)), 1, 1/(cloud.Nx-1))
-#     # quad_points_y = jnp.arange(1/(2*(cloud.Ny-1)), 1, 1/(cloud.Ny-1))
-
-#     # quad_points_x = jnp.arange(0, 1-1/(2*(cloud.Nx-1)), 1/(cloud.Nx-1))
-#     # quad_points_y = jnp.arange(0, 1-1/(2*(cloud.Ny-1)), 1/(cloud.Ny-1))
-
-#     # quad_points_x = jnp.linspace(0, 1-1/(1*(cloud.Nx-1)), cloud.Nx-1)
-#     # quad_points_y = jnp.linspace(0, 1-1/(1*(cloud.Ny-1)), cloud.Ny-1)
-
-#     ## Get quad_points on the right and up
-#     quad_points_x = jnp.linspace(1/(2*(cloud.Nx-1)), 1-1/(2*(cloud.Nx-1)), cloud.Nx-1)
-#     quad_points_y = jnp.linspace(1/(2*(cloud.Ny-1)), 1-1/(2*(cloud.Ny-1)), cloud.Ny-1)
-#     quad_points = jnp.array(jnp.meshgrid(quad_points_x, quad_points_y)).reshape(nb_squares, 2)
-#     field_vals_ru = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
-
-#     ## Get quad_points on the left and down
-#     quad_points_x = jnp.linspace(0, 1-1/(1*(cloud.Nx-1)), cloud.Nx-1)
-#     quad_points_y = jnp.linspace(0, 1-1/(1*(cloud.Ny-1)), cloud.Ny-1)
-#     quad_points = jnp.array(jnp.meshgrid(quad_points_x, quad_points_y)).reshape(nb_squares, 2)
-#     field_vals_ld = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
-
-#     ## Get quad_points on the right and down
-#     quad_points_x = jnp.linspace(1/(2*(cloud.Nx-1)), 1-1/(2*(cloud.Nx-1)), cloud.Nx-1)
-#     quad_points_y = jnp.linspace(0, 1-1/(1*(cloud.Ny-1)), cloud.Ny-1)
-#     quad_points = jnp.array(jnp.meshgrid(quad_points_x, quad_points_y)).reshape(nb_squares, 2)
-#     field_vals_rd = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
-
-#     ## Get quad_points on the left and up
-#     quad_points_x = jnp.linspace(0, 1-1/(1*(cloud.Nx-1)), cloud.Nx-1)
-#     quad_points_y = jnp.linspace(1/(2*(cloud.Ny-1)), 1-1/(2*(cloud.Ny-1)), cloud.Ny-1)
-#     quad_points = jnp.array(jnp.meshgrid(quad_points_x, quad_points_y)).reshape(nb_squares, 2)
-#     field_vals_lu = value_vec(quad_points, field, cloud.sorted_nodes, rbf)
-
-#     ## Average the field values (internals)
-#     field_vals = (field_vals_ru + field_vals_ld + field_vals_rd + field_vals_lu) / 4.
-
-#     return jnp.sum(field_vals) * area
 
 
 
@@ -628,7 +551,11 @@ def pde_solver( diff_operator:callable,
                 max_degree:int,
                 diff_args = None,
                 rhs_args = None):
-    """ Solve a PDE """
+    """ Solve a PDE 
+    diff_operator: can take as input the coeffcients of a field
+    diff_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the diff operators
+    rhs_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the rhs operators
+    """
 
     # nodal_operator = jax.jit(nodal_operator, static_argnums=2)
     diff_operator = jax.jit(diff_operator, static_argnums=[2,3])
@@ -653,8 +580,7 @@ def pde_solver( diff_operator:callable,
     rhs = assemble_q(rhs_operator, boundary_conditions, cloud, rbf, nb_monomials, rhs_args)
 
     sol_vals = jnp.linalg.solve(B1, rhs)
-    # sol_coeffs = compute_coefficients(sol_vals, cloud, rbf, max_degree)
-    sol_coeffs = new_compute_coefficients(sol_vals, cloud, rbf, nb_monomials)
+    sol_coeffs = core_compute_coefficients(sol_vals, cloud, rbf, nb_monomials)
 
     # sol_vals = apply_neumann_conditions(sol_vals, boundary_conditions, cloud)
 

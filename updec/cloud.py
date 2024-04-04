@@ -8,7 +8,7 @@ from updec.utils import distance
 import os
 from functools import cache
 
-class Cloud(object):        ## TODO: implemtn len, get_item, etc.
+class Cloud(object):
     def __init__(self, facet_types, support_size="max"):
         self.N = 0 
         self.Ni = 0

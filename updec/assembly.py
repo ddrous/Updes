@@ -630,13 +630,37 @@ def assemble_B(operator:callable, cloud:Cloud, rbf:callable, nb_monomials:int, d
     return B[:, :N]
 
 
-def new_compute_coefficients(field:jnp.ndarray, cloud:Cloud, rbf:callable, nb_monomials:int):
-    """ Find nodal and polynomial coefficients for scalar field """ 
+def core_compute_coefficients(field:jnp.ndarray, cloud:Cloud, rbf:callable, nb_monomials:int):
+    """ Find nodal and polynomial coefficients for scalar field directly from the number of monomials """ 
 
     rhs = jnp.concatenate((field, jnp.zeros((nb_monomials))))
     inv_A = assemble_invert_A(cloud, rbf, nb_monomials)
 
     return inv_A@rhs
+
+
+def compute_coefficients(field:jnp.ndarray, cloud:Cloud, rbf:callable, max_degree:int):
+    """ Find nodal and polynomial coefficients for scaar field s """ 
+    N = cloud.N
+    M = compute_nb_monomials(max_degree, cloud.dim)     ## Carefull with the problem dimension: 2
+
+    ##TODO solve the linear system quicker (store and cache LU decomp) 
+    # nodal_rbf = Partial(make_nodal_rbf, rbf=rbf)
+
+    # rhs = jnp.concatenate((field, jnp.zeros((M))))
+    # # A = assemble_A(cloud, nodal_rbf, M)
+    # inv_A = assemble_invert_A(cloud, rbf, M)
+    # # coefficients = jnp.linalg.solve(A, rhs)
+    # coefficients = inv_A@rhs
+
+    # lambdas = coefficients[:N]
+    # gammas = coefficients[N:]
+
+    # return lambdas[:, jnp.newaxis], gammas[:, jnp.newaxis]
+
+    return core_compute_coefficients(field, cloud, rbf, M)
+
+
 
 
 def get_field_coefficients(field:jnp.ndarray, cloud:Cloud, rbf:callable, max_degree:int):
@@ -661,8 +685,14 @@ def assemble_q(operator:callable, boundary_conditions:dict, cloud:Cloud, rbf:cal
 
     ## Compute coefficients here
     if rhs_args != None:
-        fields_coeffs = [new_compute_coefficients(field, cloud, rbf, M) for field in rhs_args]
-        fields_coeffs = jnp.stack(fields_coeffs, axis=-1)
+        # fields_coeffs = [core_compute_coefficients(field, cloud, rbf, M) for field in rhs_args]
+        # fields_coeffs = jnp.stack(fields_coeffs, axis=-1)
+        fields_coeffs = []
+        for field in rhs_args:
+            if field.shape[0] == N:
+                fields_coeffs.append(core_compute_coefficients(field, cloud, rbf, M))
+            else:
+                fields_coeffs.append(field)
     else:
         fields_coeffs = None
 
