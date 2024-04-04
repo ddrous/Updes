@@ -3,7 +3,7 @@ name: Updec CI/CD
 on: [push]
 
 jobs:
-  build-linux:
+  linux-tests:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
@@ -17,13 +17,7 @@ jobs:
     - name: Install Updec & Pytest
       run: |
         pip install --upgrade pip && pip install --upgrade "jax[cpu]" && python setup.py develop
-    - name: Run differential operators test
+    - name: Run package-wide test
       run: |
-        pytest --disable-warnings -q updec/tests/operators.py
-    - name: Run cloud interpolation test
-      run: |
-        pytest --disable-warnings -q updec/tests/interpolation.py
-    - name: Run outward normals test
-      run: |
-        pytest --disable-warnings -q updec/tests/normals.py
+        pytest --pyargs updec
 

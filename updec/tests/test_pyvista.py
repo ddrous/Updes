@@ -359,7 +359,7 @@ import seaborn as sns
 
 import numpy as np
 
-import pyvista as pv
+import updec.tests.test_pyvista as pv
 
 filename = "sphere-shrinking.mp4"
 

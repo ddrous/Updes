@@ -7,10 +7,7 @@ from updec import *
 seed = random.randint(0,100)
 seed = 12
 
-# EXPERIMENET_ID = random_name()
-EXPERIMENET_ID = "TempFolder"
-DATAFOLDER = "demos/NavierStokes/data/" + EXPERIMENET_ID + "/"
-# make_dir(DATAFOLDER)
+DATAFOLDER = "data/"
 
 
 # %%
@@ -86,9 +83,9 @@ print()
 # p_ = p_ + phisol_.vals
 # grad = gradient(cloud.sorted_nodes[0], sol.coeffs, cloud.sorted_nodes, RBF)
 
-# grads = gradient_vec(cloud.sorted_nodes, sol.coeffs, cloud.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
+grads = gradient_vec(cloud.sorted_nodes, sol.coeffs, cloud.sorted_nodes, RBF)        ## TODO use Pde_solver here instead ?
 
-grads = cartesian_gradient_vec(range(cloud.N), sol.vals, cloud)        ## TODO use Pde_solver here instead ?
+# grads = cartesian_gradient_vec(range(cloud.N), sol.vals, cloud)        ## TODO use Pde_solver here instead ?
 
 grads_norm = jnp.linalg.norm(grads, axis=-1)
 # print("Grads close to 0 ?", jnp.allclose(grads_norm, 0, atol=1e-05))
