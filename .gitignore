@@ -19,6 +19,8 @@ demos/temp/*
 *vtk
 quadqs_statistics.json
 
+!updec/tests/data/mesh.msh
+
 demos/Laplace/data/*
 !demos/Laplace/data/README.md
 !demos/Laplace/data/Comparison
