@@ -5,16 +5,7 @@ channels:
 dependencies:
   - pip
   - pip:
-      - flax==0.6.7
       - gmsh==4.11.1
-      - imageio==2.26.0
-      - imageio-ffmpeg==0.4.8
-      - matplotlib-inline==0.1.6
-      - optax==0.1.4
       - pytest==7.2.2
-      - pyvista==0.38.5
       - scikit-learn==1.2.2
-      - seaborn==0.12.2
-      - tqdm==4.65.0
-      - vtk==9.2.6
-prefix: /home/gb21553/miniconda3/envs/jax
+# prefix: /home/gb21553/miniconda3/envs/jax

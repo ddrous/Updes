@@ -56,3 +56,9 @@ print(new_field)
 assert jnp.allclose(field[:cloud1.Ni], new_field[:cloud2.Ni], atol=1e-12)
 
 # %%
+
+def test_interpolation(field, cloud1, cloud2):
+    new_field = interpolate_field(field, cloud1, cloud2)
+    return jnp.allclose(field[:cloud1.Ni], new_field[:cloud2.Ni], atol=1e-12)
+
+test_interpolation(field, cloud1, cloud2)
