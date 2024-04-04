@@ -12,8 +12,10 @@ setup(
    description='A package for meshless and data-driven PDE modelling and control',
    long_description=open('README.md', encoding="utf-8").read(),
    install_requires=[
+       "scikit-learn",
        "jax >= 0.3.4",
        "pytest",
+       "gmsh",
        "matplotlib>=3.4.0",
    ],
 )
