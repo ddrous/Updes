@@ -11,7 +11,7 @@ seed = random.randint(0,100)
 # seed = 12
 
 # EXPERIMENET_ID = random_name()
-DATAFOLDER = "data/"
+DATAFOLDER = "updec/test/data/"
 
 
 # %%
@@ -79,30 +79,34 @@ print("Integral over the unit square is: ", val)
 print("Expected value is: ", np.pi / 12)
 # print("Expected value is: ", 0.63951)
 
+def test_integral():
+    assert np.abs(val - (np.pi / 12)) < 1e-1
+
+
 # %%
 
 
-## Do a concergence analysis, with different sizes of the cloud
-sizes = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 20, 25]
-errors = []
-for size in sizes:
-    cloud = SquareCloud(Nx=size, Ny=size, facet_types=facet_types, support_size="max", noise_key=noise_key)
-    xy = cloud.sorted_nodes
-    # s = jnp.sqrt(xy[:,0]**2 + xy[:,1]**2)
-    s = xy[:,0]**2/ (1+xy[:,1]**2)
-    s_coeffs = get_field_coefficients(s, cloud, RBF, MAX_DEGREE)
-    val = integrate_field(s_coeffs, cloud, RBF, MAX_DEGREE)
-    # val = integrate_field(s, cloud, RBF, MAX_DEGREE)
-    # errors.append(np.abs(val - (np.sqrt(2) + (1/np.sinh(1)))/ 3))
-    errors.append(np.abs(val - (np.pi / 12)))
+# ## Do a concergence analysis, with different sizes of the cloud
+# sizes = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 20, 25]
+# errors = []
+# for size in sizes:
+#     cloud = SquareCloud(Nx=size, Ny=size, facet_types=facet_types, support_size="max", noise_key=noise_key)
+#     xy = cloud.sorted_nodes
+#     # s = jnp.sqrt(xy[:,0]**2 + xy[:,1]**2)
+#     s = xy[:,0]**2/ (1+xy[:,1]**2)
+#     s_coeffs = get_field_coefficients(s, cloud, RBF, MAX_DEGREE)
+#     val = integrate_field(s_coeffs, cloud, RBF, MAX_DEGREE)
+#     # val = integrate_field(s, cloud, RBF, MAX_DEGREE)
+#     # errors.append(np.abs(val - (np.sqrt(2) + (1/np.sinh(1)))/ 3))
+#     errors.append(np.abs(val - (np.pi / 12)))
 
-# %%
-plt.plot(sizes, errors)
-plt.xlabel("Size of the cloud")
-plt.ylabel("Error in the integral")
-plt.title("Convergence of the integral over the unit square")
-plt.yscale("log")
-plt.show()
+# # %%
+# plt.plot(sizes, errors)
+# plt.xlabel("Size of the cloud")
+# plt.ylabel("Error in the integral")
+# plt.title("Convergence of the integral over the unit square")
+# plt.yscale("log")
+# plt.show()
 
 
 
