@@ -17,5 +17,6 @@ setup(
        "pytest",
        "gmsh",
        "matplotlib>=3.4.0",
+       "seaborn",
    ],
 )
