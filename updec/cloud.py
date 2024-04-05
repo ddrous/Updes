@@ -1,7 +1,6 @@
 import warnings
 import jax
 import jax.numpy as jnp
-import numpy as np  ## TODO: Use numpy thoughout this module. The cloud is static
 from sklearn.neighbors import BallTree, KDTree
 from updec.utils import distance
 
@@ -9,7 +8,26 @@ import os
 from functools import cache
 
 class Cloud(object):
+    """ A class to store the meshfree cloud of points and related properties """
+
     def __init__(self, facet_types, support_size="max"):
+        """Initializes the cloud of points
+
+        Args:
+            facet_types (dict): Name of the various facets of the domains (keys), and their types (values). Types can be : 
+            - "d" for dirichlet, 
+            - "n" for neumann, 
+            - "r" for robin, 
+            - "p*" for periodic (where * is a letter of the alphabet to match a corresponding boundary).
+            support_size (int, str): The size of the support for each RBF centroid. Defaults to "max".
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            _type_: _description_
+        """
+
         self.N = 0 
         self.Ni = 0
         self.Nd = 0
