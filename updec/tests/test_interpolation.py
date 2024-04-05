@@ -26,7 +26,7 @@ cloud2 = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types2, support_size=SUPPOR
 print(cloud2.global_indices)
 
 
-field = jnp.arange(0, cloud1.N)
+# field = jnp.arange(0, cloud1.N)
 # cloud1.visualize_field(field)
 
 
@@ -43,10 +43,10 @@ field = jnp.arange(0, cloud1.N)
 # indexer2 = jnp.array(list(cloud2.renumbering_map.keys()))
 # new_field = field_orig[indexer2]
 
-new_field = interpolate_field(field, cloud1, cloud2)
+# new_field = interpolate_field(field, cloud1, cloud2)
 
 # cloud2.visualize_field(new_field)
-print(new_field)
+# print(new_field)
 
 
 
@@ -57,8 +57,9 @@ print(new_field)
 
 # %%
 
-def test_interpolation(field, cloud1, cloud2):
+def test_interpolation():
+    field = jnp.arange(0, cloud1.N)
     new_field = interpolate_field(field, cloud1, cloud2)
-    return jnp.allclose(field[:cloud1.Ni], new_field[:cloud2.Ni], atol=1e-12)
+    assert jnp.allclose(field[:cloud1.Ni], new_field[:cloud2.Ni], atol=1e-12)
 
-test_interpolation(field, cloud1, cloud2)
+# test_interpolation(field, cloud1, cloud2)
