@@ -1,0 +1,37 @@
+[
+  {
+    "objectID": "reference/operators.pde_solver.html",
+    "href": "reference/operators.pde_solver.html",
+    "title": "operators.pde_solver",
+    "section": "",
+    "text": "operators.pde_solver\noperators.pde_solver(diff_operator, rhs_operator, cloud, boundary_conditions, rbf, max_degree, diff_args=None, rhs_args=None)\nSolve a PDE diff_operator: can take as input the coeffcients of a field diff_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the diff operators rhs_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the rhs operators"
+  },
+  {
+    "objectID": "reference/cloud.Cloud.html",
+    "href": "reference/cloud.Cloud.html",
+    "title": "cloud.Cloud",
+    "section": "",
+    "text": "cloud.Cloud(self, facet_types, support_size='max')\nA class to store the meshfree cloud of points and related properties\n\n\n\n\n\nName\nDescription\n\n\n\n\nrenumber_nodes\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards\n\n\nsort_dict_by_keys\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable\n\n\n\n\n\ncloud.Cloud.renumber_nodes()\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards\n\n\n\ncloud.Cloud.sort_dict_by_keys(dictionnary)\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable"
+  },
+  {
+    "objectID": "reference/cloud.Cloud.html#methods",
+    "href": "reference/cloud.Cloud.html#methods",
+    "title": "cloud.Cloud",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nrenumber_nodes\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards\n\n\nsort_dict_by_keys\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable\n\n\n\n\n\ncloud.Cloud.renumber_nodes()\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards\n\n\n\ncloud.Cloud.sort_dict_by_keys(dictionnary)\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable"
+  },
+  {
+    "objectID": "reference/index.html",
+    "href": "reference/index.html",
+    "title": "Function reference",
+    "section": "",
+    "text": "Functions to inspect docstrings.\n\n\n\noperators.pde_solver\nSolve a PDE\n\n\ncloud.Cloud\nA class to store the meshfree cloud of points and related properties"
+  },
+  {
+    "objectID": "reference/index.html#some-functions",
+    "href": "reference/index.html#some-functions",
+    "title": "Function reference",
+    "section": "",
+    "text": "Functions to inspect docstrings.\n\n\n\noperators.pde_solver\nSolve a PDE\n\n\ncloud.Cloud\nA class to store the meshfree cloud of points and related properties"
+  }
+]
