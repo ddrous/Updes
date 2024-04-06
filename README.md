@@ -29,32 +29,27 @@ Check out the example notebooks and scripts in the folder [`demos`](./demos)!
 
 
 ## To-Dos
-- Integrate Updec into an ODE solver: y_ = y + dt * Updec(y, t)
-- Iterative solver
-- Make pde_solve_multidims that takes in the various differential operators, and finds the stable point!
-- Do the same for non-linear PDEs
-- Fix the adjoint with Alex
-- Contribute to Diffrax
-
-### More To-Dos
-- Review the [specifications for JOSS](https://joss.readthedocs.io/en/latest/submitting.html)
-- Setup automated tests via GitHub actions CI/CD
-- Add comments and generate Documentation (like [Equinox](https://docs.kidger.site/equinox/))
-- Code more demos and animations of PDEs: 
-    - [advection-diffusion](https://en.wikipedia.org/wiki/Convection%E2%80%93diffusion_equation) and other cool linear equations 
-    - the Navier-Stokes in a channel with a step 
-    - etc.
-- Publish to social media (and to my website)
-- Research dynamic point clouds for time-dependent problems
-- Parallelise time-dependent problems in time
-- Add support for USD files
+- Logo, licence, contributors guide, and developer documentation
+- Better introductory examples and user documentation for outreach
+    - Non-linear and multi-dimensional PDEs
+    - Adjoint schemes for fluid flows
+- Better cloud points generation with accurate geometry and normals: 
+    - USD files
+    - Gmsh tutorial
+- Add support for 3D radial basis functions
+- Improve accuracy for integration with diffrax
 
 
 ## Dependencies
-- JAX
-- GMSH
-- PyVista
-- FFMPEG
+### Core
+    - JAX
+    - GMSH
+    - Matplotlib
+
+### Optional
+    - PyVista
+    - FFMPEG
+    - QuartoDoc
 
 ## Cite us
-If you use this software, please cite us 
+If you use this software, please cite us: SC2023 reference
