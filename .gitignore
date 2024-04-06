@@ -24,7 +24,7 @@ quadqs_statistics.json
 docs/.quarto/*
 docs/_site/*
 
-!updec/tests/data/mesh.msh
+!updes/tests/data/mesh.msh
 
 demos/Laplace/data/*
 !demos/Laplace/data/README.md
