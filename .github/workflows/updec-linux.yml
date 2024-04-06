@@ -19,5 +19,5 @@ jobs:
         pip install --upgrade pip && pip install --upgrade "jax[cpu]" && python -m pip install -e .
     - name: Run package-wide test
       run: |
-        pytest --pyargs updec
+        pytest --pyargs updes
 
