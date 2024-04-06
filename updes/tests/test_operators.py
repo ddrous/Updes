@@ -7,7 +7,7 @@ from updes import *
 seed = random.randint(0,100)
 seed = 12
 
-DATAFOLDER = "updec/tests/data/"
+DATAFOLDER = "updes/tests/data/"
 
 
 # %%

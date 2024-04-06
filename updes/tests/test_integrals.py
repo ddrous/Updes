@@ -12,7 +12,7 @@ seed = random.randint(0,100)
 # seed = 12
 
 # EXPERIMENET_ID = random_name()
-DATAFOLDER = "updec/tests/data/"
+DATAFOLDER = "updes/tests/data/"
 
 
 # %%
