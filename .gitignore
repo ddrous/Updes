@@ -19,6 +19,10 @@ demos/temp/*
 *vtk
 quadqs_statistics.json
 
+## Quarto website
+docs/.quarto/*
+docs/_site/*
+
 !updec/tests/data/mesh.msh
 
 demos/Laplace/data/*

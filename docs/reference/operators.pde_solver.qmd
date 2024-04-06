@@ -1,0 +1,8 @@
+# operators.pde_solver { #updec.operators.pde_solver }
+
+`operators.pde_solver(diff_operator, rhs_operator, cloud, boundary_conditions, rbf, max_degree, diff_args=None, rhs_args=None)`
+
+Solve a PDE 
+diff_operator: can take as input the coeffcients of a field
+diff_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the diff operators
+rhs_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the rhs operators

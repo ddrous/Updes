@@ -1,0 +1,10 @@
+website:
+  sidebar:
+  - contents:
+    - reference/index.qmd
+    - contents:
+      - reference/operators.pde_solver.qmd
+      - reference/cloud.Cloud.qmd
+      section: Some functions
+    id: reference
+  - id: dummy-sidebar
