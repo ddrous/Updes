@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 # from torch.utils.tensorboard import SummaryWriter
 
-from updec import *
+from updes import *
 
 
 RBF = polyharmonic

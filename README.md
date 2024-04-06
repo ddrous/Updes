@@ -45,6 +45,9 @@ Check out the example notebooks and scripts in the folder [`demos`](./demos)!
     - JAX
     - GMSH
     - Matplotlib
+    - Seaborn
+    - Scikit-Learn
+
 
 ### Optional
     - PyVista

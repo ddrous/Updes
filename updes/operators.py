@@ -6,10 +6,10 @@ from jax.tree_util import Partial, tree_map
 from functools import cache, lru_cache, partial
 
 # from updec.config import RBF, MAX_DEGREE, DIM
-import updec.config as UPDEC
-from updec.utils import compute_nb_monomials, SteadySol,  make_all_monomials
-from updec.cloud import Cloud, SquareCloud
-from updec.assembly import assemble_B, assemble_q, core_compute_coefficients
+import updes.config as UPDEC
+from updes.utils import compute_nb_monomials, SteadySol,  make_all_monomials
+from updes.cloud import Cloud, SquareCloud
+from updes.assembly import assemble_B, assemble_q, core_compute_coefficients
 
 
 @Partial(jax.jit, static_argnums=[2,3])
@@ -552,6 +552,7 @@ def pde_solver( diff_operator:callable,
                 diff_args = None,
                 rhs_args = None):
     """ Solve a PDE 
+    cloud: the cloud of points on which the PDE is solved
     diff_operator: can take as input the coeffcients of a field
     diff_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the diff operators
     rhs_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the rhs operators

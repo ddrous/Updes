@@ -5,7 +5,7 @@ import numpy as np
 
 import random
 from functools import partial
-from updec import *
+from updes import *
 "A unit test that checks if the gradient of a constant field is zero"
 
 seed = random.randint(0,100)

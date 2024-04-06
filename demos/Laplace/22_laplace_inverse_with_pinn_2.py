@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 from functools import partial
 
 # import functools
-from updec.utils import plot, dataloader, make_dir, random_name
-from updec.cloud import SquareCloud
+from updes.utils import plot, dataloader, make_dir, random_name
+from updes.cloud import SquareCloud
 import tracemalloc, time
 
 

@@ -6,5 +6,5 @@ Functions to inspect docstrings.
 
 | | |
 | --- | --- |
-| [operators.pde_solver](operators.pde_solver.qmd#updec.operators.pde_solver) | Solve a PDE  |
-| [cloud.Cloud](cloud.Cloud.qmd#updec.cloud.Cloud) | A class to store the meshfree cloud of points and related properties |
+| [operators.pde_solver](operators.pde_solver.qmd#updes.operators.pde_solver) | Solve a PDE  |
+| [cloud.Cloud](cloud.Cloud.qmd#updes.cloud.Cloud) | A class to store the meshfree cloud of points and related properties |

@@ -2,7 +2,7 @@ import warnings
 import jax
 import jax.numpy as jnp
 from sklearn.neighbors import BallTree, KDTree
-from updec.utils import distance
+from updes.utils import distance
 
 import os
 from functools import cache

@@ -13,7 +13,7 @@ jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on D
 
 import tracemalloc, time
 
-from updec import *
+from updes import *
 
 # %%
 

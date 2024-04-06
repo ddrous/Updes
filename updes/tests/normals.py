@@ -1,7 +1,7 @@
 #%%
 
 import jax.numpy as jnp
-from updec import *
+from updes import *
 
 
 facet_types = {"Wall":"n", "Inflow":"n", "Outflow":"n", "Cylinder":"n"}

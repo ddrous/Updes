@@ -13,9 +13,9 @@ import os
 import matplotlib.pyplot as plt
 
 # import functools
-from updec.utils import plot, dataloader, make_dir
-from updec.cloud import GmshCloud
-from updec.visualise import pyvista_animation
+from updes.utils import plot, dataloader, make_dir
+from updes.cloud import GmshCloud
+from updes.visualise import pyvista_animation
 
 import tracemalloc, time
 

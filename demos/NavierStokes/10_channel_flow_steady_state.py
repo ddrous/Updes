@@ -27,7 +27,7 @@ import seaborn as sns
 sns.set(context='notebook', style='ticks',
         font='sans-serif', font_scale=1, color_codes=True, rc={"lines.linewidth": 2})
 
-from updec import *
+from updes import *
 # from updec.cloud import SquareCloud, GmshCloud
 # from updec.operators import *
 # from updec.utils import print_line_by_line, polyharmonic, multiquadric

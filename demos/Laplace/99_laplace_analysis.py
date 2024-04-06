@@ -5,7 +5,7 @@ Comparison of Laplace control methods
 """
 
 import jax.numpy as jnp
-from updec import *
+from updes import *
 
 import matplotlib as mpl
 from matplotlib.cm import ScalarMappable

@@ -4,9 +4,9 @@ from jax.tree_util import Partial
 
 from functools import cache, partial
 
-from updec.config import DIM
-from updec.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, make_all_monomials
-from updec.cloud import Cloud
+from updes.config import DIM
+from updes.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, make_all_monomials
+from updes.cloud import Cloud
 
 
 def assemble_Phi(cloud:Cloud, rbf:callable=None):

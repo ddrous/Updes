@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
 
-from updec import *
+from updes import *
 
 
 facet_types_vel = {"Wall":"d", "Inflow":"d", "Outflow":"n"}

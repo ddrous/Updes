@@ -3,7 +3,7 @@
 import jax
 import jax.numpy as jnp
 
-from updec import *
+from updes import *
 
 # from torch.utils.tensorboard import SummaryWriter
 # import datetime

@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from jax.tree_util import Partial
 from tqdm import tqdm
 
-from updec import *
+from updes import *
 
 
 ### Constants for the problem

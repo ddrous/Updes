@@ -13,7 +13,7 @@ jax.config.update('jax_platform_name', 'cpu')
 
 import tracemalloc, time
 
-from updec import *
+from updes import *
 import sys
 
 EXPERIMENET_ID = "ChannelAdjoint2_Simple"

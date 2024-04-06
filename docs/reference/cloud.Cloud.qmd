@@ -1,4 +1,4 @@
-# cloud.Cloud { #updec.cloud.Cloud }
+# cloud.Cloud { #updes.cloud.Cloud }
 
 `cloud.Cloud(self, facet_types, support_size='max')`
 
@@ -8,16 +8,16 @@ A class to store the meshfree cloud of points and related properties
 
 | Name | Description |
 | --- | --- |
-| [renumber_nodes](#updec.cloud.Cloud.renumber_nodes) | Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards |
-| [sort_dict_by_keys](#updec.cloud.Cloud.sort_dict_by_keys) | Sorts a dictionnay whose values are jax arrays; and returns an array easily indexable |
+| [renumber_nodes](#updes.cloud.Cloud.renumber_nodes) | Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards |
+| [sort_dict_by_keys](#updes.cloud.Cloud.sort_dict_by_keys) | Sorts a dictionnay whose values are jax arrays; and returns an array easily indexable |
 
-### renumber_nodes { #updec.cloud.Cloud.renumber_nodes }
+### renumber_nodes { #updes.cloud.Cloud.renumber_nodes }
 
 `cloud.Cloud.renumber_nodes()`
 
 Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards
 
-### sort_dict_by_keys { #updec.cloud.Cloud.sort_dict_by_keys }
+### sort_dict_by_keys { #updes.cloud.Cloud.sort_dict_by_keys }
 
 `cloud.Cloud.sort_dict_by_keys(dictionnary)`
 

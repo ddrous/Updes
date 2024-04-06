@@ -7,7 +7,7 @@ from functools import partial
 from tqdm import tqdm
 jax.config.update('jax_platform_name', 'cpu')           ## TODO Slow on GPU on Daffy Duck !
 
-from updec import *
+from updes import *
 
 
 # EXPERIMENET_ID = random_name()

@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 import tracemalloc, time
 
-from updec import *
+from updes import *
 
 #%%
 

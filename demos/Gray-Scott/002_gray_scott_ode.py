@@ -35,7 +35,7 @@ import diffrax
 # jax.config.update('jax_platform_name', 'cpu')
 jax.config.update("jax_enable_x64", True)
 
-from updec import *
+from updes import *
 
 SEED = 2026
 # key = jax.random.PRNGKey(SEED)

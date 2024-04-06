@@ -441,7 +441,7 @@ from tqdm import tqdm
 import jax
 import jax.numpy as jnp
 
-from updec import *
+from updes import *
 
 EXPERIMENET_ID = "StepFlow"
 DATAFOLDER = "./data/" + EXPERIMENET_ID +"/"
