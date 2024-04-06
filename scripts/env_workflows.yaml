@@ -1,0 +1,11 @@
+name: jax
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pip
+  - pip:
+      - gmsh==4.11.1
+      - pytest==7.2.2
+      - scikit-learn==1.2.2
+# prefix: /home/gb21553/miniconda3/envs/jax
