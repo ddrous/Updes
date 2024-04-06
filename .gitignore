@@ -8,6 +8,7 @@
 .cache
 .DS_Store
 Updec.egg-info/*
+updes.egg-info/*
 examples/data/*
 !examples/data/README.md
 scripts/reports/*
