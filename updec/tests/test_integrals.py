@@ -1,6 +1,7 @@
 # %%
 import jax
 # jax.config.update("jax_debug_nans", True)
+import numpy as np
 
 import random
 from functools import partial
