@@ -58,7 +58,9 @@ cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution
 
 𝕌pdes can handle much complicated cases with little to no modifications to the code above. Check out further notebooks and scripts in the documentation and the folder [`demos`](./demos)!
 
-| ![laplace](docs/assets/laplace.png) | ![Advection-Diffusion](![laplace](docs/assets/advection_diffusion.gif) | ![Burgers](docs/assets/burgers_rk4_u.gif) |
+<!-- | ![laplace](docs/assets/laplace.png) | ![Advection-Diffusion](![laplace](docs/assets/advection_diffusion.gif) | ![Burgers](docs/assets/burgers_rk4_u.gif) | -->
+
+| <img src="docs/assets/laplace.png" width="150"> | <img src="docs/assets/advection_diffusion.gif" width="250"> | <img src="docs/assets/burgers_rk4_u.gif" width="150"> |
 
 
 ## To-Dos
