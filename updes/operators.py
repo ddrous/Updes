@@ -6,7 +6,7 @@ from jax.tree_util import Partial, tree_map
 from functools import cache, lru_cache, partial
 
 # from updec.config import RBF, MAX_DEGREE, DIM
-import updes.config as UPDEC
+import updes.config as UPDES
 from updes.utils import compute_nb_monomials, SteadySol,  make_all_monomials
 from updes.cloud import Cloud, SquareCloud
 from updes.assembly import assemble_B, assemble_q, core_compute_coefficients
@@ -562,10 +562,10 @@ def pde_solver( diff_operator:callable,
     diff_operator = jax.jit(diff_operator, static_argnums=[2,3])
     rhs_operator = jax.jit(rhs_operator, static_argnums=2)
 
-    UPDEC.RBF = rbf
+    UPDES.RBF = rbf
     ### For rememmering purposes
-    UPDEC.MAX_DEGREE = max_degree
-    UPDEC.DIM = cloud.dim
+    UPDES.MAX_DEGREE = max_degree
+    UPDES.DIM = cloud.dim
 
 
     ## Build robin coeffs
@@ -682,10 +682,10 @@ def pde_multi_solver( diff_operators:list,
     diff_operators = [jax.jit(diff_op, static_argnums=[2,3]) for diff_op in diff_operators]
     rhs_operators = [jax.jit(rhs_op, static_argnums=2) for rhs_op in rhs_operators]
 
-    UPDEC.RBF = rbf
+    UPDES.RBF = rbf
     ### For rememmering purposes
-    UPDEC.MAX_DEGREE = max_degree
-    UPDEC.DIM = cloud.dim
+    UPDES.MAX_DEGREE = max_degree
+    UPDES.DIM = cloud.dim
 
 
     ## Build robin coeffs
@@ -751,10 +751,10 @@ def pde_multi_solver_unbounded( diff_operators:list,
     diff_operators = [jax.jit(diff_op, static_argnums=[2,3]) for diff_op in diff_operators]
     rhs_operators = [jax.jit(rhs_op, static_argnums=2) for rhs_op in rhs_operators]
 
-    UPDEC.RBF = rbf
+    UPDES.RBF = rbf
     ### For rememmering purposes
-    UPDEC.MAX_DEGREE = max_degree
-    UPDEC.DIM = cloud.dim
+    UPDES.MAX_DEGREE = max_degree
+    UPDES.DIM = cloud.dim
 
 
     ## Build robin coeffs

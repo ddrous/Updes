@@ -1,4 +1,4 @@
-import updes.config as UPDEC
+import updes.config as UPDES
 
 from updes.utils import *
 from updes.cloud import *

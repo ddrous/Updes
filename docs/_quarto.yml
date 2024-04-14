@@ -14,7 +14,14 @@ quartodoc:
   sidebar: _sidebar.yml
 
   sections:
-    - title: Some functions
+    - title: Utility Functions
+      desc: Functions to inspect docstrings.
+      contents:
+        # the functions being documented in the package.
+        # you can refer to anything: class methods, modules, etc..
+        - utils.RK4
+        - cloud.Cloud
+    - title: Cloud
       desc: Functions to inspect docstrings.
       contents:
         # the functions being documented in the package.
