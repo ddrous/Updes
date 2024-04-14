@@ -29,7 +29,7 @@ key = None
 # import datetime
 
 RUN_NAME = "TempFolder"
-DATAFOLDER = "../data/" + RUN_NAME +"/"
+DATAFOLDER = "./data/" + RUN_NAME +"/"
 make_dir(DATAFOLDER)
 
 RBF = partial(polyharmonic, a=1)
@@ -157,3 +157,9 @@ plt.show()
 # writer.close()
 
 # %%
+# fig = plt.figure(figsize=(6*1,5))
+# ax= fig.add_subplot(1, 1, 1, projection='3d')
+# cloud.visualize_field(rbf_sol, cmap="jet", projection="3d", title="RBF solution", ax=ax);
+# plt.show()
+# ## Savefig
+# fig.savefig(DATAFOLDER+"laplace.png", dpi=300)

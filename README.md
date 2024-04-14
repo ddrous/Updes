@@ -20,7 +20,7 @@ The package is available on PyPi. You can install it with
 pip install Updes
 ```
 
-The example below illustrated how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:
+The example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:
 ```python
 from updes import *
 import jax.numpy as jnp
@@ -46,16 +46,19 @@ boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_north, "East":d_
 
 ## Solve the Laplace equation with a JIT-compiled solver
 sol = pde_solver_jit(diff_operator=my_diff_operator, 
-                rhs_operator = my_rhs_operator, 
-                cloud = cloud, 
-                boundary_conditions = boundary_conditions, 
-                rbf=polyharmonic,
-                max_degree=1)
+                    rhs_operator = my_rhs_operator, 
+                    cloud = cloud, 
+                    boundary_conditions = boundary_conditions, 
+                    rbf=polyharmonic,
+                    max_degree=1)
 
 ## Visualize the solution
 cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution");
 ```
+
 𝕌pdes can handle much complicated cases with little to no modifications to the code above. Check out further notebooks and scripts in the documentation and the folder [`demos`](./demos)!
+
+| ![laplace](docs/assets/laplace.png) | ![Advection-Diffusion](![laplace](docs/assets/advection_diffusion.gif) | ![Burgers](docs/assets/burgers_rk4_u.gif) |
 
 
 ## To-Dos
@@ -87,6 +90,5 @@ If you use this software, please cite us with the following BibTeX entry:
   author={Nzoyem Ngueguin, Roussel Desmond and Barton, David AW and Deakin, Tom},
   booktitle={Proceedings of the SC'23 Workshops of The International Conference on High Performance Computing, Network, Storage, and Analysis},
   pages={21--28},
-  year={2023}
-}
+  year={2023}}
 ```
