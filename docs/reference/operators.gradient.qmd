@@ -1,0 +1,14 @@
+# operators.gradient { #updes.operators.gradient }
+
+`operators.gradient(x, field, centers, rbf=None, clip_val=None)`
+
+Computes the gradient of the field (given by its coefficients) at position x
+
+Args:
+    x (Float[Array, "dim"]): The position at which to conmpute the gradient value
+    centers (Float[Array, "nb_centers, dim"]): The centroids of the RBF to use
+    rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.)
+    clip_val (float, optional): The limit to which to clip the value to avoid blowup. Defaults to None.
+
+Returns:
+    Float[Array, "dim"]: The gradient of the field at x

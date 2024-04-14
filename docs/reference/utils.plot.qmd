@@ -1,0 +1,5 @@
+# utils.plot { #updes.utils.plot }
+
+`utils.plot(*args, ax=None, figsize=(6, 3.5), x_label=None, y_label=None, title=None, x_scale='linear', y_scale='linear', xlim=None, ylim=None, **kwargs)`
+
+Wrapper function for matplotlib and seaborn

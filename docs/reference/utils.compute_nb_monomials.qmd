@@ -1,0 +1,5 @@
+# utils.compute_nb_monomials { #updes.utils.compute_nb_monomials }
+
+`utils.compute_nb_monomials(max_degree, problem_dimension)`
+
+Computes the number of monomials of dregree less than 'max_degree', in dimension 'problem_dimension'

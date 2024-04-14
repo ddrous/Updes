@@ -1,0 +1,37 @@
+# cloud.GmshCloud { #updes.cloud.GmshCloud }
+
+`cloud.GmshCloud(self, filename, mesh_save_location=None, **kwargs)`
+
+A class to store the cloud of points issued from GMSH and related properties
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [define_outward_normals](#updes.cloud.GmshCloud.define_outward_normals) | Calculates (approximate) outward normal vectors to nodes on the boundaries.  |
+| [extract_nodes_and_boundary_type](#updes.cloud.GmshCloud.extract_nodes_and_boundary_type) | Extract nodes and boundary types from a .msh file according to Gmsh format 4.0.8 |
+| [get_meshfile](#updes.cloud.GmshCloud.get_meshfile) | Gets the definitive mesh file to work with |
+
+### define_outward_normals { #updes.cloud.GmshCloud.define_outward_normals }
+
+`cloud.GmshCloud.define_outward_normals()`
+
+Calculates (approximate) outward normal vectors to nodes on the boundaries. 
+Raises:
+    AssertionError: When the mesh is not fine enough to compute normals
+
+### extract_nodes_and_boundary_type { #updes.cloud.GmshCloud.extract_nodes_and_boundary_type }
+
+`cloud.GmshCloud.extract_nodes_and_boundary_type()`
+
+Extract nodes and boundary types from a .msh file according to Gmsh format 4.0.8
+
+### get_meshfile { #updes.cloud.GmshCloud.get_meshfile }
+
+`cloud.GmshCloud.get_meshfile(filename, mesh_save_location)`
+
+Gets the definitive mesh file to work with
+
+Args:
+    filename (str): see __init__()
+    mesh_save_location (str): see __init__(). If None, the mesh is saved in the same directory as the filename

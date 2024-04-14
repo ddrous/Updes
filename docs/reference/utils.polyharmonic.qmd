@@ -1,0 +1,5 @@
+# utils.polyharmonic { #updes.utils.polyharmonic }
+
+`utils.polyharmonic(x, center, a=1)`
+
+Polyharmonic Spline RBF

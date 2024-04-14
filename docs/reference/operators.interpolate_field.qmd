@@ -1,0 +1,16 @@
+# operators.interpolate_field { #updes.operators.interpolate_field }
+
+`operators.interpolate_field(field, cloud1, cloud2)`
+
+Interpolates field from cloud1 to cloud2 given that their nodes might be numbered differently
+
+Args:
+    field (Float[Array, "dim"]): The field to interpolate
+    cloud1 (Cloud): The cloud from which to interpolate
+    cloud2 (Cloud): The cloud to which to interpolate. Must be same type as cloud1, but with different numbering of node, i.e. different boundary conditions
+
+Raises:
+    AssertionError: The two clouds do not contain the same number of nodes
+
+Returns:
+    Float[Array, "dim"]: The interpolated field

@@ -1,0 +1,5 @@
+# utils.multiquadric { #updes.utils.multiquadric }
+
+`utils.multiquadric(x, center, eps=1.0)`
+
+Hardy's Multiquadric RBF

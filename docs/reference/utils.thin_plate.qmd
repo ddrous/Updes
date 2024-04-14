@@ -1,0 +1,5 @@
+# utils.thin_plate { #updes.utils.thin_plate }
+
+`utils.thin_plate(x, center, a=1)`
+
+Thin Plate Spline RBF

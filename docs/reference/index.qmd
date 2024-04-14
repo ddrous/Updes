@@ -1,10 +1,76 @@
 # Function reference {.doc .doc-index}
 
-## Some functions
+## Utility Functions
 
-Functions to inspect docstrings.
+Functions to help build other functions in the package.
 
 | | |
 | --- | --- |
-| [operators.pde_solver](operators.pde_solver.qmd#updes.operators.pde_solver) | Solve a PDE  |
+| [utils.distance](utils.distance.qmd#updes.utils.distance) | Euclidean distance between two points. |
+| [utils.multiquadric](utils.multiquadric.qmd#updes.utils.multiquadric) | Hardy's Multiquadric RBF |
+| [utils.gaussian](utils.gaussian.qmd#updes.utils.gaussian) | Gaussian RBF |
+| [utils.inverse_multiquadric](utils.inverse_multiquadric.qmd#updes.utils.inverse_multiquadric) | Inverse Multiquadric RBF |
+| [utils.polyharmonic](utils.polyharmonic.qmd#updes.utils.polyharmonic) | Polyharmonic Spline RBF |
+| [utils.thin_plate](utils.thin_plate.qmd#updes.utils.thin_plate) | Thin Plate Spline RBF |
+| [utils.make_nodal_rbf](utils.make_nodal_rbf.qmd#updes.utils.make_nodal_rbf) | A function that returns the value of the RBF at a given point x, with respect to a given node. The RBF is tuned to the given node. |
+| [utils.make_monomial](utils.make_monomial.qmd#updes.utils.make_monomial) | A function that returns the value of a monomial at a given point x. |
+| [utils.make_all_monomials](utils.make_all_monomials.qmd#updes.utils.make_all_monomials) | A function that returns up to a certain number of monomials |
+| [utils.compute_nb_monomials](utils.compute_nb_monomials.qmd#updes.utils.compute_nb_monomials) | Computes the number of monomials of dregree less than 'max_degree', in dimension 'problem_dimension' |
+| [utils.plot](utils.plot.qmd#updes.utils.plot) | Wrapper function for matplotlib and seaborn |
+| [utils.RK4](utils.RK4.qmd#updes.utils.RK4) | Numerical integration with RK4 and fixed-time stepping, but with fine subdivisions of the evaluation time intervals |
+
+## Cloud Module
+
+Functions related to building the cloud of points
+
+| | |
+| --- | --- |
 | [cloud.Cloud](cloud.Cloud.qmd#updes.cloud.Cloud) | A class to store the meshfree cloud of points and related properties |
+| [cloud.SquareCloud](cloud.SquareCloud.qmd#updes.cloud.SquareCloud) | A class to store a cloud of (scattered or regular) points on a unit square |
+| [cloud.GmshCloud](cloud.GmshCloud.qmd#updes.cloud.GmshCloud) | A class to store the cloud of points issued from GMSH and related properties |
+
+## Assembly Module
+
+Functions related to assembling the matrices needed for the PDE solve
+
+| | |
+| --- | --- |
+| [assembly.assemble_Phi](assembly.assemble_Phi.qmd#updes.assembly.assemble_Phi) | Assemble the collocation matrix Phi (see equation 5) from Shahane et al. |
+| [assembly.assemble_P](assembly.assemble_P.qmd#updes.assembly.assemble_P) | Assemble the polynomial matrix P (see equation 6 from Shahane et al.) |
+| [assembly.assemble_A](assembly.assemble_A.qmd#updes.assembly.assemble_A) | Assemble the matrix A (see equation 4 from Shahane et al.) |
+| [assembly.assemble_invert_A](assembly.assemble_invert_A.qmd#updes.assembly.assemble_invert_A) | Assembles the inverts of the matrix A |
+| [assembly.assemble_op_Phi_P](assembly.assemble_op_Phi_P.qmd#updes.assembly.assemble_op_Phi_P) | Assembles op(Phi) and op(P), the collocation and polynomial matrices after a differential operator is applied to internal nodes |
+| [assembly.assemble_bd_Phi_P](assembly.assemble_bd_Phi_P.qmd#updes.assembly.assemble_bd_Phi_P) | Assembles bd(Phi) and bd(P), the collocation and polynomial matrices after boundary conditions are applied to boundary nodes |
+| [assembly.assemble_B](assembly.assemble_B.qmd#updes.assembly.assemble_B) | Assemble matrix B using opPhi, bdPhi, opP, bdP, and A, see equation (*) from Shahane et al. |
+| [assembly.assemble_q](assembly.assemble_q.qmd#updes.assembly.assemble_q) | Assemble the right hand side q using the given operator (See equation * from Shahane et al.) |
+| [assembly.core_compute_coefficients](assembly.core_compute_coefficients.qmd#updes.assembly.core_compute_coefficients) | Find nodal and polynomial coefficients for scalar field directly from the number of monomials |
+| [assembly.compute_coefficients](assembly.compute_coefficients.qmd#updes.assembly.compute_coefficients) | Find nodal and polynomial coefficients for scalar field |
+| [assembly.get_field_coefficients](assembly.get_field_coefficients.qmd#updes.assembly.get_field_coefficients) | Find nodal and polynomial coefficients for scalar field. Alias of compute_coefficients() |
+
+## Operators Module
+
+Functions related to the operators used in the PDE solve
+
+| | |
+| --- | --- |
+| [operators.nodal_value](operators.nodal_value.qmd#updes.operators.nodal_value) | Computes the rbf or polynomial value at position x |
+| [operators.nodal_gradient](operators.nodal_gradient.qmd#updes.operators.nodal_gradient) | Computes the gradient of the rbf or polynomial at position x |
+| [operators.nodal_laplacian](operators.nodal_laplacian.qmd#updes.operators.nodal_laplacian) | Computes the laplacian as the trace of the jacobian of the gradient of the rbf or polynomial at position x |
+| [operators.nodal_div_grad](operators.nodal_div_grad.qmd#updes.operators.nodal_div_grad) | Computes the laplacian as the divergence of the gradient of the rbf or polynomial at position x |
+| [operators.value](operators.value.qmd#updes.operators.value) | Computes the value of the field (given by its coefficients) at position x |
+| [operators.gradient](operators.gradient.qmd#updes.operators.gradient) | Computes the gradient of the field (given by its coefficients) at position x |
+| [operators.gradient_vals](operators.gradient_vals.qmd#updes.operators.gradient_vals) | Computes the gradient of the field (given by its values) at position x |
+| [operators.cartesian_gradient](operators.cartesian_gradient.qmd#updes.operators.cartesian_gradient) | Computes the gradient of the field (given by its values) at a specific node of a cartesian grid, using finite differences |
+| [operators.divergence](operators.divergence.qmd#updes.operators.divergence) | Computes the divergence of the vector field (given by its coefficients) at position x |
+| [operators.laplacian](operators.laplacian.qmd#updes.operators.laplacian) | Computes the laplacian of the field (given by its coefficients) at position x |
+| [operators.laplacian_vals](operators.laplacian_vals.qmd#updes.operators.laplacian_vals) | Computes the laplacian of the field (given by its values) at position x |
+| [operators.integrate_field](operators.integrate_field.qmd#updes.operators.integrate_field) | Integrate the field (given by its coefficients) over the 2D square cloud domain, using the midpoint rule: |
+| [operators.interpolate_field](operators.interpolate_field.qmd#updes.operators.interpolate_field) | Interpolates field from cloud1 to cloud2 given that their nodes might be numbered differently |
+| [operators.pde_solver](operators.pde_solver.qmd#updes.operators.pde_solver) | Solves a PDE using radial basis functions |
+| [operators.pde_solver_jit](operators.pde_solver_jit.qmd#updes.operators.pde_solver_jit) | PDE solver just-in-time compiled with respect to the boundary conditions |
+| [operators.pde_multi_solver](operators.pde_multi_solver.qmd#updes.operators.pde_multi_solver) | Solves a system of (non-linear) PDEs using an iterative approach for radial basis functions (see pde_solver for details on scalar PDEs) |
+| [operators.enforce_cartesian_gradient_neumann](operators.enforce_cartesian_gradient_neumann.qmd#updes.operators.enforce_cartesian_gradient_neumann) | Sets the gradient at every neumann node using catesian grid |
+| [operators.duplicate_robin_coeffs](operators.duplicate_robin_coeffs.qmd#updes.operators.duplicate_robin_coeffs) | Duplicate the Robin coefficients to the nodes of the facets they are applied to |
+| [operators.apply_neumann_conditions](operators.apply_neumann_conditions.qmd#updes.operators.apply_neumann_conditions) | Enforces the Neumann boundary conditions to the field |
+| [operators.zerofy_periodic_cond](operators.zerofy_periodic_cond.qmd#updes.operators.zerofy_periodic_cond) | Zero out the periodic boundary conditions (this is aplied before the PDE solve, to overwrite any value set by the user) |
+| [operators.boundary_conditions_func_to_arr](operators.boundary_conditions_func_to_arr.qmd#updes.operators.boundary_conditions_func_to_arr) | Convert the given boundary conditions from functions to an array |

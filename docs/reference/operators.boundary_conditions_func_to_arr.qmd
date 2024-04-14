@@ -1,0 +1,5 @@
+# operators.boundary_conditions_func_to_arr { #updes.operators.boundary_conditions_func_to_arr }
+
+`operators.boundary_conditions_func_to_arr(boundary_conditions, cloud)`
+
+Convert the given boundary conditions from functions to an array

@@ -1,0 +1,5 @@
+# utils.inverse_multiquadric { #updes.utils.inverse_multiquadric }
+
+`utils.inverse_multiquadric(x, center, eps=1.0)`
+
+Inverse Multiquadric RBF

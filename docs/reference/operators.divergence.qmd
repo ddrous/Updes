@@ -1,0 +1,14 @@
+# operators.divergence { #updes.operators.divergence }
+
+`operators.divergence(x, field, centers, rbf=None, clip_val=None)`
+
+Computes the divergence of the vector field (given by its coefficients) at position x
+
+Args:
+    x (Float[Array, "dim"]): The position at which to compute the divergence value
+    centers (Float[Array, "nb_centers, dim"]): The centroids of the RBF to use
+    rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.)
+    clip_val (float, optional): The limit to which to clip the value to avoid blowup. Defaults to None.
+
+Returns:
+    float: The divergence of field at x

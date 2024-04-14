@@ -1,0 +1,12 @@
+# utils.make_monomial { #updes.utils.make_monomial }
+
+`utils.make_monomial(x, id)`
+
+A function that returns the value of a monomial at a given point x.
+
+Args:
+    x (Float[Array, "dim"]): The point at which the monomial is to be evaluated.
+    id (int): The id of the monomial to be evaluated.
+
+Returns:
+    float: The value of the monomial at the given point x.

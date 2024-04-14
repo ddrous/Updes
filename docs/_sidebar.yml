@@ -3,8 +3,59 @@ website:
   - contents:
     - reference/index.qmd
     - contents:
-      - reference/operators.pde_solver.qmd
+      - reference/utils.distance.qmd
+      - reference/utils.multiquadric.qmd
+      - reference/utils.gaussian.qmd
+      - reference/utils.inverse_multiquadric.qmd
+      - reference/utils.polyharmonic.qmd
+      - reference/utils.thin_plate.qmd
+      - reference/utils.make_nodal_rbf.qmd
+      - reference/utils.make_monomial.qmd
+      - reference/utils.make_all_monomials.qmd
+      - reference/utils.compute_nb_monomials.qmd
+      - reference/utils.plot.qmd
+      - reference/utils.RK4.qmd
+      section: Utility Functions
+    - contents:
       - reference/cloud.Cloud.qmd
-      section: Some functions
+      - reference/cloud.SquareCloud.qmd
+      - reference/cloud.GmshCloud.qmd
+      section: Cloud Module
+    - contents:
+      - reference/assembly.assemble_Phi.qmd
+      - reference/assembly.assemble_P.qmd
+      - reference/assembly.assemble_A.qmd
+      - reference/assembly.assemble_invert_A.qmd
+      - reference/assembly.assemble_op_Phi_P.qmd
+      - reference/assembly.assemble_bd_Phi_P.qmd
+      - reference/assembly.assemble_B.qmd
+      - reference/assembly.assemble_q.qmd
+      - reference/assembly.core_compute_coefficients.qmd
+      - reference/assembly.compute_coefficients.qmd
+      - reference/assembly.get_field_coefficients.qmd
+      section: Assembly Module
+    - contents:
+      - reference/operators.nodal_value.qmd
+      - reference/operators.nodal_gradient.qmd
+      - reference/operators.nodal_laplacian.qmd
+      - reference/operators.nodal_div_grad.qmd
+      - reference/operators.value.qmd
+      - reference/operators.gradient.qmd
+      - reference/operators.gradient_vals.qmd
+      - reference/operators.cartesian_gradient.qmd
+      - reference/operators.divergence.qmd
+      - reference/operators.laplacian.qmd
+      - reference/operators.laplacian_vals.qmd
+      - reference/operators.integrate_field.qmd
+      - reference/operators.interpolate_field.qmd
+      - reference/operators.pde_solver.qmd
+      - reference/operators.pde_solver_jit.qmd
+      - reference/operators.pde_multi_solver.qmd
+      - reference/operators.enforce_cartesian_gradient_neumann.qmd
+      - reference/operators.duplicate_robin_coeffs.qmd
+      - reference/operators.apply_neumann_conditions.qmd
+      - reference/operators.zerofy_periodic_cond.qmd
+      - reference/operators.boundary_conditions_func_to_arr.qmd
+      section: Operators Module
     id: reference
   - id: dummy-sidebar

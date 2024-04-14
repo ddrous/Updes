@@ -1,0 +1,21 @@
+# utils.RK4 { #updes.utils.RK4 }
+
+`utils.RK4(fun, t_span, y0, *args, t_eval=None, subdivisions=1, **kwargs)`
+
+Numerical integration with RK4 and fixed-time stepping, but with fine subdivisions of the evaluation time intervals
+
+Args:
+    fun (Callable): The function to be integrated.
+    y0 (Float[Array]): The initial condition.
+    t_span (Tuple): The time interval for which the integration is to be performed.
+    t_eval (Float[Array]): The time points at which the solution is to be evaluated.
+    subdivisions (int): To improve stability, each interval in t_eval is divided into this many subdivisions. Consider increasing this if you obtain NaNs.
+    *args: Additional arguments to be passed to the function.
+    **kwargs: Additional keyword arguments to be passed to the function.
+
+Raises:
+    Warning: if t_span[0] is None.
+    ValueError: if t_eval is None and t_span[1] is None.
+
+Returns:
+    Float[Array, "nb_time_steps"]: The solution at the time points in t_eval.

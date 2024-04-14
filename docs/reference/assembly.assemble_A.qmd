@@ -1,0 +1,13 @@
+# assembly.assemble_A { #updes.assembly.assemble_A }
+
+`assembly.assemble_A(cloud, rbf, nb_monomials=2)`
+
+Assemble the matrix A (see equation 4 from Shahane et al.)
+
+Args:
+    cloud (Cloud): The cloud of points to use, along with all required information
+    rbf (callable, optional): The radial basis function to use
+    nb_monomials (int): The number of monomials to use, with increasing degree. Defaults to 2.
+
+Returns:
+    Float[Array, "nb_nodes+nb_monomials, nb_nodes+nb_monomials"]: The matrix A

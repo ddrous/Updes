@@ -16,8 +16,8 @@ import math
 import random
 
 
-## Euclidian distance
 def distance(node1, node2):
+    """ Euclidean distance between two points. """
     diff = node1 - node2
     return jnp.sqrt(diff.T @ diff)
 
@@ -27,31 +27,31 @@ def print_line_by_line(dictionary):
     for k, v in dictionary.items():
         print("\t", k,":",v)
 
-## Hardy's Multiquadric RBF
 def multiquadric_func(r, eps):
     return jnp.sqrt(1 + (eps*r)**2)
 @jax.jit
 def multiquadric(x, center, eps=1.):
+    """ Hardy's Multiquadric RBF """
     return multiquadric_func(distance(x, center), eps)
 
-## Inverse Multiquadric RBF
 def inv_multiquadric_func(r, eps):
     return 1./ jnp.sqrt(1 + (eps*r)**2)
 @jax.jit
 def inverse_multiquadric(x, center, eps=1.):
+    """ Inverse Multiquadric RBF """
     return inv_multiquadric_func(distance(x, center), eps)
 
-## Gaussian RBF
 def gaussian_func(r, eps):
     return jnp.exp(-(eps * r)**2)
 def gaussian(x, center, eps=1.):
+    """ Gaussian RBF """
     return gaussian_func(distance(x, center), eps)
 
-## Polyharmonic Spline RBF
 def polyharmonic_func(r, a):
     return r**(2*a+1)
 @jax.jit
 def polyharmonic(x, center, a=1):
+    """ Polyharmonic Spline RBF """
     return polyharmonic_func(distance(x, center), a)
 
 ## Gradient of Polyharmonic Spline RBF
@@ -65,6 +65,7 @@ def thin_plate_func(r, a):
     return jnp.nan_to_num(jnp.log(r) * r**(2*a), neginf=0., posinf=0.)
 @jax.jit
 def thin_plate(x, center, a=1):
+    """ Thin Plate Spline RBF """
     return thin_plate_func(distance(x, center), a)
 
 
@@ -99,6 +100,7 @@ def make_monomial(x, id):
     Returns:
         float: The value of the monomial at the given point x.
     """
+    if id == 0:
         return 1.0
     elif id == 1:
         return x[0]
@@ -198,7 +200,7 @@ def dataloader(array, batch_size, key):
 
 
 def RK4(fun, t_span, y0, *args, t_eval=None, subdivisions=1, **kwargs):
-    """Numerical integration with a time interval subdivisions
+    """Numerical integration with RK4 and fixed-time stepping, but with fine subdivisions of the evaluation time intervals
 
     Args:
         fun (Callable): The function to be integrated.

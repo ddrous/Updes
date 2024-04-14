@@ -365,6 +365,9 @@ class Cloud(object):
 
 
 class SquareCloud(Cloud):
+    """ A class to store a cloud of (scattered or regular) points on a unit square """
+
+
     def __init__(self, Nx=7, Ny=5, noise_key=None, **kwargs):
         """Initializes a unit square cloud of points
 

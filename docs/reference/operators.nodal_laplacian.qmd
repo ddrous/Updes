@@ -1,0 +1,14 @@
+# operators.nodal_laplacian { #updes.operators.nodal_laplacian }
+
+`operators.nodal_laplacian(x, center=None, rbf=None, monomial=None)`
+
+Computes the laplacian as the trace of the jacobian of the gradient of the rbf or polynomial at position x
+
+Args:
+    x (Float[Array, "dim"]): The position at which to evaluate the laplacian rbf or polynomial
+    center (Float[Array, "dim"]): The centroid of the RBF if used. (Currently mandadatory, despite the signature.)
+    rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.)
+    monomial (callable): The monomial to use. (Currently mandadatory, despite the signature.)
+
+Returns:
+    float: The value of the laplacian rbf or polynomial at x

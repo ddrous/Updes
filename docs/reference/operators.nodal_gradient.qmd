@@ -1,0 +1,14 @@
+# operators.nodal_gradient { #updes.operators.nodal_gradient }
+
+`operators.nodal_gradient(x, center=None, rbf=None, monomial=None)`
+
+Computes the gradient of the rbf or polynomial at position x
+
+Args:
+    x (Float[Array, "dim"]): The position at which to evaluate the gradient rbf or polynomial
+    center (Float[Array, "dim"]): The centroid of the RBF if used. (Currently mandadatory, despite the signature.)
+    rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.)
+    monomial (callable): The monomial to use. (Currently mandadatory, despite the signature.)
+
+Returns:
+    Float[Array, "dim"]: The value of the gradient rbf or polynomial at x

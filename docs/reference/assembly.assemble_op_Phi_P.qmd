@@ -1,0 +1,15 @@
+# assembly.assemble_op_Phi_P { #updes.assembly.assemble_op_Phi_P }
+
+`assembly.assemble_op_Phi_P(operator, cloud, rbf, nb_monomials, args)`
+
+Assembles op(Phi) and op(P), the collocation and polynomial matrices after a differential operator is applied to internal nodes
+
+Args:
+    operator (callable): the differential operator to apply
+    cloud (Cloud): the cloud of points to use
+    rbf (callable): the radial basis function to use
+    nb_monomials (int): the number of monomials to use
+    args (list): the fields to use in the aplication of the operator. Can be either the field values themselves or their coefficients
+
+Returns:
+    tuple(Float[Array, "nb_internal_nodes nb_nodes"], Float[Array, "nb_internal_nodes nb_monomials"]): The internal operator matrices

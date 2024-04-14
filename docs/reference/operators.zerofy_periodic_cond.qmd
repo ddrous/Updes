@@ -1,0 +1,5 @@
+# operators.zerofy_periodic_cond { #updes.operators.zerofy_periodic_cond }
+
+`operators.zerofy_periodic_cond(boundary_conditions, cloud)`
+
+Zero out the periodic boundary conditions (this is aplied before the PDE solve, to overwrite any value set by the user)

@@ -1,0 +1,12 @@
+# operators.integrate_field { #updes.operators.integrate_field }
+
+`operators.integrate_field(field, cloud, rbf, max_degree)`
+
+Integrate the field (given by its coefficients) over the 2D square cloud domain, using the midpoint rule:
+1. Identify the small squares in the domain (all identical)
+2. Get the field value at the center of each square
+3. Account for border and corner values: https://stackoverflow.com/a/62991037/8140182
+4. Compute the approximate integral
+
+Returns:
+    float: the integral of the field over the domain

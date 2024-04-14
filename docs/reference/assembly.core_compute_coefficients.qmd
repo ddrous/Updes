@@ -1,0 +1,5 @@
+# assembly.core_compute_coefficients { #updes.assembly.core_compute_coefficients }
+
+`assembly.core_compute_coefficients(field, cloud, rbf, nb_monomials)`
+
+Find nodal and polynomial coefficients for scalar field directly from the number of monomials

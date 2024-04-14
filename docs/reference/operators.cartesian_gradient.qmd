@@ -1,0 +1,14 @@
+# operators.cartesian_gradient { #updes.operators.cartesian_gradient }
+
+`operators.cartesian_gradient(node_id, field, cloud, clip_val=None)`
+
+Computes the gradient of the field (given by its values) at a specific node of a cartesian grid, using finite differences
+
+Args:
+    node_id (int): The node at which to conmpute the gradient value
+    field (Float[Array, "nb_grid_points"]): The field to use for the gradient computation
+    cloud (Cloud): The cloud of points to use: must be a square grid
+    clip_val (float, optional): The limit to which to clip the value to avoid blowup. Defaults to None.
+
+Returns:
+    Float[Array, "dim"]: The gradient of the field at x

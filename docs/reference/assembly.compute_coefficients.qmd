@@ -1,0 +1,5 @@
+# assembly.compute_coefficients { #updes.assembly.compute_coefficients }
+
+`assembly.compute_coefficients(field, cloud, rbf, max_degree)`
+
+Find nodal and polynomial coefficients for scalar field

@@ -1,0 +1,5 @@
+# operators.duplicate_robin_coeffs { #updes.operators.duplicate_robin_coeffs }
+
+`operators.duplicate_robin_coeffs(boundary_conditions, cloud)`
+
+Duplicate the Robin coefficients to the nodes of the facets they are applied to
