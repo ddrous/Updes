@@ -14,18 +14,12 @@ class Cloud(object):
         """Initializes the cloud of points
 
         Args:
-            facet_types (dict): Name of the various facets of the domains (keys), and their types (values). Types can be : 
+            facet_types (dict): Name of the various facets (faces in 2D) of the domains (keys), and their boundary condition types (values). Types can be : 
             - "d" for dirichlet, 
             - "n" for neumann, 
             - "r" for robin, 
             - "p*" for periodic (where * is a letter of the alphabet to match a corresponding boundary).
-            support_size (int, str): The size of the support for each RBF centroid. Defaults to "max".
-
-        Raises:
-            ValueError: _description_
-
-        Returns:
-            _type_: _description_
+            support_size (int, str): The size of the support (the closest centroids) to evaluate RBFs at each point of the cloud. Defaults to "max" to use all other centroids in the cloud.
         """
 
         self.N = 0 
@@ -40,13 +34,12 @@ class Cloud(object):
         self.facet_nodes = {}
         self.facet_types = facet_types
         self.support_size = support_size
-        self.dim = 2                ## TODO: default problem dimension is 2
-        # self.facet_names = {}
-        self.facet_precedence = {k:i for i,(k,v) in enumerate(facet_types.items())}        ## Facet order of precedence usefull for corner nodes membership
+        self.dim = 2    ## TODO: implement 3-dimensional RBFs
 
-        ## For each periodic facet type we encounter, we append a letter of the alphabet to it. This is useful for renumbering nodes; and clean for the user.
-        # self.facet_types = {k:v+str(i) for i,(k,v) in enumerate(facet_types.items()) if v[0]=="p" else k:v}
-        ## Use for look here
+        ## Facet precedence usefull for determining which facet a corner node belongs to
+        self.facet_precedence = {k:i for i,(k,v) in enumerate(facet_types.items())}        
+
+        ## For each periodic facet we encounter, we append a number to its end. This is useful for renumbering nodes and matching them
         new_facet_types = {}
         for i, (k,v) in enumerate(facet_types.items()):
             if v[0]=="p":
@@ -55,89 +48,81 @@ class Cloud(object):
                 new_facet_types[k] = v
         self.facet_types = new_facet_types
 
-        # print("Facet types:", self.facet_types)
-
     def print_global_indices(self):
+        
+        """
+        Print the global ids of the cloud of points.
+
+        :return: A 2d array of the global indices
+        """
         print(jnp.flip(self.global_indices.T, axis=0))
 
     def average_spacing(self):
+        """ Computes the average distance between nodes in the cloud
+
+        Returns:
+            float: the mean distance between nodes
+        """
         spacings = []
         for i in range(self.N):
             for j in range(i, self.N):
                 spacings.append(distance(self.nodes[i], self.nodes[j]))
         return jnp.mean(jnp.array(spacings))
 
-    # @cache
-    # def get_sorted_nodes(self):       ## TODO LRU cache this, or turn it into @Property
-    #     """ Return numpy arrays """
-    #     sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
-    #     return jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
-
-    # def get_sorted_local_supports(self):
-    #     """ Return numpy arrays """
-    #     sorted_local_supports = sorted(self.local_supports.items(), key=lambda x:x[0])
-    #     return jnp.stack(list(dict(sorted_local_supports).values()), axis=-1).T
-    
-    # def get_sorted_outward_normals(self):
-    #     """ Return numpy arrays """
-    #     sorted_outward_normals = sorted(self.outward_normals.items(), key=lambda x:x[0])
-    #     return jnp.stack(list(dict(sorted_outward_normals).values()), axis=-1).T
-
     def sort_dict_by_keys(self, dictionnary):
-        """ Sorts a dictionnay whose values are jax arrays; and returns an array easily indexable """ ## TODO: add the warning, only use this after nodes have been renumbered
-        # sorted_dict = sorted(dictionnary.items(), key=lambda x:x[0])
-        # sorted_dict_stacked = np.stack(list(dict(sorted_dict).values()), axis=-1).T
-        # return jnp.asarray(sorted_dict_stacked)
+        """ Sorts a dictionnay whose values are jax arrays; and returns an array easily indexable """ 
+        
+        ## add the warning, only use this after nodes have been renumbered
+        if not hasattr(self, "renumbering_map"):
+            warnings.warn("Nodes have not been renumbered to place internals first, and boundary nodes afterwards. This function might not work properly")
+
         sorted_dict = sorted(dictionnary.items(), key=lambda x:x[0])
         sorted_dict = {k:jnp.array(v) for k,v in sorted_dict}
         return jnp.stack(list(dict(sorted_dict).values()), axis=-1).T
 
     def define_local_supports(self):
-        ## finds the 'support_size' nearest neighbords of each node
+        """Finds the 'support_size' nearest neighbords of each node. This function is aware of the renumbering of nodes and uses the renumbering map to renumber the local supports accordingly.
+
+        Raises:
+            AssertionError: When the support size not between 1 (included) and N-1 (included)
+
+        Returns:
+            None: creates aditional attribute 'local_supports' in the class
+        """
         self.local_supports = {}
 
         renumb_map = {i:k for i,k in enumerate(self.nodes.keys())}      ## TODO use the sorted nodes for this
         coords = jnp.stack(list(self.nodes.values()), axis=-1).T
 
-        # coords = jnp.stack([v for k,v in self.nodes.items() if self.node_types[k]=="i"], axis=-1).T
-        # print("This is coords", coords)
-
-
         if self.support_size == "max" or self.support_size == None:
-            # warnings.warn("Support size is too big. Setting it to maximum")
-            # self.support_size = self.N-1
             self.support_size = coords.shape[0]
         assert self.support_size > 0, "Support size must be strictly greater than 0"
         assert self.support_size <= self.N, "Support size must be strictly less than or equal the number of nodes"
 
-        #### BALL TREE METHOD       
+        ## Use BallTree for fast nearest neighbors search
         # ball_tree = KDTree(coords, leaf_size=40, metric='euclidean')
         ball_tree = BallTree(coords, leaf_size=40, metric='euclidean')
-        for i in range(self.N): 
-            # _, neighbours = ball_tree.query(coords[i:i+1], k=self.support_size+1)
+        for i in range(self.N):
             _, neighbours = ball_tree.query(self.nodes[i][jnp.newaxis], k=self.support_size)
-            neighbours = neighbours[0][1:]                    ## Result is a 2d list, with the first el itself
-            # neighbours = neighbours[0][:]                    ## Result is a 2d list, with the first el itself
+            neighbours = neighbours[0][1:]  ## Result is a 2d list, without the first el (the node itself)
             self.local_supports[renumb_map[i]] = [renumb_map[j] for j in neighbours]
-            # self.local_supports[i] = [j for j in neighbours]        ## TODO THIS IS THE WAY !! unlike what is up above
-
-            # in_nodes = [k for k in self.nodes.keys() if self.node_types[k]=="i"]
-            # self.local_supports[i] = in_nodes
-        # print("Local support of node 0:", self.nodes[renumb_map[0]], self.local_supports[0])
-        # for ii in self.local_supports[0]:
-        #     print(self.nodes[ii])
-        # print("Support size used:", len(self.local_supports[0]))
 
 
     def renumber_nodes(self):
-        """ Places the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards """
+        """Places the internal nodes at the top of the list, then the dirichlet, then neumann, then robin, then periodic nodes.
 
+        Raises:
+            ValueError: When an unknown node type is found
+
+        Returns:
+            None: creates additional attributes like: 'facet_nodes', 'renumbering_map' in the class. Also renumnbers the local supports, the outward normals, and the global indices
+        """
         i_nodes = []
         d_nodes = []
         n_nodes = []
         r_nodes = []
         p_nodes = {}
-        for i in range(self.N):         
+        for i in range(self.N):
             if self.node_types[i][0] == "i":
                 i_nodes.append(i)
             elif self.node_types[i][0] == "d":
@@ -152,12 +137,13 @@ class Cloud(object):
             else:
                 raise ValueError("Unknown node type")
 
-        ## Sort the keys of p_nodes before adding the values back to back 
+        ## Sort the keys of nodes with periodic bc before adding the values back to back 
         all_p_nodes = []
         for k in sorted(p_nodes.keys()):
             all_p_nodes += p_nodes[k]
 
-        new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes+r_nodes+all_p_nodes)}       ## Reads as: node v is now node k
+        ## Renumber the nodes such that it reads as: node v is now node k
+        new_numb = {v:k for k, v in enumerate(i_nodes+d_nodes+n_nodes+r_nodes+all_p_nodes)}
 
         if hasattr(self, "global_indices_rev"):
             self.global_indices_rev = {new_numb[k]: v for k, v in self.global_indices_rev.items()}
@@ -172,11 +158,6 @@ class Cloud(object):
             self.local_supports = jax.tree_util.tree_map(lambda i:new_numb[i], self.local_supports)
             self.local_supports = {new_numb[k]:v for k,v in self.local_supports.items()}
 
-            # print("Renumbered or not:", self.local_supports.keys())
-            # print()
-
-            # self.local_supports = jnp.array(np.stack(list(self.local_supports.values()), axis=0))   ## Needed for JIT. Because renumbering only happens at cloud creation, this is not a problem 
-
         self.facet_nodes = jax.tree_util.tree_map(lambda i:new_numb[i], self.facet_nodes)
         if hasattr(self, 'facet_tag_nodes'):
             self.facet_tag_nodes = jax.tree_util.tree_map(lambda i:new_numb[i], self.facet_tag_nodes)
@@ -184,19 +165,14 @@ class Cloud(object):
         if hasattr(self, 'outward_normals'):
             self.outward_normals = {new_numb[k]:v for k,v in self.outward_normals.items()}
 
-            # print("Renumbered or not:", self.outward_normals.keys())
-            # print()
-
-            # if len(self.outward_normals) > 0:
-            #     self.outward_normals = jnp.array(np.stack(list(self.outward_normals.values()), axis=0))     ## Needed for JIT
-
         self.renumbering_map = new_numb
 
 
 
     def visualize_cloud(self, ax=None, title="Cloud", xlabel=r'$x$', ylabel=r'$y$', legend_size=8, figsize=(5.5,5), **kwargs):
         import matplotlib.pyplot as plt
-        ## TODO Color and print important stuff appropriately
+        """Visualizes the cloud of points
+        """
 
         if ax is None:
             fig = plt.figure(figsize=figsize)
@@ -213,6 +189,7 @@ class Cloud(object):
             ax.scatter(x=coords[Ni+Nd:Ni+Nd+Nn, 0], y=coords[Ni+Nd:Ni+Nd+Nn, 1], c="g", label="neumann", **kwargs)
         if Ni+Nd+Nn < self.N:
             ax.scatter(x=coords[Ni+Nd+Nn:, 0], y=coords[Ni+Nd+Nn:, 1], c="b", label="robin", **kwargs)
+        ## TODO: Add periodic nodes
 
         if xlabel:
             ax.set_xlabel(xlabel)
@@ -227,14 +204,14 @@ class Cloud(object):
 
     def visualize_normals(self, ax=None, title="Normal vectors", xlabel=r'$x$', ylabel=r'$y$', figsize=(5.5,5), zoom_region=None, **kwargs):
         import matplotlib.pyplot as plt
-        """ Displays the outward normal vectors on Neumann and Robin boundaries"""
+        """Displays the outward normal vectors on Neumann and Robin boundaries"""
 
         if ax is None:
             fig = plt.figure(figsize=figsize)
             ax = fig.add_subplot(1, 1, 1)
 
         concerned_nodes = [i for i in range(self.N) if self.node_types[i] in ["n", "r"]]
-        if len(concerned_nodes)==0:  ## Nothing to plot 
+        if len(concerned_nodes)==0:  ## Nothing to plot
             return ax
 
         coords = jnp.stack([self.nodes[node_id] for node_id in concerned_nodes], axis=0)
@@ -259,11 +236,10 @@ class Cloud(object):
 
     def visualize_field(self, field, projection="2d", title="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, colorbar=True, ax=None, figsize=(6,5), extend="neither", **kwargs):
         import matplotlib.pyplot as plt
+        """Visualizes the field on the cloud of points"""
 
-        # sorted_nodes = sorted(self.nodes.items(), key=lambda x:x[0])
-        # coords = jnp.stack(list(dict(sorted_nodes).values()), axis=-1).T
         x, y = self.sorted_nodes[:, 0], self.sorted_nodes[:, 1]
-        if len(field.shape) > 1:        ## If field is in tensorshpa, e.g. (N, 1)
+        if len(field.shape) > 1:    ## If field has superfluous dimensions, e.g. (N, 1)
             field = field[:, 0, ...]
 
         if ax is None:
@@ -298,11 +274,9 @@ class Cloud(object):
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         from matplotlib.animation import FuncAnimation
-        import os
-        """ Animation of signals """
+        """Animation of each field in the list of fields on the cloud of points"""
 
-        ## If not array already
-        # signals = [jnp.stack(field, axis=0) for field in fields if isinstance(field, list)]
+        ## Convert to arrays if not array already
         signals = []
         for field in fields:
             if isinstance(field, list):
@@ -353,7 +327,7 @@ class Cloud(object):
                 ax[i].set_xlabel(xlabel)
             ax[i].set_ylabel(ylabel)
 
-        ## ANimation function
+        ## Animation function
         def animate(frame):
             imgs = [ax[i].tricontourf(x, y, signals[i][frame], levels=levels, vmin=minmaxs[i][0], vmax=minmaxs[i][1], cmap=cmaps[i], extend='min', **kwargs) for i in range(nb_signals)]
             # plt.suptitle("iter = "+str(i), size="large", y=0.95)      ## TODO doesn't work well with tight layout
@@ -392,17 +366,22 @@ class Cloud(object):
 
 class SquareCloud(Cloud):
     def __init__(self, Nx=7, Ny=5, noise_key=None, **kwargs):
+        """Initializes a unit square cloud of points
+
+        Args:
+            Nx (int, optional): Number of points alont the x direction. Defaults to 7.
+            Ny (int, optional): Number of points alont the y direction. Defaults to 5.
+            noise_key (int, optional): An optional noise key to scramble the points' locations. Defaults to None.
+        """
         super().__init__(**kwargs)
 
         self.Nx = Nx
         self.Ny = Ny
         self.N = self.Nx*self.Ny
-        # self.facet_types = facet_types
 
         self.define_global_indices()
         self.define_node_types()
         self.define_node_coordinates(noise_key)
-        # if self.support_size:
         self.define_local_supports()
         self.define_outward_normals()
         self.renumber_nodes()
@@ -414,12 +393,10 @@ class SquareCloud(Cloud):
         if len(self.outward_normals) > 0:
             self.sorted_outward_normals = self.sort_dict_by_keys(self.outward_normals)
 
-        # self.visualise_cloud()        ## TODO Finsih this properly
-
 
     def define_global_indices(self):
-        ## defines the 2d to 1d indices and vice-versa
-
+        """Defines the 2d coordinates to 1d indices map and vice-versa
+        """
         self.global_indices = jnp.zeros((self.Nx, self.Ny), dtype=int)
         self.global_indices_rev = {}
 
@@ -432,14 +409,11 @@ class SquareCloud(Cloud):
 
 
     def define_node_coordinates(self, noise_key):
-        """ Can be used to redefine coordinates for performance study """
+        """ Calculates the coordinates of the nodes in the square domain. Optionally adds noise to the coordinates """
         x = jnp.linspace(0, 1., self.Nx)
         y = jnp.linspace(0, 1., self.Ny)
         xx, yy = jnp.meshgrid(x, y)
 
-        # if noise_key is None:
-        #     noise_key = jax.random.PRNGKey(42)
- 
         if noise_key is not None:
             key = jax.random.split(noise_key, self.N)
             delta_noise = min((x[1]-x[0], y[1]-y[0])) / 2.   ## To make sure nodes don't go into each other
@@ -451,7 +425,7 @@ class SquareCloud(Cloud):
                 global_id = int(self.global_indices[i,j])
 
                 if (self.node_types[global_id] not in ["d", "n", "r"]) and (noise_key is not None):
-                    noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)         ## Just add some noisy noise !!
+                    noise = jax.random.uniform(key[global_id], (2,), minval=-delta_noise, maxval=delta_noise)
                 else:
                     noise = jnp.zeros((2,))
 
@@ -459,10 +433,10 @@ class SquareCloud(Cloud):
 
 
     def define_node_types(self):
-        """ Makes the boundaries for the square domain """
+        """ Defines the boundary dype for each node in the square domain """
 
         self.facet_nodes = {k:[] for k in self.facet_types.keys()}     ## List of nodes belonging to each facet
-        self.node_types = {}                              ## Coding structure: internal="i", dirichlet="d", neumann="n", external="e" (not supported yet)
+        self.node_types = {}    ## internal="i", dirichlet="d", neumann="n", robin="r", pediodic="p*"
 
         for i in range(self.N):
             [k, l] = list(self.global_indices_rev[i])
@@ -479,13 +453,12 @@ class SquareCloud(Cloud):
                 self.facet_nodes["West"].append(i)
                 self.node_types[i] = self.facet_types["West"]
             else:
-                self.node_types[i] = "i"       ## Internal node (not a boundary). But very very important!
+                self.node_types[i] = "i"       ## Internal node (not a boundary). But very very important to be numbered!
 
         self.Nd = 0
         self.Nn = 0
         self.Nr = 0
-        self.Np = {v[:-1]:0 for v in self.facet_types.values() if v[0]=="p"}    ## Number of nodes per periodic boundary
-        # print("I got here:", self.Np)
+        self.Np = {v[:-1]:0 for v in self.facet_types.values() if v[0]=="p"}    ## Number of nodes per periodic boundary id
 
         for f_id, f_type in self.facet_types.items():
             if f_type == "d":
@@ -495,20 +468,18 @@ class SquareCloud(Cloud):
             if f_type == "r":
                 self.Nr += len(self.facet_nodes[f_id])
             if f_type[0] == "p":
-                # print("I got here:", f_type, self.facet_nodes[f_id])
-                # print("Details here:", f_type, self.facet_nodes[f_id])
                 self.Np[f_type[:-1]] += len(self.facet_nodes[f_id])
+
         ## Get periodic count as a list sorted by keys
-        # print("I got here:", self.Np)
         self.Np = [self.Np[k] for k in sorted(self.Np.keys())]
 
         self.Ni = self.N - self.Nd - self.Nn - self.Nr - sum(self.Np)
 
-        # print("All counts:", self.N, self.Ni, self.Nd, self.Nn, self.Nr, self.Np)
 
     def define_outward_normals(self):
-        ## Makes the outward normal vectors to boundaries
-        bd_nodes = [k for k,v in self.node_types.items() if v[0] in ["n", "r", "p"]]   ## Neumann or Robin nodes
+        """ Makes the outward normal vectors to nodes on the boundaries
+        """
+        bd_nodes = [k for k,v in self.node_types.items() if v[0] in ["n", "r", "p"]]   ## Neumann, Robin, or Periodic nodes
         self.outward_normals = {}
 
         for i in bd_nodes:
@@ -522,8 +493,6 @@ class SquareCloud(Cloud):
             elif k==0:
                 n = jnp.array([-1., 0.])
 
-
-            # self.outward_normals[int(self.global_indices[k,l])] = jnp.array([nx, ny])
             self.outward_normals[int(self.global_indices[k,l])] = n
 
 
@@ -546,22 +515,27 @@ class SquareCloud(Cloud):
 
 
 class GmshCloud(Cloud):
-    """ Parses gmsh format 4.0.8, not the newer version """
+    """ A class to store the cloud of points issued from GMSH and related properties """
 
     def __init__(self, filename, mesh_save_location=None, **kwargs):
+        """ Initializes the cloud of points from a Gmsh mesh file
 
+        Args:
+            filename (str): a Gmsh mesh file in either .msh or .py format. 
+            - If a .msh file is provided, the mesh is loaded directly assuming the Gmsh format it was generated with is 4.0.8
+            - If a .py file is provided, the mesh is generated using the `gmsh` Python package with format 4.0.8, then saved.
+            mesh_save_location (str, optional): The path to save the .msh file if a .py file was provided. Defaults to None.
+        """
         super().__init__(**kwargs)
 
         self.get_meshfile(filename, mesh_save_location)
-        # self.facet_types = facet_types
 
         self.extract_nodes_and_boundary_type()
         self.define_outward_normals()
-        # if self.support_size:
         self.define_local_supports()
         self.renumber_nodes()
 
-        self.sorted_nodes = self.sort_dict_by_keys(self.nodes)  ## !TODO: Shall we delete the dictionary after this? It becomes useless !
+        self.sorted_nodes = self.sort_dict_by_keys(self.nodes)
 
         self.sorted_local_supports = self.sort_dict_by_keys(self.local_supports)
 
@@ -570,7 +544,12 @@ class GmshCloud(Cloud):
 
 
     def get_meshfile(self, filename, mesh_save_location):
-        ## If None, the mesh is saved in the same directory as the filename
+        """ Gets the definitive mesh file to work with
+
+        Args:
+            filename (str): see __init__()
+            mesh_save_location (str): see __init__(). If None, the mesh is saved in the same directory as the filename
+        """
         if mesh_save_location is None:
             mesh_save_location = os.path.dirname(filename)+"/"
 
@@ -583,7 +562,7 @@ class GmshCloud(Cloud):
 
 
     def extract_nodes_and_boundary_type(self):
-        """ Extract nodes and all boundary types """
+        """ Extract nodes and boundary types from a .msh file according to Gmsh format 4.0.8 """
 
         f = open(self.filename, "r")
 
@@ -700,12 +679,14 @@ class GmshCloud(Cloud):
         self.Nr = len({k:v for k,v in self.node_types.items() if v[0]=="r"})
         self.Nn = len({k:v for k,v in self.node_types.items() if v[0]=="n"})
 
-        # print("All counts:", self.N, self.Ni, self.Nd, self.Nn, self.Nr, self.Np, self.node_types)
-
 
 
     def define_outward_normals(self):
-        ## Use the Gmesh API        https://stackoverflow.com/a/59279502/8140182
+        """ Calculates (approximate) outward normal vectors to nodes on the boundaries. 
+        Raises:
+            AssertionError: When the mesh is not fine enough to compute normals
+        """
+        ## In 3D, we could use the Gmesh API: https://stackoverflow.com/a/59279502/8140182
 
         ## To get the closes internal point
         in_coords = jnp.stack([self.nodes[node_id] for node_id in range(self.N) if self.node_types[node_id] == "i"], axis=0)
@@ -714,7 +695,7 @@ class GmshCloud(Cloud):
 
         for f_tag, f_nodes in self.facet_tag_nodes.items():
 
-            if self.facet_types[self.facet_names[f_tag]][0] in ["n", "r", "p"]:      ### Only Neuman and Robin need normals !
+            if self.facet_types[self.facet_names[f_tag]][0] in ["n", "r", "p"]:      ### Only Neuman, Robin, and Periodic need normals !
                 assert len(f_nodes) >= 2, " Mesh not fine enough for normal computation "
 
                 ## Sort the nodes in this facet
