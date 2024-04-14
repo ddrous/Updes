@@ -136,7 +136,7 @@ plt.draw()
 def gray_scott_vector_field(t, U, *args):
     u, v = jnp.split(U, 2)
     sol_prev = [u, v]
-    sol_now = pde_multi_solver_unbounded(
+    sol_now = pde_multi_solver(
         diff_operators=[my_diff_operator_u, my_diff_operator_v],
         rhs_operators=[my_rhs_operator_u, my_rhs_operator_v],
         diff_args=[sol_prev, sol_prev],
