@@ -1,37 +1,387 @@
 [
   {
-    "objectID": "reference/operators.pde_solver.html",
-    "href": "reference/operators.pde_solver.html",
-    "title": "operators.pde_solver",
+    "objectID": "reference/utils.polyharmonic.html",
+    "href": "reference/utils.polyharmonic.html",
+    "title": "utils.polyharmonic",
     "section": "",
-    "text": "operators.pde_solver\noperators.pde_solver(diff_operator, rhs_operator, cloud, boundary_conditions, rbf, max_degree, diff_args=None, rhs_args=None)\nSolve a PDE cloud: the cloud of points on which the PDE is solved diff_operator: can take as input the coeffcients of a field diff_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the diff operators rhs_args: can be either coeffs or values of the fields. Ultimately, only coefficients will be passed the rhs operators"
+    "text": "utils.polyharmonic\nutils.polyharmonic(x, center, a=1)\nPolyharmonic Spline RBF"
   },
   {
-    "objectID": "reference/cloud.Cloud.html",
-    "href": "reference/cloud.Cloud.html",
-    "title": "cloud.Cloud",
+    "objectID": "reference/operators.cartesian_gradient.html",
+    "href": "reference/operators.cartesian_gradient.html",
+    "title": "operators.cartesian_gradient",
     "section": "",
-    "text": "cloud.Cloud(self, facet_types, support_size='max')\nA class to store the meshfree cloud of points and related properties\n\n\n\n\n\nName\nDescription\n\n\n\n\nrenumber_nodes\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards\n\n\nsort_dict_by_keys\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable\n\n\n\n\n\ncloud.Cloud.renumber_nodes()\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards\n\n\n\ncloud.Cloud.sort_dict_by_keys(dictionnary)\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable"
+    "text": "operators.cartesian_gradient\noperators.cartesian_gradient(node_id, field, cloud, clip_val=None)\nComputes the gradient of the field (given by its values) at a specific node of a cartesian grid, using finite differences\nArgs: node_id (int): The node at which to conmpute the gradient value field (Float[Array, “nb_grid_points”]): The field to use for the gradient computation cloud (Cloud): The cloud of points to use: must be a square grid clip_val (float, optional): The limit to which to clip the value to avoid blowup. Defaults to None.\nReturns: Float[Array, “dim”]: The gradient of the field at x"
   },
   {
-    "objectID": "reference/cloud.Cloud.html#methods",
-    "href": "reference/cloud.Cloud.html#methods",
-    "title": "cloud.Cloud",
+    "objectID": "reference/cloud.GmshCloud.html",
+    "href": "reference/cloud.GmshCloud.html",
+    "title": "cloud.GmshCloud",
     "section": "",
-    "text": "Name\nDescription\n\n\n\n\nrenumber_nodes\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards\n\n\nsort_dict_by_keys\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable\n\n\n\n\n\ncloud.Cloud.renumber_nodes()\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann: good for matrix afterwards\n\n\n\ncloud.Cloud.sort_dict_by_keys(dictionnary)\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable"
+    "text": "cloud.GmshCloud(self, filename, mesh_save_location=None, **kwargs)\nA class to store the cloud of points issued from GMSH and related properties\n\n\n\n\n\nName\nDescription\n\n\n\n\ndefine_outward_normals\nCalculates (approximate) outward normal vectors to nodes on the boundaries.\n\n\nextract_nodes_and_boundary_type\nExtract nodes and boundary types from a .msh file according to Gmsh format 4.0.8\n\n\nget_meshfile\nGets the definitive mesh file to work with\n\n\n\n\n\ncloud.GmshCloud.define_outward_normals()\nCalculates (approximate) outward normal vectors to nodes on the boundaries. Raises: AssertionError: When the mesh is not fine enough to compute normals\n\n\n\ncloud.GmshCloud.extract_nodes_and_boundary_type()\nExtract nodes and boundary types from a .msh file according to Gmsh format 4.0.8\n\n\n\ncloud.GmshCloud.get_meshfile(filename, mesh_save_location)\nGets the definitive mesh file to work with\nArgs: filename (str): see init() mesh_save_location (str): see init(). If None, the mesh is saved in the same directory as the filename"
+  },
+  {
+    "objectID": "reference/cloud.GmshCloud.html#methods",
+    "href": "reference/cloud.GmshCloud.html#methods",
+    "title": "cloud.GmshCloud",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\ndefine_outward_normals\nCalculates (approximate) outward normal vectors to nodes on the boundaries.\n\n\nextract_nodes_and_boundary_type\nExtract nodes and boundary types from a .msh file according to Gmsh format 4.0.8\n\n\nget_meshfile\nGets the definitive mesh file to work with\n\n\n\n\n\ncloud.GmshCloud.define_outward_normals()\nCalculates (approximate) outward normal vectors to nodes on the boundaries. Raises: AssertionError: When the mesh is not fine enough to compute normals\n\n\n\ncloud.GmshCloud.extract_nodes_and_boundary_type()\nExtract nodes and boundary types from a .msh file according to Gmsh format 4.0.8\n\n\n\ncloud.GmshCloud.get_meshfile(filename, mesh_save_location)\nGets the definitive mesh file to work with\nArgs: filename (str): see init() mesh_save_location (str): see init(). If None, the mesh is saved in the same directory as the filename"
+  },
+  {
+    "objectID": "reference/operators.pde_solver_jit.html",
+    "href": "reference/operators.pde_solver_jit.html",
+    "title": "operators.pde_solver_jit",
+    "section": "",
+    "text": "operators.pde_solver_jit\noperators.pde_solver_jit(diff_operator, rhs_operator, cloud, boundary_conditions, rbf, max_degree, diff_args=None, rhs_args=None)\nPDE solver just-in-time compiled with respect to the boundary conditions\nArgs: diff_operator (callable): The differential operator (the left-hand side of the PDE), evaluated at each internal point with respect to each RBF centroid seperately, i.e. nodal evaluation. rhs_operator (callable): The right-hand-side operator, evaluated at each node with respect to all centroids at once, i.e. global evaluation. cloud (Cloud): The cloud on which to solve the PDE boundary_conditions (dict): The boundary conditions to enforce, one for each facet given by either a function or an approiate vector rbf (callable): The radial basis function to use max_degree (int): The maximum degree of the polynomial to use in the RBF diff_args (list, optional): The arguments to pass to the differential operator. Defaults to None. rhs_args (list, optional): The arguments to pass to the right-hand-side operator. Defaults to None.\nReturns: SteadySol: A named tuple containing the values and coefficients of the solution, as well as the matrix used in the linear solve"
+  },
+  {
+    "objectID": "reference/operators.pde_multi_solver.html",
+    "href": "reference/operators.pde_multi_solver.html",
+    "title": "operators.pde_multi_solver",
+    "section": "",
+    "text": "operators.pde_multi_solver\noperators.pde_multi_solver(diff_operators, rhs_operators, cloud, boundary_conditions, rbf, max_degree, nb_iters=10, tol=1e-06, diff_args=None, rhs_args=None)\nSolves a system of (non-linear) PDEs using an iterative approach for radial basis functions (see pde_solver for details on scalar PDEs)\nArgs: diff_operators (list[callable]): The (nodal) differential operators (the left-hand side of the PDEs) rhs_operator (list[callable]): The (global) right-hand-side operator cloud (Cloud): The same cloud on which to solve the PDEs boundary_conditionss (list[dict]): The boundary conditions to enforce, one for each PDE rbf (callable): The radial basis function to use max_degree (int): The maximum degree of the polynomial to use in the RBF nb_iters (int, optional): The maximum number of iterations to use in the solver. Defaults to 10. tol (float, optional): The tolerance to check for convergence. Defaults to 1e-6. (Currently not used, because of JIT-issues) diff_args (list[list], optional): The arguments to pass to each differential operator. Defaults to list of Nones. rhs_args (list[list], optional): The arguments to pass to each right-hand-side operator. Defaults to list of None.\nRaises: AssertionError: The number of differential operators must match the number of right-hand side operators\nReturns: list[SteadySol]: A list of named named tuples containing the solutions for each PDE"
+  },
+  {
+    "objectID": "reference/operators.divergence.html",
+    "href": "reference/operators.divergence.html",
+    "title": "operators.divergence",
+    "section": "",
+    "text": "operators.divergence\noperators.divergence(x, field, centers, rbf=None, clip_val=None)\nComputes the divergence of the vector field (given by its coefficients) at position x\nArgs: x (Float[Array, “dim”]): The position at which to compute the divergence value centers (Float[Array, “nb_centers, dim”]): The centroids of the RBF to use rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.) clip_val (float, optional): The limit to which to clip the value to avoid blowup. Defaults to None.\nReturns: float: The divergence of field at x"
+  },
+  {
+    "objectID": "reference/assembly.core_compute_coefficients.html",
+    "href": "reference/assembly.core_compute_coefficients.html",
+    "title": "assembly.core_compute_coefficients",
+    "section": "",
+    "text": "assembly.core_compute_coefficients\nassembly.core_compute_coefficients(field, cloud, rbf, nb_monomials)\nFind nodal and polynomial coefficients for scalar field directly from the number of monomials"
+  },
+  {
+    "objectID": "reference/utils.make_nodal_rbf.html",
+    "href": "reference/utils.make_nodal_rbf.html",
+    "title": "utils.make_nodal_rbf",
+    "section": "",
+    "text": "utils.make_nodal_rbf\nutils.make_nodal_rbf(x, node, rbf)\nA function that returns the value of the RBF at a given point x, with respect to a given node. The RBF is tuned to the given node.\nArgs: x (Float[Array, “dim”]): The point at which the RBF is to be evaluated. node (Float[Array, “dim”]): The centroid with respect to which the RBF is evaluated. rbf (Callable): The RBF function to be used, with signature rbf(r) where r is the Euclidean distance between the two points\nReturns: float: The scalar value of the RBF at the given point x, with respect to the given node."
+  },
+  {
+    "objectID": "reference/operators.boundary_conditions_func_to_arr.html",
+    "href": "reference/operators.boundary_conditions_func_to_arr.html",
+    "title": "operators.boundary_conditions_func_to_arr",
+    "section": "",
+    "text": "operators.boundary_conditions_func_to_arr\noperators.boundary_conditions_func_to_arr(boundary_conditions, cloud)\nConvert the given boundary conditions from functions to an array"
+  },
+  {
+    "objectID": "reference/operators.enforce_cartesian_gradient_neumann.html",
+    "href": "reference/operators.enforce_cartesian_gradient_neumann.html",
+    "title": "operators.enforce_cartesian_gradient_neumann",
+    "section": "",
+    "text": "operators.enforce_cartesian_gradient_neumann\noperators.enforce_cartesian_gradient_neumann(field, grads, boundary_conditions, cloud, clip_val=None)\nSets the gradient at every neumann node using catesian grid"
   },
   {
     "objectID": "reference/index.html",
     "href": "reference/index.html",
     "title": "Function reference",
     "section": "",
-    "text": "Functions to inspect docstrings.\n\n\n\noperators.pde_solver\nSolve a PDE\n\n\ncloud.Cloud\nA class to store the meshfree cloud of points and related properties"
+    "text": "Functions to help build other functions in the package.\n\n\n\nutils.distance\nEuclidean distance between two points.\n\n\nutils.multiquadric\nHardy’s Multiquadric RBF\n\n\nutils.gaussian\nGaussian RBF\n\n\nutils.inverse_multiquadric\nInverse Multiquadric RBF\n\n\nutils.polyharmonic\nPolyharmonic Spline RBF\n\n\nutils.thin_plate\nThin Plate Spline RBF\n\n\nutils.make_nodal_rbf\nA function that returns the value of the RBF at a given point x, with respect to a given node. The RBF is tuned to the given node.\n\n\nutils.make_monomial\nA function that returns the value of a monomial at a given point x.\n\n\nutils.make_all_monomials\nA function that returns up to a certain number of monomials\n\n\nutils.compute_nb_monomials\nComputes the number of monomials of dregree less than ‘max_degree’, in dimension ‘problem_dimension’\n\n\nutils.plot\nWrapper function for matplotlib and seaborn\n\n\nutils.RK4\nNumerical integration with RK4 and fixed-time stepping, but with fine subdivisions of the evaluation time intervals\n\n\n\n\n\n\nFunctions related to building the cloud of points\n\n\n\ncloud.Cloud\nA class to store the meshfree cloud of points and related properties\n\n\ncloud.SquareCloud\nA class to store a cloud of (scattered or regular) points on a unit square\n\n\ncloud.GmshCloud\nA class to store the cloud of points issued from GMSH and related properties\n\n\n\n\n\n\nFunctions related to assembling the matrices needed for the PDE solve\n\n\n\nassembly.assemble_Phi\nAssemble the collocation matrix Phi (see equation 5) from Shahane et al.\n\n\nassembly.assemble_P\nAssemble the polynomial matrix P (see equation 6 from Shahane et al.)\n\n\nassembly.assemble_A\nAssemble the matrix A (see equation 4 from Shahane et al.)\n\n\nassembly.assemble_invert_A\nAssembles the inverts of the matrix A\n\n\nassembly.assemble_op_Phi_P\nAssembles op(Phi) and op(P), the collocation and polynomial matrices after a differential operator is applied to internal nodes\n\n\nassembly.assemble_bd_Phi_P\nAssembles bd(Phi) and bd(P), the collocation and polynomial matrices after boundary conditions are applied to boundary nodes\n\n\nassembly.assemble_B\nAssemble matrix B using opPhi, bdPhi, opP, bdP, and A, see equation (*) from Shahane et al.\n\n\nassembly.assemble_q\nAssemble the right hand side q using the given operator (See equation * from Shahane et al.)\n\n\nassembly.core_compute_coefficients\nFind nodal and polynomial coefficients for scalar field directly from the number of monomials\n\n\nassembly.compute_coefficients\nFind nodal and polynomial coefficients for scalar field\n\n\nassembly.get_field_coefficients\nFind nodal and polynomial coefficients for scalar field. Alias of compute_coefficients()\n\n\n\n\n\n\nFunctions related to the operators used in the PDE solve\n\n\n\noperators.nodal_value\nComputes the rbf or polynomial value at position x\n\n\noperators.nodal_gradient\nComputes the gradient of the rbf or polynomial at position x\n\n\noperators.nodal_laplacian\nComputes the laplacian as the trace of the jacobian of the gradient of the rbf or polynomial at position x\n\n\noperators.nodal_div_grad\nComputes the laplacian as the divergence of the gradient of the rbf or polynomial at position x\n\n\noperators.value\nComputes the value of the field (given by its coefficients) at position x\n\n\noperators.gradient\nComputes the gradient of the field (given by its coefficients) at position x\n\n\noperators.gradient_vals\nComputes the gradient of the field (given by its values) at position x\n\n\noperators.cartesian_gradient\nComputes the gradient of the field (given by its values) at a specific node of a cartesian grid, using finite differences\n\n\noperators.divergence\nComputes the divergence of the vector field (given by its coefficients) at position x\n\n\noperators.laplacian\nComputes the laplacian of the field (given by its coefficients) at position x\n\n\noperators.laplacian_vals\nComputes the laplacian of the field (given by its values) at position x\n\n\noperators.integrate_field\nIntegrate the field (given by its coefficients) over the 2D square cloud domain, using the midpoint rule:\n\n\noperators.interpolate_field\nInterpolates field from cloud1 to cloud2 given that their nodes might be numbered differently\n\n\noperators.pde_solver\nSolves a PDE using radial basis functions\n\n\noperators.pde_solver_jit\nPDE solver just-in-time compiled with respect to the boundary conditions\n\n\noperators.pde_multi_solver\nSolves a system of (non-linear) PDEs using an iterative approach for radial basis functions (see pde_solver for details on scalar PDEs)\n\n\noperators.enforce_cartesian_gradient_neumann\nSets the gradient at every neumann node using catesian grid\n\n\noperators.duplicate_robin_coeffs\nDuplicate the Robin coefficients to the nodes of the facets they are applied to\n\n\noperators.apply_neumann_conditions\nEnforces the Neumann boundary conditions to the field\n\n\noperators.zerofy_periodic_cond\nZero out the periodic boundary conditions (this is aplied before the PDE solve, to overwrite any value set by the user)\n\n\noperators.boundary_conditions_func_to_arr\nConvert the given boundary conditions from functions to an array"
   },
   {
-    "objectID": "reference/index.html#some-functions",
-    "href": "reference/index.html#some-functions",
+    "objectID": "reference/index.html#utility-functions",
+    "href": "reference/index.html#utility-functions",
     "title": "Function reference",
     "section": "",
-    "text": "Functions to inspect docstrings.\n\n\n\noperators.pde_solver\nSolve a PDE\n\n\ncloud.Cloud\nA class to store the meshfree cloud of points and related properties"
+    "text": "Functions to help build other functions in the package.\n\n\n\nutils.distance\nEuclidean distance between two points.\n\n\nutils.multiquadric\nHardy’s Multiquadric RBF\n\n\nutils.gaussian\nGaussian RBF\n\n\nutils.inverse_multiquadric\nInverse Multiquadric RBF\n\n\nutils.polyharmonic\nPolyharmonic Spline RBF\n\n\nutils.thin_plate\nThin Plate Spline RBF\n\n\nutils.make_nodal_rbf\nA function that returns the value of the RBF at a given point x, with respect to a given node. The RBF is tuned to the given node.\n\n\nutils.make_monomial\nA function that returns the value of a monomial at a given point x.\n\n\nutils.make_all_monomials\nA function that returns up to a certain number of monomials\n\n\nutils.compute_nb_monomials\nComputes the number of monomials of dregree less than ‘max_degree’, in dimension ‘problem_dimension’\n\n\nutils.plot\nWrapper function for matplotlib and seaborn\n\n\nutils.RK4\nNumerical integration with RK4 and fixed-time stepping, but with fine subdivisions of the evaluation time intervals"
+  },
+  {
+    "objectID": "reference/index.html#cloud-module",
+    "href": "reference/index.html#cloud-module",
+    "title": "Function reference",
+    "section": "",
+    "text": "Functions related to building the cloud of points\n\n\n\ncloud.Cloud\nA class to store the meshfree cloud of points and related properties\n\n\ncloud.SquareCloud\nA class to store a cloud of (scattered or regular) points on a unit square\n\n\ncloud.GmshCloud\nA class to store the cloud of points issued from GMSH and related properties"
+  },
+  {
+    "objectID": "reference/index.html#assembly-module",
+    "href": "reference/index.html#assembly-module",
+    "title": "Function reference",
+    "section": "",
+    "text": "Functions related to assembling the matrices needed for the PDE solve\n\n\n\nassembly.assemble_Phi\nAssemble the collocation matrix Phi (see equation 5) from Shahane et al.\n\n\nassembly.assemble_P\nAssemble the polynomial matrix P (see equation 6 from Shahane et al.)\n\n\nassembly.assemble_A\nAssemble the matrix A (see equation 4 from Shahane et al.)\n\n\nassembly.assemble_invert_A\nAssembles the inverts of the matrix A\n\n\nassembly.assemble_op_Phi_P\nAssembles op(Phi) and op(P), the collocation and polynomial matrices after a differential operator is applied to internal nodes\n\n\nassembly.assemble_bd_Phi_P\nAssembles bd(Phi) and bd(P), the collocation and polynomial matrices after boundary conditions are applied to boundary nodes\n\n\nassembly.assemble_B\nAssemble matrix B using opPhi, bdPhi, opP, bdP, and A, see equation (*) from Shahane et al.\n\n\nassembly.assemble_q\nAssemble the right hand side q using the given operator (See equation * from Shahane et al.)\n\n\nassembly.core_compute_coefficients\nFind nodal and polynomial coefficients for scalar field directly from the number of monomials\n\n\nassembly.compute_coefficients\nFind nodal and polynomial coefficients for scalar field\n\n\nassembly.get_field_coefficients\nFind nodal and polynomial coefficients for scalar field. Alias of compute_coefficients()"
+  },
+  {
+    "objectID": "reference/index.html#operators-module",
+    "href": "reference/index.html#operators-module",
+    "title": "Function reference",
+    "section": "",
+    "text": "Functions related to the operators used in the PDE solve\n\n\n\noperators.nodal_value\nComputes the rbf or polynomial value at position x\n\n\noperators.nodal_gradient\nComputes the gradient of the rbf or polynomial at position x\n\n\noperators.nodal_laplacian\nComputes the laplacian as the trace of the jacobian of the gradient of the rbf or polynomial at position x\n\n\noperators.nodal_div_grad\nComputes the laplacian as the divergence of the gradient of the rbf or polynomial at position x\n\n\noperators.value\nComputes the value of the field (given by its coefficients) at position x\n\n\noperators.gradient\nComputes the gradient of the field (given by its coefficients) at position x\n\n\noperators.gradient_vals\nComputes the gradient of the field (given by its values) at position x\n\n\noperators.cartesian_gradient\nComputes the gradient of the field (given by its values) at a specific node of a cartesian grid, using finite differences\n\n\noperators.divergence\nComputes the divergence of the vector field (given by its coefficients) at position x\n\n\noperators.laplacian\nComputes the laplacian of the field (given by its coefficients) at position x\n\n\noperators.laplacian_vals\nComputes the laplacian of the field (given by its values) at position x\n\n\noperators.integrate_field\nIntegrate the field (given by its coefficients) over the 2D square cloud domain, using the midpoint rule:\n\n\noperators.interpolate_field\nInterpolates field from cloud1 to cloud2 given that their nodes might be numbered differently\n\n\noperators.pde_solver\nSolves a PDE using radial basis functions\n\n\noperators.pde_solver_jit\nPDE solver just-in-time compiled with respect to the boundary conditions\n\n\noperators.pde_multi_solver\nSolves a system of (non-linear) PDEs using an iterative approach for radial basis functions (see pde_solver for details on scalar PDEs)\n\n\noperators.enforce_cartesian_gradient_neumann\nSets the gradient at every neumann node using catesian grid\n\n\noperators.duplicate_robin_coeffs\nDuplicate the Robin coefficients to the nodes of the facets they are applied to\n\n\noperators.apply_neumann_conditions\nEnforces the Neumann boundary conditions to the field\n\n\noperators.zerofy_periodic_cond\nZero out the periodic boundary conditions (this is aplied before the PDE solve, to overwrite any value set by the user)\n\n\noperators.boundary_conditions_func_to_arr\nConvert the given boundary conditions from functions to an array"
+  },
+  {
+    "objectID": "reference/operators.nodal_value.html",
+    "href": "reference/operators.nodal_value.html",
+    "title": "operators.nodal_value",
+    "section": "",
+    "text": "operators.nodal_value\noperators.nodal_value(x, center=None, rbf=None, monomial=None)\nComputes the rbf or polynomial value at position x\nArgs: x (Float[Array, “dim”]): The position at which to evaluate the rbf or polynomial center (Float[Array, “dim”]): The centroid of the RBF if used. (Currently mandadatory, despite the signature.) rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.) monomial (callable): The monomial to use. (Currently mandadatory, despite the signature.)\nReturns: float: The value of the rbf or polynomial at x"
+  },
+  {
+    "objectID": "reference/operators.laplacian.html",
+    "href": "reference/operators.laplacian.html",
+    "title": "operators.laplacian",
+    "section": "",
+    "text": "operators.laplacian\noperators.laplacian(x, field, centers, rbf=None, clip_val=None)\nComputes the laplacian of the field (given by its coefficients) at position x\nArgs: x (Float[Array, “dim”]): The position at which to compute the laplacian value centers (Float[Array, “nb_centers, dim”]): The centroids of the RBF to use rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.) clip_val (float, optional): The limit to which to clip the value to avoid blowup. Defaults to None.\nReturns: float: The laplacian of field at x"
+  },
+  {
+    "objectID": "reference/operators.laplacian_vals.html",
+    "href": "reference/operators.laplacian_vals.html",
+    "title": "operators.laplacian_vals",
+    "section": "",
+    "text": "operators.laplacian_vals\noperators.laplacian_vals(x, field, cloud, rbf, max_degree)\nComputes the laplacian of the field (given by its values) at position x\nArgs: x (Float[Array, “dim”]): The position at which to compute the laplacian value centers (Float[Array, “nb_centers, dim”]): The centroids of the RBF to use rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.)\nReturns: float: The laplacian of field at x"
+  },
+  {
+    "objectID": "reference/assembly.assemble_invert_A.html",
+    "href": "reference/assembly.assemble_invert_A.html",
+    "title": "assembly.assemble_invert_A",
+    "section": "",
+    "text": "assembly.assemble_invert_A\nassembly.assemble_invert_A(cloud, rbf, nb_monomials)\nAssembles the inverts of the matrix A"
+  },
+  {
+    "objectID": "reference/utils.multiquadric.html",
+    "href": "reference/utils.multiquadric.html",
+    "title": "utils.multiquadric",
+    "section": "",
+    "text": "utils.multiquadric\nutils.multiquadric(x, center, eps=1.0)\nHardy’s Multiquadric RBF"
+  },
+  {
+    "objectID": "reference/operators.gradient_vals.html",
+    "href": "reference/operators.gradient_vals.html",
+    "title": "operators.gradient_vals",
+    "section": "",
+    "text": "operators.gradient_vals\noperators.gradient_vals(x, field, cloud, rbf, max_degree)\nComputes the gradient of the field (given by its values) at position x\nArgs: x (Float[Array, “dim”]): The position at which to conmpute the gradient value centers (Float[Array, “nb_centers, dim”]): The centroids of the RBF to use rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.) clip_val (float, optional): The limit to which to clip the value to avoid blowup. Defaults to None.\nReturns: Float[Array, “dim”]: The gradient of the field at x"
+  },
+  {
+    "objectID": "reference/operators.interpolate_field.html",
+    "href": "reference/operators.interpolate_field.html",
+    "title": "operators.interpolate_field",
+    "section": "",
+    "text": "operators.interpolate_field\noperators.interpolate_field(field, cloud1, cloud2)\nInterpolates field from cloud1 to cloud2 given that their nodes might be numbered differently\nArgs: field (Float[Array, “dim”]): The field to interpolate cloud1 (Cloud): The cloud from which to interpolate cloud2 (Cloud): The cloud to which to interpolate. Must be same type as cloud1, but with different numbering of node, i.e. different boundary conditions\nRaises: AssertionError: The two clouds do not contain the same number of nodes\nReturns: Float[Array, “dim”]: The interpolated field"
+  },
+  {
+    "objectID": "reference/assembly.assemble_q.html",
+    "href": "reference/assembly.assemble_q.html",
+    "title": "assembly.assemble_q",
+    "section": "",
+    "text": "assembly.assemble_q\nassembly.assemble_q(operator, boundary_conditions, cloud, rbf, nb_monomials, rhs_args)\nAssemble the right hand side q using the given operator (See equation * from Shahane et al.)\nArgs: operator (callable): the rhs operator to apply boundary_conditions (dict): the boundary conditions to use cloud (Cloud): the cloud of points to use rbf (callable): the radial basis function to use nb_monomials (int): the number of monomials to use rhs_args (list): the fields to use in the application of the operator. Can be either the field values themselves or their coefficients\nReturns: Float[Array, “nb_nodes”]: The vector q"
+  },
+  {
+    "objectID": "reference/cloud.Cloud.html",
+    "href": "reference/cloud.Cloud.html",
+    "title": "cloud.Cloud",
+    "section": "",
+    "text": "cloud.Cloud(self, facet_types, support_size='max')\nA class to store the meshfree cloud of points and related properties\n\n\n\n\n\nName\nDescription\n\n\n\n\naverage_spacing\nComputes the average distance between nodes in the cloud\n\n\ndefine_local_supports\nFinds the ‘support_size’ nearest neighbords of each node. This function is aware of the renumbering of nodes and uses the renumbering map to renumber the local supports accordingly.\n\n\nprint_global_indices\nPrint the global ids of the cloud of points.\n\n\nrenumber_nodes\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann, then robin, then periodic nodes.\n\n\nsort_dict_by_keys\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable\n\n\n\n\n\ncloud.Cloud.average_spacing()\nComputes the average distance between nodes in the cloud\nReturns: float: the mean distance between nodes\n\n\n\ncloud.Cloud.define_local_supports()\nFinds the ‘support_size’ nearest neighbords of each node. This function is aware of the renumbering of nodes and uses the renumbering map to renumber the local supports accordingly.\nRaises: AssertionError: When the support size not between 1 (included) and N-1 (included)\nReturns: None: creates aditional attribute ‘local_supports’ in the class\n\n\n\ncloud.Cloud.print_global_indices()\nPrint the global ids of the cloud of points.\n:return: A 2d array of the global indices\n\n\n\ncloud.Cloud.renumber_nodes()\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann, then robin, then periodic nodes.\nRaises: ValueError: When an unknown node type is found\nReturns: None: creates additional attributes like: ‘facet_nodes’, ‘renumbering_map’ in the class. Also renumnbers the local supports, the outward normals, and the global indices\n\n\n\ncloud.Cloud.sort_dict_by_keys(dictionnary)\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable"
+  },
+  {
+    "objectID": "reference/cloud.Cloud.html#methods",
+    "href": "reference/cloud.Cloud.html#methods",
+    "title": "cloud.Cloud",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\naverage_spacing\nComputes the average distance between nodes in the cloud\n\n\ndefine_local_supports\nFinds the ‘support_size’ nearest neighbords of each node. This function is aware of the renumbering of nodes and uses the renumbering map to renumber the local supports accordingly.\n\n\nprint_global_indices\nPrint the global ids of the cloud of points.\n\n\nrenumber_nodes\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann, then robin, then periodic nodes.\n\n\nsort_dict_by_keys\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable\n\n\n\n\n\ncloud.Cloud.average_spacing()\nComputes the average distance between nodes in the cloud\nReturns: float: the mean distance between nodes\n\n\n\ncloud.Cloud.define_local_supports()\nFinds the ‘support_size’ nearest neighbords of each node. This function is aware of the renumbering of nodes and uses the renumbering map to renumber the local supports accordingly.\nRaises: AssertionError: When the support size not between 1 (included) and N-1 (included)\nReturns: None: creates aditional attribute ‘local_supports’ in the class\n\n\n\ncloud.Cloud.print_global_indices()\nPrint the global ids of the cloud of points.\n:return: A 2d array of the global indices\n\n\n\ncloud.Cloud.renumber_nodes()\nPlaces the internal nodes at the top of the list, then the dirichlet, then neumann, then robin, then periodic nodes.\nRaises: ValueError: When an unknown node type is found\nReturns: None: creates additional attributes like: ‘facet_nodes’, ‘renumbering_map’ in the class. Also renumnbers the local supports, the outward normals, and the global indices\n\n\n\ncloud.Cloud.sort_dict_by_keys(dictionnary)\nSorts a dictionnay whose values are jax arrays; and returns an array easily indexable"
+  },
+  {
+    "objectID": "reference/utils.inverse_multiquadric.html",
+    "href": "reference/utils.inverse_multiquadric.html",
+    "title": "utils.inverse_multiquadric",
+    "section": "",
+    "text": "utils.inverse_multiquadric\nutils.inverse_multiquadric(x, center, eps=1.0)\nInverse Multiquadric RBF"
+  },
+  {
+    "objectID": "reference/assembly.assemble_A.html",
+    "href": "reference/assembly.assemble_A.html",
+    "title": "assembly.assemble_A",
+    "section": "",
+    "text": "assembly.assemble_A\nassembly.assemble_A(cloud, rbf, nb_monomials=2)\nAssemble the matrix A (see equation 4 from Shahane et al.)\nArgs: cloud (Cloud): The cloud of points to use, along with all required information rbf (callable, optional): The radial basis function to use nb_monomials (int): The number of monomials to use, with increasing degree. Defaults to 2.\nReturns: Float[Array, “nb_nodes+nb_monomials, nb_nodes+nb_monomials”]: The matrix A"
+  },
+  {
+    "objectID": "reference/assembly.assemble_Phi.html",
+    "href": "reference/assembly.assemble_Phi.html",
+    "title": "assembly.assemble_Phi",
+    "section": "",
+    "text": "assembly.assemble_Phi\nassembly.assemble_Phi(cloud, rbf)\nAssemble the collocation matrix Phi (see equation 5) from Shahane et al.\nArgs: cloud (Cloud): The points to use, along with all required information rbf (callable, optional): The radial basis function to use\nReturns: Float[Array, “nb_nodes, nb_nodes”]: The collocation matrix Phi"
+  },
+  {
+    "objectID": "reference/operators.integrate_field.html",
+    "href": "reference/operators.integrate_field.html",
+    "title": "operators.integrate_field",
+    "section": "",
+    "text": "operators.integrate_field\noperators.integrate_field(field, cloud, rbf, max_degree)\nIntegrate the field (given by its coefficients) over the 2D square cloud domain, using the midpoint rule: 1. Identify the small squares in the domain (all identical) 2. Get the field value at the center of each square 3. Account for border and corner values: https://stackoverflow.com/a/62991037/8140182 4. Compute the approximate integral\nReturns: float: the integral of the field over the domain"
+  },
+  {
+    "objectID": "reference/operators.gradient.html",
+    "href": "reference/operators.gradient.html",
+    "title": "operators.gradient",
+    "section": "",
+    "text": "operators.gradient\noperators.gradient(x, field, centers, rbf=None, clip_val=None)\nComputes the gradient of the field (given by its coefficients) at position x\nArgs: x (Float[Array, “dim”]): The position at which to conmpute the gradient value centers (Float[Array, “nb_centers, dim”]): The centroids of the RBF to use rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.) clip_val (float, optional): The limit to which to clip the value to avoid blowup. Defaults to None.\nReturns: Float[Array, “dim”]: The gradient of the field at x"
+  },
+  {
+    "objectID": "reference/assembly.compute_coefficients.html",
+    "href": "reference/assembly.compute_coefficients.html",
+    "title": "assembly.compute_coefficients",
+    "section": "",
+    "text": "assembly.compute_coefficients\nassembly.compute_coefficients(field, cloud, rbf, max_degree)\nFind nodal and polynomial coefficients for scalar field"
+  },
+  {
+    "objectID": "reference/utils.compute_nb_monomials.html",
+    "href": "reference/utils.compute_nb_monomials.html",
+    "title": "utils.compute_nb_monomials",
+    "section": "",
+    "text": "utils.compute_nb_monomials\nutils.compute_nb_monomials(max_degree, problem_dimension)\nComputes the number of monomials of dregree less than ‘max_degree’, in dimension ‘problem_dimension’"
+  },
+  {
+    "objectID": "reference/operators.nodal_div_grad.html",
+    "href": "reference/operators.nodal_div_grad.html",
+    "title": "operators.nodal_div_grad",
+    "section": "",
+    "text": "operators.nodal_div_grad\noperators.nodal_div_grad(x, center=None, rbf=None, monomial=None, args=None)\nComputes the laplacian as the divergence of the gradient of the rbf or polynomial at position x\nArgs: x (Float[Array, “dim”]): The position at which to evaluate the laplacian rbf or polynomial center (Float[Array, “dim”]): The centroid of the RBF if used. (Currently mandadatory, despite the signature.) rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.) monomial (callable): The monomial to use. (Currently mandadatory, despite the signature.)\nReturns: float: The value of the laplacian rbf or polynomial at x"
+  },
+  {
+    "objectID": "reference/assembly.assemble_B.html",
+    "href": "reference/assembly.assemble_B.html",
+    "title": "assembly.assemble_B",
+    "section": "",
+    "text": "assembly.assemble_B\nassembly.assemble_B(operator, cloud, rbf, nb_monomials, diff_args, robin_coeffs)\nAssemble matrix B using opPhi, bdPhi, opP, bdP, and A, see equation (*) from Shahane et al.\nArgs: operator (callable): the differential operator to apply cloud (Cloud): the cloud of points to use rbf (callable): the radial basis function to use nb_monomials (int): the number of monomials to use diff_args (list): the fields to use in the aplication of the operator. Can be either the field values themselves or their coefficients robin_coeffs (dict): the coefficients for the Robin boundary conditions if needed\nReturns: Float[Array, “dim1 nb_nodes”]: The matrix B to use in the PDE solver"
+  },
+  {
+    "objectID": "reference/utils.thin_plate.html",
+    "href": "reference/utils.thin_plate.html",
+    "title": "utils.thin_plate",
+    "section": "",
+    "text": "utils.thin_plate\nutils.thin_plate(x, center, a=1)\nThin Plate Spline RBF"
+  },
+  {
+    "objectID": "reference/assembly.assemble_P.html",
+    "href": "reference/assembly.assemble_P.html",
+    "title": "assembly.assemble_P",
+    "section": "",
+    "text": "assembly.assemble_P\nassembly.assemble_P(cloud, nb_monomials)\nAssemble the polynomial matrix P (see equation 6 from Shahane et al.)\nArgs: cloud (Cloud): The cloud of points to use, along with all required information nb_monomials (int): The number of monomials to use, with increasing degree\nReturns: Float[Array, “nb_nodes, nb_monomials”]: The matrix P"
+  },
+  {
+    "objectID": "reference/assembly.assemble_bd_Phi_P.html",
+    "href": "reference/assembly.assemble_bd_Phi_P.html",
+    "title": "assembly.assemble_bd_Phi_P",
+    "section": "",
+    "text": "assembly.assemble_bd_Phi_P\nassembly.assemble_bd_Phi_P(cloud, rbf, nb_monomials, robin_coeffs=None)\nAssembles bd(Phi) and bd(P), the collocation and polynomial matrices after boundary conditions are applied to boundary nodes\nArgs: cloud (Cloud): the cloud of points to use rbf (callable): the radial basis function to use nb_monomials (int): the number of monomials to use robin_coeffs (dict): the coefficients for the Robin boundary conditions if needed\nReturns: tuple(Float[Array, “nb_boundary_nodes nb_nodes”], Float[Array, “nb_boundary_nodes nb_monomials”]): The boundary operator matrices"
+  },
+  {
+    "objectID": "reference/utils.make_all_monomials.html",
+    "href": "reference/utils.make_all_monomials.html",
+    "title": "utils.make_all_monomials",
+    "section": "",
+    "text": "utils.make_all_monomials\nutils.make_all_monomials(nb_monomials)\nA function that returns up to a certain number of monomials"
+  },
+  {
+    "objectID": "reference/operators.apply_neumann_conditions.html",
+    "href": "reference/operators.apply_neumann_conditions.html",
+    "title": "operators.apply_neumann_conditions",
+    "section": "",
+    "text": "operators.apply_neumann_conditions\noperators.apply_neumann_conditions(field, boundary_conditions, cloud)\nEnforces the Neumann boundary conditions to the field"
+  },
+  {
+    "objectID": "reference/cloud.SquareCloud.html",
+    "href": "reference/cloud.SquareCloud.html",
+    "title": "cloud.SquareCloud",
+    "section": "",
+    "text": "cloud.SquareCloud(self, Nx=7, Ny=5, noise_key=None, **kwargs)\nA class to store a cloud of (scattered or regular) points on a unit square\n\n\n\n\n\nName\nDescription\n\n\n\n\ndefine_global_indices\nDefines the 2d coordinates to 1d indices map and vice-versa\n\n\ndefine_node_coordinates\nCalculates the coordinates of the nodes in the square domain. Optionally adds noise to the coordinates\n\n\ndefine_node_types\nDefines the boundary dype for each node in the square domain\n\n\ndefine_outward_normals\nMakes the outward normal vectors to nodes on the boundaries\n\n\n\n\n\ncloud.SquareCloud.define_global_indices()\nDefines the 2d coordinates to 1d indices map and vice-versa\n\n\n\ncloud.SquareCloud.define_node_coordinates(noise_key)\nCalculates the coordinates of the nodes in the square domain. Optionally adds noise to the coordinates\n\n\n\ncloud.SquareCloud.define_node_types()\nDefines the boundary dype for each node in the square domain\n\n\n\ncloud.SquareCloud.define_outward_normals()\nMakes the outward normal vectors to nodes on the boundaries"
+  },
+  {
+    "objectID": "reference/cloud.SquareCloud.html#methods",
+    "href": "reference/cloud.SquareCloud.html#methods",
+    "title": "cloud.SquareCloud",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\ndefine_global_indices\nDefines the 2d coordinates to 1d indices map and vice-versa\n\n\ndefine_node_coordinates\nCalculates the coordinates of the nodes in the square domain. Optionally adds noise to the coordinates\n\n\ndefine_node_types\nDefines the boundary dype for each node in the square domain\n\n\ndefine_outward_normals\nMakes the outward normal vectors to nodes on the boundaries\n\n\n\n\n\ncloud.SquareCloud.define_global_indices()\nDefines the 2d coordinates to 1d indices map and vice-versa\n\n\n\ncloud.SquareCloud.define_node_coordinates(noise_key)\nCalculates the coordinates of the nodes in the square domain. Optionally adds noise to the coordinates\n\n\n\ncloud.SquareCloud.define_node_types()\nDefines the boundary dype for each node in the square domain\n\n\n\ncloud.SquareCloud.define_outward_normals()\nMakes the outward normal vectors to nodes on the boundaries"
+  },
+  {
+    "objectID": "reference/operators.nodal_laplacian.html",
+    "href": "reference/operators.nodal_laplacian.html",
+    "title": "operators.nodal_laplacian",
+    "section": "",
+    "text": "operators.nodal_laplacian\noperators.nodal_laplacian(x, center=None, rbf=None, monomial=None)\nComputes the laplacian as the trace of the jacobian of the gradient of the rbf or polynomial at position x\nArgs: x (Float[Array, “dim”]): The position at which to evaluate the laplacian rbf or polynomial center (Float[Array, “dim”]): The centroid of the RBF if used. (Currently mandadatory, despite the signature.) rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.) monomial (callable): The monomial to use. (Currently mandadatory, despite the signature.)\nReturns: float: The value of the laplacian rbf or polynomial at x"
+  },
+  {
+    "objectID": "reference/assembly.assemble_op_Phi_P.html",
+    "href": "reference/assembly.assemble_op_Phi_P.html",
+    "title": "assembly.assemble_op_Phi_P",
+    "section": "",
+    "text": "assembly.assemble_op_Phi_P\nassembly.assemble_op_Phi_P(operator, cloud, rbf, nb_monomials, args)\nAssembles op(Phi) and op(P), the collocation and polynomial matrices after a differential operator is applied to internal nodes\nArgs: operator (callable): the differential operator to apply cloud (Cloud): the cloud of points to use rbf (callable): the radial basis function to use nb_monomials (int): the number of monomials to use args (list): the fields to use in the aplication of the operator. Can be either the field values themselves or their coefficients\nReturns: tuple(Float[Array, “nb_internal_nodes nb_nodes”], Float[Array, “nb_internal_nodes nb_monomials”]): The internal operator matrices"
+  },
+  {
+    "objectID": "reference/operators.duplicate_robin_coeffs.html",
+    "href": "reference/operators.duplicate_robin_coeffs.html",
+    "title": "operators.duplicate_robin_coeffs",
+    "section": "",
+    "text": "operators.duplicate_robin_coeffs\noperators.duplicate_robin_coeffs(boundary_conditions, cloud)\nDuplicate the Robin coefficients to the nodes of the facets they are applied to"
+  },
+  {
+    "objectID": "reference/utils.gaussian.html",
+    "href": "reference/utils.gaussian.html",
+    "title": "utils.gaussian",
+    "section": "",
+    "text": "utils.gaussian\nutils.gaussian(x, center, eps=1.0)\nGaussian RBF"
+  },
+  {
+    "objectID": "reference/operators.value.html",
+    "href": "reference/operators.value.html",
+    "title": "operators.value",
+    "section": "",
+    "text": "operators.value\noperators.value(x, field, centers, rbf=None, clip_val=None)\nComputes the value of the field (given by its coefficients) at position x\nArgs: x (Float[Array, “dim”]): The position at which to conmpute the field value centers (Float[Array, “nb_centers, dim”]): The centroids of the RBF to use rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.) clip_val (float, optional): The limit to which to clip the value to avoid blowup. Defaults to None.\nReturns: float: The value of the field at x"
+  },
+  {
+    "objectID": "reference/operators.pde_solver.html",
+    "href": "reference/operators.pde_solver.html",
+    "title": "operators.pde_solver",
+    "section": "",
+    "text": "operators.pde_solver\noperators.pde_solver(diff_operator, rhs_operator, cloud, boundary_conditions, rbf, max_degree, diff_args=None, rhs_args=None)\nSolves a PDE using radial basis functions\nArgs: diff_operator (callable): The differential operator (the left-hand side of the PDE), evaluated at each internal point with respect to each RBF centroid seperately, i.e. nodal evaluation. rhs_operator (callable): The right-hand-side operator, evaluated at each node with respect to all centroids at once, i.e. global evaluation. cloud (Cloud): The cloud on which to solve the PDE boundary_conditions (dict): The boundary conditions to enforce, one for each facet given by an approiate vector rbf (callable): The radial basis function to use max_degree (int): The maximum degree of the polynomial to use in the RBF diff_args (list, optional): The arguments to pass to the differential operator. Defaults to None. rhs_args (list, optional): The arguments to pass to the right-hand-side operator. Defaults to None.\nReturns: SteadySol: A named tuple containing the values and coefficients of the solution, as well as the matrix used in the linear solve"
+  },
+  {
+    "objectID": "reference/utils.distance.html",
+    "href": "reference/utils.distance.html",
+    "title": "utils.distance",
+    "section": "",
+    "text": "utils.distance\nutils.distance(node1, node2)\nEuclidean distance between two points."
+  },
+  {
+    "objectID": "reference/utils.plot.html",
+    "href": "reference/utils.plot.html",
+    "title": "utils.plot",
+    "section": "",
+    "text": "utils.plot\nutils.plot(*args, ax=None, figsize=(6, 3.5), x_label=None, y_label=None, title=None, x_scale='linear', y_scale='linear', xlim=None, ylim=None, **kwargs)\nWrapper function for matplotlib and seaborn"
+  },
+  {
+    "objectID": "reference/utils.RK4.html",
+    "href": "reference/utils.RK4.html",
+    "title": "utils.RK4",
+    "section": "",
+    "text": "utils.RK4\nutils.RK4(fun, t_span, y0, *args, t_eval=None, subdivisions=1, **kwargs)\nNumerical integration with RK4 and fixed-time stepping, but with fine subdivisions of the evaluation time intervals\nArgs: fun (Callable): The function to be integrated. y0 (Float[Array]): The initial condition. t_span (Tuple): The time interval for which the integration is to be performed. t_eval (Float[Array]): The time points at which the solution is to be evaluated. subdivisions (int): To improve stability, each interval in t_eval is divided into this many subdivisions. Consider increasing this if you obtain NaNs. *args: Additional arguments to be passed to the function. **kwargs: Additional keyword arguments to be passed to the function.\nRaises: Warning: if t_span[0] is None. ValueError: if t_eval is None and t_span[1] is None.\nReturns: Float[Array, “nb_time_steps”]: The solution at the time points in t_eval."
+  },
+  {
+    "objectID": "reference/utils.make_monomial.html",
+    "href": "reference/utils.make_monomial.html",
+    "title": "utils.make_monomial",
+    "section": "",
+    "text": "utils.make_monomial\nutils.make_monomial(x, id)\nA function that returns the value of a monomial at a given point x.\nArgs: x (Float[Array, “dim”]): The point at which the monomial is to be evaluated. id (int): The id of the monomial to be evaluated.\nReturns: float: The value of the monomial at the given point x."
+  },
+  {
+    "objectID": "reference/assembly.get_field_coefficients.html",
+    "href": "reference/assembly.get_field_coefficients.html",
+    "title": "assembly.get_field_coefficients",
+    "section": "",
+    "text": "assembly.get_field_coefficients\nassembly.get_field_coefficients(field, cloud, rbf, max_degree)\nFind nodal and polynomial coefficients for scalar field. Alias of compute_coefficients()"
+  },
+  {
+    "objectID": "reference/operators.nodal_gradient.html",
+    "href": "reference/operators.nodal_gradient.html",
+    "title": "operators.nodal_gradient",
+    "section": "",
+    "text": "operators.nodal_gradient\noperators.nodal_gradient(x, center=None, rbf=None, monomial=None)\nComputes the gradient of the rbf or polynomial at position x\nArgs: x (Float[Array, “dim”]): The position at which to evaluate the gradient rbf or polynomial center (Float[Array, “dim”]): The centroid of the RBF if used. (Currently mandadatory, despite the signature.) rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.) monomial (callable): The monomial to use. (Currently mandadatory, despite the signature.)\nReturns: Float[Array, “dim”]: The value of the gradient rbf or polynomial at x"
+  },
+  {
+    "objectID": "reference/operators.zerofy_periodic_cond.html",
+    "href": "reference/operators.zerofy_periodic_cond.html",
+    "title": "operators.zerofy_periodic_cond",
+    "section": "",
+    "text": "operators.zerofy_periodic_cond\noperators.zerofy_periodic_cond(boundary_conditions, cloud)\nZero out the periodic boundary conditions (this is aplied before the PDE solve, to overwrite any value set by the user)"
   }
 ]

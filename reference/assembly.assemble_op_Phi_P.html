@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>index</title>
+<title>assembly.assemble_op_phi_p</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -72,7 +72,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/index.html">Function reference</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/assembly.assemble_Phi.html">Assembly Module</a></li><li class="breadcrumb-item"><a href="../reference/assembly.assemble_op_Phi_P.html">assembly.assemble_op_Phi_P</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -94,7 +94,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../reference/index.html" class="sidebar-item-text sidebar-link active">
+  <a href="../reference/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Function reference</span></a>
   </div>
 </li>
@@ -245,7 +245,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../reference/assembly.assemble_op_Phi_P.html" class="sidebar-item-text sidebar-link">
+  <a href="../reference/assembly.assemble_op_Phi_P.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">assembly.assemble_op_Phi_P</span></a>
   </div>
 </li>
@@ -435,230 +435,14 @@ ul.task-list li input[type="checkbox"] {
 
 
 
-<section id="function-reference" class="level1 doc doc-index">
-<h1 class="doc doc-index">Function reference</h1>
-<section id="utility-functions" class="level2">
-<h2 class="anchored" data-anchor-id="utility-functions">Utility Functions</h2>
-<p>Functions to help build other functions in the package.</p>
-<table class="table">
-<tbody>
-<tr class="odd">
-<td><a href="../reference/utils.distance.html#updes.utils.distance">utils.distance</a></td>
-<td>Euclidean distance between two points.</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/utils.multiquadric.html#updes.utils.multiquadric">utils.multiquadric</a></td>
-<td>Hardy’s Multiquadric RBF</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/utils.gaussian.html#updes.utils.gaussian">utils.gaussian</a></td>
-<td>Gaussian RBF</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/utils.inverse_multiquadric.html#updes.utils.inverse_multiquadric">utils.inverse_multiquadric</a></td>
-<td>Inverse Multiquadric RBF</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/utils.polyharmonic.html#updes.utils.polyharmonic">utils.polyharmonic</a></td>
-<td>Polyharmonic Spline RBF</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/utils.thin_plate.html#updes.utils.thin_plate">utils.thin_plate</a></td>
-<td>Thin Plate Spline RBF</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/utils.make_nodal_rbf.html#updes.utils.make_nodal_rbf">utils.make_nodal_rbf</a></td>
-<td>A function that returns the value of the RBF at a given point x, with respect to a given node. The RBF is tuned to the given node.</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/utils.make_monomial.html#updes.utils.make_monomial">utils.make_monomial</a></td>
-<td>A function that returns the value of a monomial at a given point x.</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/utils.make_all_monomials.html#updes.utils.make_all_monomials">utils.make_all_monomials</a></td>
-<td>A function that returns up to a certain number of monomials</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/utils.compute_nb_monomials.html#updes.utils.compute_nb_monomials">utils.compute_nb_monomials</a></td>
-<td>Computes the number of monomials of dregree less than ‘max_degree’, in dimension ‘problem_dimension’</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/utils.plot.html#updes.utils.plot">utils.plot</a></td>
-<td>Wrapper function for matplotlib and seaborn</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/utils.RK4.html#updes.utils.RK4">utils.RK4</a></td>
-<td>Numerical integration with RK4 and fixed-time stepping, but with fine subdivisions of the evaluation time intervals</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="cloud-module" class="level2">
-<h2 class="anchored" data-anchor-id="cloud-module">Cloud Module</h2>
-<p>Functions related to building the cloud of points</p>
-<table class="table">
-<tbody>
-<tr class="odd">
-<td><a href="../reference/cloud.Cloud.html#updes.cloud.Cloud">cloud.Cloud</a></td>
-<td>A class to store the meshfree cloud of points and related properties</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/cloud.SquareCloud.html#updes.cloud.SquareCloud">cloud.SquareCloud</a></td>
-<td>A class to store a cloud of (scattered or regular) points on a unit square</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/cloud.GmshCloud.html#updes.cloud.GmshCloud">cloud.GmshCloud</a></td>
-<td>A class to store the cloud of points issued from GMSH and related properties</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="assembly-module" class="level2">
-<h2 class="anchored" data-anchor-id="assembly-module">Assembly Module</h2>
-<p>Functions related to assembling the matrices needed for the PDE solve</p>
-<table class="table">
-<tbody>
-<tr class="odd">
-<td><a href="../reference/assembly.assemble_Phi.html#updes.assembly.assemble_Phi">assembly.assemble_Phi</a></td>
-<td>Assemble the collocation matrix Phi (see equation 5) from Shahane et al.</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/assembly.assemble_P.html#updes.assembly.assemble_P">assembly.assemble_P</a></td>
-<td>Assemble the polynomial matrix P (see equation 6 from Shahane et al.)</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/assembly.assemble_A.html#updes.assembly.assemble_A">assembly.assemble_A</a></td>
-<td>Assemble the matrix A (see equation 4 from Shahane et al.)</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/assembly.assemble_invert_A.html#updes.assembly.assemble_invert_A">assembly.assemble_invert_A</a></td>
-<td>Assembles the inverts of the matrix A</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/assembly.assemble_op_Phi_P.html#updes.assembly.assemble_op_Phi_P">assembly.assemble_op_Phi_P</a></td>
-<td>Assembles op(Phi) and op(P), the collocation and polynomial matrices after a differential operator is applied to internal nodes</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/assembly.assemble_bd_Phi_P.html#updes.assembly.assemble_bd_Phi_P">assembly.assemble_bd_Phi_P</a></td>
-<td>Assembles bd(Phi) and bd(P), the collocation and polynomial matrices after boundary conditions are applied to boundary nodes</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/assembly.assemble_B.html#updes.assembly.assemble_B">assembly.assemble_B</a></td>
-<td>Assemble matrix B using opPhi, bdPhi, opP, bdP, and A, see equation (*) from Shahane et al.</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/assembly.assemble_q.html#updes.assembly.assemble_q">assembly.assemble_q</a></td>
-<td>Assemble the right hand side q using the given operator (See equation * from Shahane et al.)</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/assembly.core_compute_coefficients.html#updes.assembly.core_compute_coefficients">assembly.core_compute_coefficients</a></td>
-<td>Find nodal and polynomial coefficients for scalar field directly from the number of monomials</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/assembly.compute_coefficients.html#updes.assembly.compute_coefficients">assembly.compute_coefficients</a></td>
-<td>Find nodal and polynomial coefficients for scalar field</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/assembly.get_field_coefficients.html#updes.assembly.get_field_coefficients">assembly.get_field_coefficients</a></td>
-<td>Find nodal and polynomial coefficients for scalar field. Alias of compute_coefficients()</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="operators-module" class="level2">
-<h2 class="anchored" data-anchor-id="operators-module">Operators Module</h2>
-<p>Functions related to the operators used in the PDE solve</p>
-<table class="table">
-<tbody>
-<tr class="odd">
-<td><a href="../reference/operators.nodal_value.html#updes.operators.nodal_value">operators.nodal_value</a></td>
-<td>Computes the rbf or polynomial value at position x</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.nodal_gradient.html#updes.operators.nodal_gradient">operators.nodal_gradient</a></td>
-<td>Computes the gradient of the rbf or polynomial at position x</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.nodal_laplacian.html#updes.operators.nodal_laplacian">operators.nodal_laplacian</a></td>
-<td>Computes the laplacian as the trace of the jacobian of the gradient of the rbf or polynomial at position x</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.nodal_div_grad.html#updes.operators.nodal_div_grad">operators.nodal_div_grad</a></td>
-<td>Computes the laplacian as the divergence of the gradient of the rbf or polynomial at position x</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.value.html#updes.operators.value">operators.value</a></td>
-<td>Computes the value of the field (given by its coefficients) at position x</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.gradient.html#updes.operators.gradient">operators.gradient</a></td>
-<td>Computes the gradient of the field (given by its coefficients) at position x</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.gradient_vals.html#updes.operators.gradient_vals">operators.gradient_vals</a></td>
-<td>Computes the gradient of the field (given by its values) at position x</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.cartesian_gradient.html#updes.operators.cartesian_gradient">operators.cartesian_gradient</a></td>
-<td>Computes the gradient of the field (given by its values) at a specific node of a cartesian grid, using finite differences</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.divergence.html#updes.operators.divergence">operators.divergence</a></td>
-<td>Computes the divergence of the vector field (given by its coefficients) at position x</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.laplacian.html#updes.operators.laplacian">operators.laplacian</a></td>
-<td>Computes the laplacian of the field (given by its coefficients) at position x</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.laplacian_vals.html#updes.operators.laplacian_vals">operators.laplacian_vals</a></td>
-<td>Computes the laplacian of the field (given by its values) at position x</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.integrate_field.html#updes.operators.integrate_field">operators.integrate_field</a></td>
-<td>Integrate the field (given by its coefficients) over the 2D square cloud domain, using the midpoint rule:</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.interpolate_field.html#updes.operators.interpolate_field">operators.interpolate_field</a></td>
-<td>Interpolates field from cloud1 to cloud2 given that their nodes might be numbered differently</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.pde_solver.html#updes.operators.pde_solver">operators.pde_solver</a></td>
-<td>Solves a PDE using radial basis functions</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.pde_solver_jit.html#updes.operators.pde_solver_jit">operators.pde_solver_jit</a></td>
-<td>PDE solver just-in-time compiled with respect to the boundary conditions</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.pde_multi_solver.html#updes.operators.pde_multi_solver">operators.pde_multi_solver</a></td>
-<td>Solves a system of (non-linear) PDEs using an iterative approach for radial basis functions (see pde_solver for details on scalar PDEs)</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.enforce_cartesian_gradient_neumann.html#updes.operators.enforce_cartesian_gradient_neumann">operators.enforce_cartesian_gradient_neumann</a></td>
-<td>Sets the gradient at every neumann node using catesian grid</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.duplicate_robin_coeffs.html#updes.operators.duplicate_robin_coeffs">operators.duplicate_robin_coeffs</a></td>
-<td>Duplicate the Robin coefficients to the nodes of the facets they are applied to</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.apply_neumann_conditions.html#updes.operators.apply_neumann_conditions">operators.apply_neumann_conditions</a></td>
-<td>Enforces the Neumann boundary conditions to the field</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/operators.zerofy_periodic_cond.html#updes.operators.zerofy_periodic_cond">operators.zerofy_periodic_cond</a></td>
-<td>Zero out the periodic boundary conditions (this is aplied before the PDE solve, to overwrite any value set by the user)</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/operators.boundary_conditions_func_to_arr.html#updes.operators.boundary_conditions_func_to_arr">operators.boundary_conditions_func_to_arr</a></td>
-<td>Convert the given boundary conditions from functions to an array</td>
-</tr>
-</tbody>
-</table>
+<section id="updes.assembly.assemble_op_Phi_P" class="level1">
+<h1>assembly.assemble_op_Phi_P</h1>
+<p><code>assembly.assemble_op_Phi_P(operator, cloud, rbf, nb_monomials, args)</code></p>
+<p>Assembles op(Phi) and op(P), the collocation and polynomial matrices after a differential operator is applied to internal nodes</p>
+<p>Args: operator (callable): the differential operator to apply cloud (Cloud): the cloud of points to use rbf (callable): the radial basis function to use nb_monomials (int): the number of monomials to use args (list): the fields to use in the aplication of the operator. Can be either the field values themselves or their coefficients</p>
+<p>Returns: tuple(Float[Array, “nb_internal_nodes nb_nodes”], Float[Array, “nb_internal_nodes nb_monomials”]): The internal operator matrices</p>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
