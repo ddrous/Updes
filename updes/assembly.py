@@ -2,10 +2,8 @@ import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
 
-from functools import cache, partial
-
 from updes.config import DIM
-from updes.utils import make_nodal_rbf, make_monomial, compute_nb_monomials, make_all_monomials
+from updes.utils import make_monomial, compute_nb_monomials, make_all_monomials
 from updes.cloud import Cloud
 
 
