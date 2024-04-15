@@ -46,9 +46,9 @@ def my_rhs_operator(x, centers, rbf, fields):
     return 0.0
 
 # Set a sin function as the Dirichlet BC on the North, and zero everywhere else
-sin_func = lambda coord: jnp.sin(jnp.pi * coord[0])
-zero_func = lambda coord: 0.0
-boundary_conditions = {"South":zero_func, "West":zero_func, "North":sin_func, "East":zero_func}
+sine = lambda coord: jnp.sin(jnp.pi * coord[0])
+zero = lambda coord: 0.0
+boundary_conditions = {"South":zero, "West":zero, "North":sine, "East":zero}
 
 # Solve the Laplace equation with a JIT-compiled solver
 sol = pde_solver_jit(diff_operator=my_diff_operator, 
@@ -59,7 +59,7 @@ sol = pde_solver_jit(diff_operator=my_diff_operator,
                     max_degree=1)
 
 # Visualize the solution
-cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution");
+cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution")
 ```
 
 𝕌pdes can handle much complicated cases with little to no modifications to the code above. Check out further notebooks and scripts in the documentation and the folder [`demos`](./demos)!
