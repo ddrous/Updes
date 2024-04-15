@@ -19,6 +19,13 @@ The package is available on PyPi. You can install it with
 ```
 pip install updes
 ```
+<table>
+  <tr>
+    <th><img src="docs/assets/laplace.png" width="180"></th>
+    <th><img src="docs/assets/advection_diffusion.gif" width="350"></th>
+    <th><img src="docs/assets/burgers_u.gif" width="188"></th>
+  </tr>
+</table>
 
 The example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:
 ```python
@@ -56,20 +63,11 @@ cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution
 
 𝕌pdes can handle much complicated cases with little to no modifications to the code above. Check out further notebooks and scripts in the documentation and the folder [`demos`](./demos)!
 
-<!-- | ![laplace](docs/assets/laplace.png) | ![Advection-Diffusion](![laplace](docs/assets/advection_diffusion.gif) | ![Burgers](docs/assets/burgers_rk4_u.gif) | -->
-
-<table>
-  <tr>
-    <th><img src="docs/assets/laplace.png" width="180"></th>
-    <th><img src="docs/assets/advection_diffusion.gif" width="350"></th>
-    <th><img src="docs/assets/burgers_u.gif" width="188"></th>
-  </tr>
-</table>
 
 
 
 ## To-Dos
-- Logo, licence, contributors guide, and developer documentation
+- Logo, contributors guide, and developer documentation
 - Better introductory examples and user documentation for outreach
     - Integration with Neural Networks and Equinox
     - Non-linear and multi-dimensional PDEs
@@ -89,7 +87,7 @@ We welcome contributions from the community. Please feel free to open an issue o
 See the `pyproject.toml` file the specific versions of the dependencies.
 
 
-## Cite us
+## Cite us !
 If you use this software, please cite us with the following BibTeX entry:
 ```
 @inproceedings{nzoyem2023comparison,
