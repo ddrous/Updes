@@ -134,16 +134,16 @@ print("MSE on Neumann boundary:", jnp.mean(error_neumann**2))
 
 
 
-### Visualisation
-fig = plt.figure(figsize=(6*3,5))
-ax1= fig.add_subplot(1, 3, 1, projection='3d')
-ax2 = fig.add_subplot(1, 3, 2, projection='3d')
-ax3 = fig.add_subplot(1, 3, 3, projection='3d')
-cloud.visualize_field(rbf_sol, cmap="jet", projection="3d", title="RBF solution", ax=ax1);
-cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", ax=ax2);
-# cloud.visualize_field(exact_sol, cmap="jet", projection="2d", title="Analytical solution", ax=ax2);
-cloud.visualize_field(error, cmap="magma", projection="3d", title="MSE error", ax=ax3);
-plt.show()
+# ### Visualisation
+# fig = plt.figure(figsize=(6*3,5))
+# ax1= fig.add_subplot(1, 3, 1, projection='3d')
+# ax2 = fig.add_subplot(1, 3, 2, projection='3d')
+# ax3 = fig.add_subplot(1, 3, 3, projection='3d')
+# cloud.visualize_field(rbf_sol, cmap="jet", projection="3d", title="RBF solution", ax=ax1);
+# cloud.visualize_field(exact_sol, cmap="jet", projection="3d", title="Analytical solution", ax=ax2);
+# # cloud.visualize_field(exact_sol, cmap="jet", projection="2d", title="Analytical solution", ax=ax2);
+# cloud.visualize_field(error, cmap="magma", projection="3d", title="MSE error", ax=ax3);
+# plt.show()
 
 
 ## Write stuff to tensorboard
@@ -157,9 +157,9 @@ plt.show()
 # writer.close()
 
 # %%
-# fig = plt.figure(figsize=(6*1,5))
-# ax= fig.add_subplot(1, 1, 1, projection='3d')
-# cloud.visualize_field(rbf_sol, cmap="jet", projection="3d", title="RBF solution", ax=ax);
-# plt.show()
-# ## Savefig
-# fig.savefig(DATAFOLDER+"laplace.png", dpi=300)
+fig = plt.figure(figsize=(6*1,5))
+ax= fig.add_subplot(1, 1, 1, projection='3d')
+cloud.visualize_field(rbf_sol, cmap="jet", projection="3d", title="Laplace with RBFs", ax=ax);
+plt.show()
+## Savefig
+fig.savefig(DATAFOLDER+"laplace.png", dpi=300)

@@ -39,7 +39,7 @@ PLOT_EVERY = 10
 
 ## Diffusive constant
 K = 0.08
-VEL = jnp.array([-100.0, 0.0])
+VEL = jnp.array([100.0, 0.0])
 
 Nx = 25
 Ny = 25
@@ -70,7 +70,7 @@ def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
     return (val/DT) + jnp.dot(VEL, grad) - K*lap
 
 def my_rhs_operator(x, centers=None, rbf=None, fields=None):
-    return value(x, fields[:,0], centers, RBF) / DT     ## TODO value ?
+    return value(x, fields[:,0], centers, rbf) / DT
 
 d_zero = lambda x: 0.
 boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_zero, "East":d_zero}
@@ -87,7 +87,7 @@ boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_zero, "East":d_z
 def gaussian(x, y, x0, y0, sigma):
     return jnp.exp(-((x-x0)**2 + (y-y0)**2) / (2*sigma**2))
 xy = cloud.sorted_nodes
-u0 = gaussian(xy[:,0], xy[:,1], 0.75, 0.5, 1/10)
+u0 = gaussian(xy[:,0], xy[:,1], 0.35, 0.5, 1/10)
 
 
 
@@ -104,7 +104,7 @@ ulist = [u]
 start = time.time()
 
 for i in range(1, NB_TIMESTEPS+1):
-    ufield = pde_solver(diff_operator=my_diff_operator,
+    ufield = pde_solver_jit(diff_operator=my_diff_operator,
                         rhs_operator = my_rhs_operator,
                         rhs_args=[u],
                         cloud = cloud,

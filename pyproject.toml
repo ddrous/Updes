@@ -1,10 +1,20 @@
 [project]
 name = "updes"
 description = "Universal Partial Differential Equations Simulator"
-version = "0.1.5"
+version = "1.0.0"
+readme = "README.md"
 authors = [
     { name = "Roussel Desmond Nzoyem", email = "desmond.ngueguin@gmail.com" }
 ]
+keywords = [
+    "differentiable-programming",
+    "radial-basis-function",
+    "meshfree",
+    "optimisation",
+    "differentiable-physics",
+    "PDEs",
+]
+
 dependencies = [
     "jax >= 0.3.4",
     "gmsh",

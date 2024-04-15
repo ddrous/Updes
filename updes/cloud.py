@@ -270,8 +270,8 @@ class Cloud(object):
 
 
     def animate_fields(self, fields, filename=None, titles="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, figsize=(6,5), cmaps="jet", cbarsplit=50, duration=5, **kwargs):
-        import matplotlib
-        matplotlib.use('Agg')
+        import matplotlib as mpl
+        mpl.use('Agg')
         import matplotlib.pyplot as plt
         from matplotlib.animation import FuncAnimation
         """Animation of each field in the list of fields on the cloud of points"""
@@ -343,6 +343,9 @@ class Cloud(object):
             writer = 'ffmpeg' if filename.endswith('.mp4') else 'pillow'
             anim.save(filename, writer=writer, fps=fps)
             print("Animation sucessfully saved at:", filename)
+
+        # ## Reset the backend to one that has GUI support
+        # mpl.use('Qt5Agg')
 
         return ax
 

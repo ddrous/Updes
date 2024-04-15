@@ -1,23 +1,23 @@
 # 𝕌pdes
 
-𝕌pdes is a general-purpose library for mesh-free PDE simulation and control. __𝕌pdes__ stands for Universal(__𝕌__) Partial Differential Equations (__PDE__) Simulator(__S__). There is no faster way to run your PDE than to use Updes !
+𝕌pdes is a general-purpose library for mesh-free PDE simulation and control. There is no faster way to explore the realm of PDEs !
 
 
 ## Features
-𝕌pdes is equipped with the following features:
+𝕌pdes leverages Radial Basis Functions (RBFs) and JAX to provide the following features:
 - User-centric design: no need to re-implement a solver for each new PDE
 - Lightning fast mesh-free simulation via Radial Basis Functions
 - Robust differentiable simulation via JAX, and portable across CPU, GPU, and TPU
 - Support for Dirichlet, Neumann, Robin, and Periodic boundary conditions
 - Automatic generation of normals from 2D GMSH meshes
 
-𝕌pdes in incredibly extendable, and additional features will be added soon.
+𝕌pdes in incredibly extendable, with additional features added frequently.
 
 
 ## Getting started
 The package is available on PyPi. You can install it with
 ```
-pip install Updes
+pip install updes
 ```
 
 The example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:
@@ -25,13 +25,11 @@ The example below illustrates how to solve the Laplace equation with Dirichlet a
 from updes import *
 import jax.numpy as jnp
 
-## Boundary condition type for each side of the square
+# Create a mesh-free cloud of points on a unit square
 facet_types={"South":"n", "West":"d", "North":"d", "East":"d"}
-
-## Create a mesh-free square cloud of points
 cloud = SquareCloud(Nx=30, Ny=20, facet_types=facet_types)
 
-## Define the differential operator (left-hand side of the PDE)
+# Define the differential operator (left-hand side of the PDE)
 def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
     return nodal_laplacian(x, center, rbf, monomial)
 
@@ -39,20 +37,20 @@ def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
 def my_rhs_operator(x, centers=None, rbf=None, fields=None):
     return 0.0
 
-## Set a sin function as the Dirichlet BC on the North, and zero everywhere else
+# Set a sin function as the Dirichlet BC on the North, and zero everywhere else
 d_north = lambda coord: jnp.sin(jnp.pi * coord[0])
 d_zero = lambda coord: 0.0
 boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_north, "East":d_zero}
 
-## Solve the Laplace equation with a JIT-compiled solver
+# Solve the Laplace equation with a JIT-compiled solver
 sol = pde_solver_jit(diff_operator=my_diff_operator, 
-                    rhs_operator = my_rhs_operator, 
-                    cloud = cloud, 
-                    boundary_conditions = boundary_conditions, 
+                    rhs_operator=my_rhs_operator, 
+                    cloud=cloud, 
+                    boundary_conditions=boundary_conditions, 
                     rbf=polyharmonic,
                     max_degree=1)
 
-## Visualize the solution
+# Visualize the solution
 cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution");
 ```
 
@@ -63,8 +61,8 @@ cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution
 <table>
   <tr>
     <th><img src="docs/assets/laplace.png" width="180"></th>
-    <th><img src="docs/assets/advection_diffusion.gif" width="300"></th>
-    <th><img src="docs/assets/burgers_rk4_u.gif" width="188"></th>
+    <th><img src="docs/assets/advection_diffusion.gif" width="350"></th>
+    <th><img src="docs/assets/burgers_u.gif" width="188"></th>
   </tr>
 </table>
 
@@ -76,7 +74,7 @@ cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution
     - Integration with Neural Networks and Equinox
     - Non-linear and multi-dimensional PDEs
     - Adjoint schemes for fluid flows
-- Better cloud points generation with accurate geometry and normals: 
+- Better point generation with accurate geometry and normals: 
     - USD format
     - Gmsh tutorial
 - Add support for 3D radial basis functions

@@ -59,7 +59,6 @@ MAX_DEGREE = 2
 
 # DT = 1e-3
 NB_TIMESTEPS = 200
-PLOT_EVERY = 2
 
 Nx = 10
 Ny = 10
@@ -142,43 +141,12 @@ def burgers_vector_field(t, U, *args):
 
 
 
-def RK4(fun, t_span, y0, *args, t_eval=None, subdivisions=1, **kwargs):
-    """ Perform numerical integration with a time step divided by the evaluation subdivision factor (Not necessarily equally spaced). If we get NaNs, we can try to increasing the subdivision factor for finer time steps."""
-    if t_eval is None:
-        if t_span[0] is None:
-            t_eval = jnp.array([t_span[1]])
-            raise Warning("t_span[0] is None. Setting t_span[0] to 0.")
-        elif t_span[1] is None:
-            raise ValueError("t_span[1] must be provided if t_eval is not.")
-        else:
-            t_eval = jnp.array(t_span)
-
-    hs = t_eval[1:] - t_eval[:-1]
-    t_ = t_eval[:-1, None] + jnp.arange(subdivisions)[None, :]*hs[:, None]/subdivisions
-    t_solve = jnp.concatenate([t_.flatten(), t_eval[-1:]])
-    eval_indices = jnp.arange(0, t_solve.size, subdivisions)
-
-    def step(state, t):
-        t_prev, y_prev = state
-        h = t - t_prev
-        k1 = h * fun(t_prev, y_prev, *args)
-        k2 = h * fun(t_prev + h/2., y_prev + k1/2., *args)
-        k3 = h * fun(t_prev + h/2., y_prev + k2/2., *args)
-        k4 = h * fun(t + h, y_prev + k3, *args)
-        y = y_prev + (k1 + 2*k2 + 2*k3 + k4) / 6.
-        return (t, y), y
-
-    _, ys = jax.lax.scan(step, (t_solve[0], y0), t_solve[:])
-    return ys[eval_indices, :]
-
-
-
 
 start = time.time()
 
 U0 = jnp.concatenate([u0, v0])
 
-t_span = [0, 1]
+t_span = [0, 20]
 t_eval = jnp.linspace(0, *t_span, NB_TIMESTEPS+1)
 Us = RK4(burgers_vector_field, t_span=t_span, y0=U0, t_eval=t_eval, subdivisions=1)
 
@@ -196,11 +164,11 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 
 
 # %%
-ulist = Us[::NB_TIMESTEPS//10, :Nx*Ny]
-filename = DATAFOLDER + "burgers_rk4_u.mp4"
-cloud.animate_fields([ulist], cmaps="coolwarm", filename=filename, levels=200, duration=10, figsize=(7.5,6), titles=["Burgers with RBFs - u"]);
+ulist = Us[::NB_TIMESTEPS//200, :Nx*Ny]
+filename = DATAFOLDER + "burgers_rk4_u.gif"
+cloud.animate_fields([ulist], cmaps="coolwarm", filename=filename, levels=200, duration=5, figsize=(7.5,6), titles=["Burgers with RBFs"]);
 
-U_norm = Us[::NB_TIMESTEPS//10].reshape(-1, 2, Nx*Ny)
-normlist = jnp.linalg.norm(U_norm, axis=1)
-filename = DATAFOLDER + "burgers_rk4_norm.mp4"
-cloud.animate_fields([normlist], cmaps="coolwarm", filename=filename, levels=200, duration=10, figsize=(7.5,6), titles=["Burgers with RBFs - norm"]);
+# U_norm = Us[::NB_TIMESTEPS//10].reshape(-1, 2, Nx*Ny)
+# normlist = jnp.linalg.norm(U_norm, axis=1)
+# filename = DATAFOLDER + "burgers_rk4_norm.mp4"
+# cloud.animate_fields([normlist], cmaps="coolwarm", filename=filename, levels=200, duration=10, figsize=(7.5,6), titles=["Burgers with RBFs - norm"]);

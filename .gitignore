@@ -20,6 +20,10 @@ demos/temp/*
 *vtk
 quadqs_statistics.json
 
+## Python wheels
+*.whl
+*.tar.gz
+
 ## Quarto website
 docs/.quarto/*
 docs/_site/*

@@ -459,6 +459,7 @@ def assemble_q(operator:callable, boundary_conditions:dict, cloud:Cloud, rbf:cal
                 fields_coeffs.append(core_compute_coefficients(field, cloud, rbf, M))
             else:
                 fields_coeffs.append(field)
+        fields_coeffs = jnp.stack(fields_coeffs, axis=-1)
     else:
         fields_coeffs = None
 
@@ -467,7 +468,6 @@ def assemble_q(operator:callable, boundary_conditions:dict, cloud:Cloud, rbf:cal
     nodes = cloud.sorted_nodes
     internal_ids = jnp.arange(Ni)
     q = q.at[internal_ids].set(operator_vec(nodes[internal_ids], nodes, rbf, fields_coeffs))
-
 
     ## Facet nodes
     for f_id in cloud.facet_types.keys():
