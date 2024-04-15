@@ -2,6 +2,14 @@
 
 𝕌pdes is a general-purpose library for mesh-free PDE simulation and control. There is no faster way to explore the realm of PDEs !
 
+<table>
+  <tr>
+    <th><img src="docs/assets/laplace.png" width="180"></th>
+    <th><img src="docs/assets/advection_diffusion.gif" width="350"></th>
+    <th><img src="docs/assets/burgers_u.gif" width="188"></th>
+  </tr>
+</table>
+
 
 ## Features
 𝕌pdes leverages Radial Basis Functions (RBFs) and JAX to provide the following features:
@@ -12,14 +20,6 @@
 - Automatic generation of normals from 2D GMSH meshes
 
 𝕌pdes in incredibly extendable, with additional features added frequently.
-
-<table>
-  <tr>
-    <th><img src="docs/assets/laplace.png" width="180"></th>
-    <th><img src="docs/assets/advection_diffusion.gif" width="350"></th>
-    <th><img src="docs/assets/burgers_u.gif" width="188"></th>
-  </tr>
-</table>
 
 
 ## Getting started
