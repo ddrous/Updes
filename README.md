@@ -38,17 +38,17 @@ facet_types={"South":"n", "West":"d", "North":"d", "East":"d"}
 cloud = SquareCloud(Nx=30, Ny=20, facet_types=facet_types)
 
 # Define the differential operator (left-hand side of the PDE)
-def my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):
+def my_diff_operator(x, center, rbf, monomial, fields):
     return nodal_laplacian(x, center, rbf, monomial)
 
 # Define the right-hand side of the PDE
-def my_rhs_operator(x, centers=None, rbf=None, fields=None):
+def my_rhs_operator(x, centers, rbf, fields):
     return 0.0
 
 # Set a sin function as the Dirichlet BC on the North, and zero everywhere else
-d_north = lambda coord: jnp.sin(jnp.pi * coord[0])
-d_zero = lambda coord: 0.0
-boundary_conditions = {"South":d_zero, "West":d_zero, "North":d_north, "East":d_zero}
+sin_func = lambda coord: jnp.sin(jnp.pi * coord[0])
+zero_func = lambda coord: 0.0
+boundary_conditions = {"South":zero_func, "West":zero_func, "North":sin_func, "East":zero_func}
 
 # Solve the Laplace equation with a JIT-compiled solver
 sol = pde_solver_jit(diff_operator=my_diff_operator, 
@@ -69,7 +69,7 @@ cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution
 
 ## To-Dos
 - Logo, contributors guide, and developer documentation
-- Better introductory examples and user documentation for outreach:
+- Better introductory examples and user documentation for outreach
     - Integration with Neural Networks and Equinox
     - Non-linear and multi-dimensional PDEs
     - Adjoint schemes for fluid flows
