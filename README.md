@@ -69,7 +69,7 @@ cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution
 
 ## To-Dos
 - Logo, contributors guide, and developer documentation
-- Better introductory examples and user documentation for outreach
+- Better introductory examples and user documentation for outreach:
     - Integration with Neural Networks and Equinox
     - Non-linear and multi-dimensional PDEs
     - Adjoint schemes for fluid flows
