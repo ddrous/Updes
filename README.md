@@ -13,12 +13,6 @@
 
 𝕌pdes in incredibly extendable, with additional features added frequently.
 
-
-## Getting started
-The package is available on PyPi. You can install it with
-```
-pip install updes
-```
 <table>
   <tr>
     <th><img src="docs/assets/laplace.png" width="180"></th>
@@ -26,6 +20,13 @@ pip install updes
     <th><img src="docs/assets/burgers_u.gif" width="188"></th>
   </tr>
 </table>
+
+
+## Getting started
+The package is available on PyPi. You can install it with
+```
+pip install updes
+```
 
 The example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:
 ```python
