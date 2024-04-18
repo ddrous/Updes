@@ -17,7 +17,7 @@
 
 
 ## Getting started
-The package is available on PyPi. You can install it with
+The package is available on PyPI. You can install it with
 ```
 pip install updes
 ```

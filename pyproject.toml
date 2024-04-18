@@ -1,8 +1,8 @@
 [project]
 name = "updes"
 description = "Universal Partial Differential Equations Simulator"
-version = "1.0.1"
-readme = "docs/assets/README_PyPI/md"
+version = "1.0.1.post"
+readme = "docs/assets/README_PyPI.md"
 authors = [
     { name = "Roussel Desmond Nzoyem", email = "desmond.ngueguin@gmail.com" }
 ]
