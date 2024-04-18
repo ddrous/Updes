@@ -41,8 +41,8 @@ PLOT_EVERY = 10
 K = 0.08
 VEL = jnp.array([100.0, 0.0])
 
-Nx = 25
-Ny = 25
+Nx = 35
+Ny = 35
 SUPPORT_SIZE = "max"
 
 # facet_types={"South":"p1", "North":"p1", "West":"p2", "East":"p2"}
@@ -119,9 +119,9 @@ for i in range(1, NB_TIMESTEPS+1):
         print(f"Step {i}")
         # plt.cla()
         # cloud.visualize_field(u, cmap="jet", projection="3d", title=f"Step {i}")
-        ax, _ = cloud.visualize_field(u, cmap="jet", title=f"Step {i}", vmin=0, vmax=1, figsize=(6,3),colorbar=False)
-        # plt.draw()
+        ax, _ = cloud.visualize_field(u, cmap="jet", title=f"Step {i}", vmin=0, vmax=1, figsize=(6*10,3*10), colorbar=False, levels=200)
         plt.show()
+
 
 
 walltime = time.time() - start
@@ -140,5 +140,4 @@ cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), tit
 
 
 # %%
-
 

@@ -1,6 +1,33 @@
 project:
   type: website
 
+format:
+  html:
+    theme: 
+      light: yeti
+      dark: superhero
+    highlight-style: zenburn
+    toc: true
+
+
+website: 
+  title: 𝕌pdes
+  description: A Python package for solving PDEs using radial basis functions
+  reader-mode: true
+  # sidebar:
+    # collapse-level: 2
+  navbar:
+    # logo: "assets/images/logo.png"
+    href: index.qmd
+    left:
+      - text: "Examples"
+        href: "examples.qmd"
+      - text: "API"
+        href: "reference/index.qmd"
+    right:
+      - icon: github
+        href: https://github.com/ddrous/Updes
+
 # tell quarto to read the generated sidebar
 metadata-files:
   - _sidebar.yml
@@ -8,10 +35,12 @@ metadata-files:
 
 quartodoc:
   # the name used to import the package you want to create reference docs for
+  style: pkgdown
   package: updes
 
   # write sidebar data to this file
   sidebar: _sidebar.yml
+  dynamic: true
 
   sections:
     - title: Utility Functions
@@ -78,3 +107,4 @@ quartodoc:
         - operators.zerofy_periodic_cond
         - operators.boundary_conditions_func_to_arr
   
+
