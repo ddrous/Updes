@@ -210,11 +210,39 @@
     "text": "operators.integrate_field\noperators.integrate_field(field, cloud, rbf, max_degree)\nIntegrate the field (given by its coefficients) over the 2D square cloud domain, using the midpoint rule: 1. Identify the small squares in the domain (all identical) 2. Get the field value at the center of each square 3. Account for border and corner values: https://stackoverflow.com/a/62991037/8140182 4. Compute the approximate integral\nReturns: float: the integral of the field over the domain"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
+    "objectID": "assets/README_PyPI.html",
+    "href": "assets/README_PyPI.html",
     "title": "𝕌pdes",
     "section": "",
-    "text": "𝕌pdes is a general-purpose library for mesh-free PDE simulation and control.\nIt supports:\n\nUser-centric design: no need to re-implement a solver for each new PDE\nLightning fast mesh-free simulation via Radial Basis Functions\nRobust differentiable simulation via JAX, and portable across CPU, GPU, and TPU\nSupport for Dirichlet, Neumann, Robin, and Periodic boundary conditions\nAutomatic generation of normals from 2D GMSH meshes\n𝕌pdes in incredibly extendable, with additional features added frequently.\nMany more to come…\n\nTo get started using this library:\n\nInstall the package with: pip install updes.\nFollow the tutorials from Examples.\nGo further by reading the API.\n\nWe welcome contributions in all areas above. Please feel free to open up an issue or a pull request if anything is unclear 🙂."
+    "text": "𝕌pdes is a general-purpose library for mesh-free PDE simulation and control. - GitHub project: https://github.com/ddrous/Updes - Documentation: https://ddrous.github.io/Updes/\n\n\n𝕌pdes leverages Radial Basis Functions (RBFs) and JAX to provide the following features: - User-centric design: no need to re-implement a solver for each new PDE - Lightning fast mesh-free simulation via Radial Basis Functions - Robust differentiable simulation via JAX, and portable across CPU, GPU, and TPU - Support for Dirichlet, Neumann, Robin, and Periodic boundary conditions - Automatic generation of normals from 2D GMSH meshes\n𝕌pdes in incredibly extendable, with additional features added frequently.\n\n\n\nThe package is available on PyPI. You can install it with\npip install updes\nThe example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:\nimport updes\nimport jax.numpy as jnp\n\n# Create a mesh-free cloud of points on a unit square\nfacet_types={\"South\":\"n\", \"West\":\"d\", \"North\":\"d\", \"East\":\"d\"}\ncloud = updes.SquareCloud(Nx=30, Ny=20, facet_types=facet_types)\n\n# Define the differential operator (left-hand side of the PDE)\ndef my_diff_operator(x, center, rbf, monomial, fields):\n    return updes.nodal_laplacian(x, center, rbf, monomial)\n\n# Define the right-hand side of the PDE\ndef my_rhs_operator(x, centers, rbf, fields):\n    return 0.0\n\n# Set a sin function as the Dirichlet BC on the North, and zero everywhere else\nsine = lambda coord: jnp.sin(jnp.pi * coord[0])\nzero = lambda coord: 0.0\nboundary_conditions = {\"South\":zero, \"West\":zero, \"North\":sine, \"East\":zero}\n\n# Solve the Laplace equation with a JIT-compiled solver\nsol = updes.pde_solver_jit(diff_operator=my_diff_operator, \n                    rhs_operator=my_rhs_operator, \n                    cloud=cloud, \n                    boundary_conditions=boundary_conditions, \n                    rbf=updes.polyharmonic,\n                    max_degree=1)\n\n# Visualize the solution\ncloud.visualize_field(sol.vals, cmap=\"jet\", projection=\"3d\", title=\"RBF solution\")\n𝕌pdes can handle much complicated cases with little to no modifications to the code above. Check out further notebooks and scripts in the documentation and the folder demos!\n\n\n\n\nCore: JAX - GMSH - Matplotlib - Seaborn - Scikit-Learn\nOptional: PyVista - FFMPEG - QuartoDoc\n\nSee the pyproject.toml file the specific versions of the dependencies.\n\n\n\nIf you use this software, please cite us with the following BibTeX entry:\n@inproceedings{nzoyem2023comparison,\n  title={A comparison of mesh-free differentiable programming and data-driven strategies for optimal control under PDE constraints},\n  author={Nzoyem Ngueguin, Roussel Desmond and Barton, David AW and Deakin, Tom},\n  booktitle={Proceedings of the SC'23 Workshops of The International Conference on High Performance Computing, Network, Storage, and Analysis},\n  pages={21--28},\n  year={2023}}"
+  },
+  {
+    "objectID": "assets/README_PyPI.html#features",
+    "href": "assets/README_PyPI.html#features",
+    "title": "𝕌pdes",
+    "section": "",
+    "text": "𝕌pdes leverages Radial Basis Functions (RBFs) and JAX to provide the following features: - User-centric design: no need to re-implement a solver for each new PDE - Lightning fast mesh-free simulation via Radial Basis Functions - Robust differentiable simulation via JAX, and portable across CPU, GPU, and TPU - Support for Dirichlet, Neumann, Robin, and Periodic boundary conditions - Automatic generation of normals from 2D GMSH meshes\n𝕌pdes in incredibly extendable, with additional features added frequently."
+  },
+  {
+    "objectID": "assets/README_PyPI.html#getting-started",
+    "href": "assets/README_PyPI.html#getting-started",
+    "title": "𝕌pdes",
+    "section": "",
+    "text": "The package is available on PyPI. You can install it with\npip install updes\nThe example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:\nimport updes\nimport jax.numpy as jnp\n\n# Create a mesh-free cloud of points on a unit square\nfacet_types={\"South\":\"n\", \"West\":\"d\", \"North\":\"d\", \"East\":\"d\"}\ncloud = updes.SquareCloud(Nx=30, Ny=20, facet_types=facet_types)\n\n# Define the differential operator (left-hand side of the PDE)\ndef my_diff_operator(x, center, rbf, monomial, fields):\n    return updes.nodal_laplacian(x, center, rbf, monomial)\n\n# Define the right-hand side of the PDE\ndef my_rhs_operator(x, centers, rbf, fields):\n    return 0.0\n\n# Set a sin function as the Dirichlet BC on the North, and zero everywhere else\nsine = lambda coord: jnp.sin(jnp.pi * coord[0])\nzero = lambda coord: 0.0\nboundary_conditions = {\"South\":zero, \"West\":zero, \"North\":sine, \"East\":zero}\n\n# Solve the Laplace equation with a JIT-compiled solver\nsol = updes.pde_solver_jit(diff_operator=my_diff_operator, \n                    rhs_operator=my_rhs_operator, \n                    cloud=cloud, \n                    boundary_conditions=boundary_conditions, \n                    rbf=updes.polyharmonic,\n                    max_degree=1)\n\n# Visualize the solution\ncloud.visualize_field(sol.vals, cmap=\"jet\", projection=\"3d\", title=\"RBF solution\")\n𝕌pdes can handle much complicated cases with little to no modifications to the code above. Check out further notebooks and scripts in the documentation and the folder demos!"
+  },
+  {
+    "objectID": "assets/README_PyPI.html#dependencies",
+    "href": "assets/README_PyPI.html#dependencies",
+    "title": "𝕌pdes",
+    "section": "",
+    "text": "Core: JAX - GMSH - Matplotlib - Seaborn - Scikit-Learn\nOptional: PyVista - FFMPEG - QuartoDoc\n\nSee the pyproject.toml file the specific versions of the dependencies."
+  },
+  {
+    "objectID": "assets/README_PyPI.html#cite-us",
+    "href": "assets/README_PyPI.html#cite-us",
+    "title": "𝕌pdes",
+    "section": "",
+    "text": "If you use this software, please cite us with the following BibTeX entry:\n@inproceedings{nzoyem2023comparison,\n  title={A comparison of mesh-free differentiable programming and data-driven strategies for optimal control under PDE constraints},\n  author={Nzoyem Ngueguin, Roussel Desmond and Barton, David AW and Deakin, Tom},\n  booktitle={Proceedings of the SC'23 Workshops of The International Conference on High Performance Computing, Network, Storage, and Analysis},\n  pages={21--28},\n  year={2023}}"
   },
   {
     "objectID": "examples.html",
@@ -271,6 +299,13 @@
     "title": "Examples",
     "section": "Step 7: Visualization",
     "text": "Step 7: Visualization\nAfter simulating the advection-diffusion equation and obtaining the results, it’s crucial to visualize the evolution of the quantity of interest over time. Visualization helps us understand the behavior of the system and interpret the simulation outcomes.\ncloud.animate_fields([ulist], \n                    cmaps=\"jet\", \n                    filename=\"adv_dif.gif\", \n                    figsize=(7,3), \n                    titles=[\"Advection-Diffusion with RBFs\"]);\nAgain, the cloud class provides a method to animate the collected fields over time. The animate_fields method takes a list of fields’s trajectories to animate, the colormap to use, the filename to save the animation, the figure size, and the titles of the frames, and many others. The resulting simulation can be seen below:\n\n\n\nAdvection-Diffusion with Radial Basis Functions (RBFs) and the Updes differentiable simulator.\n\n\nNOTE: For a more complete version of this script, see the GitHub repository here."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "𝕌pdes",
+    "section": "",
+    "text": "𝕌pdes is a general-purpose library for mesh-free PDE simulation and control.\nIt supports:\n\nUser-centric design: no need to re-implement a solver for each new PDE\nLightning fast mesh-free simulation via Radial Basis Functions\nRobust differentiable simulation via JAX, and portable across CPU, GPU, and TPU\nSupport for Dirichlet, Neumann, Robin, and Periodic boundary conditions\nAutomatic generation of normals from 2D GMSH meshes\n𝕌pdes in incredibly extendable, with additional features added frequently.\nMany more to come…\n\nTo get started using this library:\n\nInstall the package with: pip install updes.\nFollow the tutorials from Examples.\nGo further by reading the API.\n\nWe welcome contributions in all areas above. Please feel free to open up an issue or a pull request if anything is unclear 🙂."
   },
   {
     "objectID": "reference/operators.gradient.html",
