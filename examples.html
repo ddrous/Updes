@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>𝕌pdes - Examples</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">𝕌pdes</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="./examples.html" rel="" target="" aria-current="page">
+ <span class="menu-text">Examples</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./reference/index.html" rel="" target="">
+ <span class="menu-text">API</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/ddrous/Updes" rel="" target=""><i class="bi bi-github" role="img">
+</i> 
+ <span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#step-1-installation" id="toc-step-1-installation" class="nav-link active" data-scroll-target="#step-1-installation">Step 1: Installation</a></li>
+  <li><a href="#step-2-introduction" id="toc-step-2-introduction" class="nav-link" data-scroll-target="#step-2-introduction">Step 2: Introduction</a></li>
+  <li><a href="#step-3-creating-a-square-cloud-and-defining-initial-condition" id="toc-step-3-creating-a-square-cloud-and-defining-initial-condition" class="nav-link" data-scroll-target="#step-3-creating-a-square-cloud-and-defining-initial-condition">Step 3: Creating a Square Cloud and Defining Initial Condition</a></li>
+  <li><a href="#step-4-defining-differential-and-right-hand-side-operators" id="toc-step-4-defining-differential-and-right-hand-side-operators" class="nav-link" data-scroll-target="#step-4-defining-differential-and-right-hand-side-operators">Step 4: Defining Differential and Right-hand Side Operators</a></li>
+  <li><a href="#step-5-setting-boundary-conditions" id="toc-step-5-setting-boundary-conditions" class="nav-link" data-scroll-target="#step-5-setting-boundary-conditions">Step 5: Setting Boundary Conditions</a></li>
+  <li><a href="#step-6-solving-the-advection-diffusion-equation" id="toc-step-6-solving-the-advection-diffusion-equation" class="nav-link" data-scroll-target="#step-6-solving-the-advection-diffusion-equation">Step 6: Solving the Advection-Diffusion Equation</a></li>
+  <li><a href="#step-7-visualization" id="toc-step-7-visualization" class="nav-link" data-scroll-target="#step-7-visualization">Step 7: Visualization</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Examples</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>In this tutorial, we will simulate a Advection-Diffusion equation in 2D using Updes.</p>
+<section id="step-1-installation" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-installation">Step 1: Installation</h2>
+<p>Before we begin, let’s ensure we have the necessary package installed. Run the following command to install the <code>updes</code> package:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install the updes package</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install updes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="step-2-introduction" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-introduction">Step 2: Introduction</h2>
+<p>In this step, we’ll introduce the concept of the advection-diffusion equation and set up the parameters required for the simulation.</p>
+<p>The advection-diffusion equation describes the transport (advection) of a quantity <span class="math inline">\(u(x,y,t)\)</span>, such as heat or fluid concentration while it is diffused in the medium. Mathematically, the advection-diffusion equation defined in a domain <span class="math inline">\(\Omega\)</span> can be written as: <span class="math display">\[
+\frac{\partial u}{ \partial t} + \nabla \cdot (u \mathbf{v}) = k \nabla^2 u
+\]</span> where:</p>
+<ul>
+<li><span class="math inline">\(u\)</span> is the quantity being transported,</li>
+<li><span class="math inline">\(t\)</span> is time,</li>
+<li><span class="math inline">\(\mathbf{v}\)</span> is the velocity vector,</li>
+<li><span class="math inline">\(k\)</span> is the diffusive constant, and</li>
+<li><span class="math inline">\(\nabla^2\)</span> is the Laplacian operator.</li>
+</ul>
+<p>Let the domain be a unit square. The PDE above is complemented by periodic boundary conditions in both directions, i.e.,</p>
+<ul>
+<li><span class="math inline">\(u(x, 0, t) = u(x, 1, t)\)</span> and</li>
+<li><span class="math inline">\(u(0, y, t) = u(1, y, t)\)</span>.</li>
+</ul>
+<p>Additionally, we enforce their normal derivatives to be equal to each other:</p>
+<ul>
+<li><span class="math inline">\(\frac{\partial u}{\partial x}(x, 0, t) = \frac{\partial u}{\partial x}(x, 1, t)\)</span> and</li>
+<li><span class="math inline">\(\frac{\partial u}{\partial y}(0, y, t) = \frac{\partial u}{\partial y}(1, y, t)\)</span>.</li>
+</ul>
+<p>Now, let’s import necessary packages and set up the parameters for our simulation:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Import necessary packages</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> updes <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>DT <span class="op">=</span> <span class="fl">1e-4</span>             <span class="co"># Time step size</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>NB_TIMESTEPS <span class="op">=</span> <span class="dv">100</span>    <span class="co"># Number of time steps</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>PLOT_EVERY <span class="op">=</span> <span class="dv">10</span>       <span class="co"># Plot every nth time step</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> <span class="fl">0.08</span>              <span class="co"># Diffusive constant</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>VEL <span class="op">=</span> jnp.array([<span class="fl">100.0</span>, <span class="fl">0.0</span>])  <span class="co"># Velocity vector</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>Nx <span class="op">=</span> <span class="dv">25</span>               <span class="co"># Number of grid points in x-direction</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>Ny <span class="op">=</span> <span class="dv">25</span>               <span class="co"># Number of grid points in y-direction</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="step-3-creating-a-square-cloud-and-defining-initial-condition" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-creating-a-square-cloud-and-defining-initial-condition">Step 3: Creating a Square Cloud and Defining Initial Condition</h2>
+<p>Now, we’ll create a square computational domain and define the initial condition for the quantity being transported. Unlike Neumann <code>n</code>, Dirichlet <code>d</code>, or Robin <code>r</code> boundary conditions, the periodic boundary <code>p*</code> needs a special treatment. We must provide a common identifier for boundaries (or more generally, facets) on which the quantity <span class="math inline">\(u\)</span> doesn’t change, i.e., <code>p1</code> for the South and North facets and <code>p2</code> for the West and East facets.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Creating a square cloud</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>facet_types <span class="op">=</span> {<span class="st">"South"</span>: <span class="st">"p1"</span>, <span class="st">"North"</span>: <span class="st">"p1"</span>, <span class="st">"West"</span>: <span class="st">"p2"</span>, <span class="st">"East"</span>: <span class="st">"p2"</span>}</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>cloud <span class="op">=</span> SquareCloud(Nx<span class="op">=</span>Nx, Ny<span class="op">=</span>Ny, facet_types<span class="op">=</span>facet_types)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>SquareCloud</code> class can take arguments to scatter its nodes. It inherits from the <code>Cloud</code> class, which is a base class for all clouds in Updes, including clouds built from <a href="https://gmsh.info">GMSH</a> meshes. All Cloud instances provide methods to visualize the computational domain, its normals, and the solution. See the <a href="./reference/index.html">API</a> for more on the <code>Cloud</code> class.</p>
+<p>The computational domain is discretized into a grid of points surgically sorted based on the boundary type of the facet they belong to. We will used those <code>sorted_nodes</code> to define the initial condition which specifies the initial distribution of the quantity <span class="math inline">\(u\)</span>. Here, we’ll use a Gaussian signal:</p>
+<p><span class="math display">\[
+u(x, y, 0) = \exp\left(-\frac{(x - 0.35)^2 + (y - 0.5)^2}{0.1}\right)
+\]</span></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Defining the initial condition using a Gaussian distribution</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gaussian(x, y, x0, y0, sigma):</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> jnp.exp(<span class="op">-</span>((x<span class="op">-</span>x0)<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> (y<span class="op">-</span>y0)<span class="op">**</span><span class="dv">2</span>) <span class="op">/</span> (<span class="dv">2</span><span class="op">*</span>sigma<span class="op">**</span><span class="dv">2</span>))</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>xy <span class="op">=</span> cloud.sorted_nodes</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>u0 <span class="op">=</span> gaussian(xy[:,<span class="dv">0</span>], xy[:,<span class="dv">1</span>], <span class="fl">0.35</span>, <span class="fl">0.5</span>, <span class="dv">1</span><span class="op">/</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="step-4-defining-differential-and-right-hand-side-operators" class="level2">
+<h2 class="anchored" data-anchor-id="step-4-defining-differential-and-right-hand-side-operators">Step 4: Defining Differential and Right-hand Side Operators</h2>
+<p>For that, we discretize the problem along the time direction using a Backward Euler scheme. No need to discretize the problem along the spatial direction as Updes does it for you. The PDE becomes: <span class="math display">\[
+\frac{u^{n+1} - u^n}{\Delta t} + \nabla \cdot (u^{n+1} \mathbf{v}) = k \nabla^2 u^{n+1}
+\]</span></p>
+<p>We can now isolate to define the differential and the right-hand side operators for the advection-diffusion equation for this implicit scheme to solve for <span class="math inline">\(u^{n+1}\)</span> at each time step:</p>
+<p><span class="math display">\[
+\frac{u^{n+1}}{\Delta t} + \nabla \cdot (u^{n+1} \mathbf{v}) - k \nabla^2 u^{n+1} =  \frac{u^n}{\Delta t}
+\]</span></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> my_diff_operator(x, center<span class="op">=</span><span class="va">None</span>, rbf<span class="op">=</span><span class="va">None</span>, monomial<span class="op">=</span><span class="va">None</span>, fields<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    val <span class="op">=</span> nodal_value(x, center, rbf, monomial)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    grad <span class="op">=</span> nodal_gradient(x, center, rbf, monomial)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    lap <span class="op">=</span> nodal_laplacian(x, center, rbf, monomial)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (val<span class="op">/</span>DT) <span class="op">+</span> jnp.dot(VEL, grad) <span class="op">-</span> K<span class="op">*</span>lap</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> my_rhs_operator(x, centers<span class="op">=</span><span class="va">None</span>, rbf<span class="op">=</span><span class="va">None</span>, fields<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value(x, fields[:,<span class="dv">0</span>], centers, rbf) <span class="op">/</span> DT</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The signature of these two operators is paramounts, as defined in the <a href="./reference/index.html">API</a> section for Operators</p>
+<p>Note that in our custom differential operator, we used the <code>nodal_value</code>, <code>nodal_gradient</code>, and <code>nodal_laplacian</code> functions to compute the value, gradient, and Laplacian of the quantity <span class="math inline">\(u\)</span> at the nodes, respectively. The <code>nodal</code> indicates that these values are tied to the center of the RBF when those functions are used. However, in our RHS operator, all centers are used, and thus the RBF is applied with respect to all nodes.</p>
+<p>Also, our custom operators all take extra <code>fiels</code> as argument, these are known quantities that are passed to the operators via the PDE solver below.</p>
+</section>
+<section id="step-5-setting-boundary-conditions" class="level2">
+<h2 class="anchored" data-anchor-id="step-5-setting-boundary-conditions">Step 5: Setting Boundary Conditions</h2>
+<p>Updes needs a dictionary with the same keys as facet_types and values as the boundary conditions. Here, we will use the periodic boundary conditions for all facets. Since we are enforcing equality in periodic boundary conditions, we can use a lambda function that returns zero for all boundaries.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>d_zero <span class="op">=</span> <span class="kw">lambda</span> x: <span class="fl">0.</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>boundary_conditions <span class="op">=</span> {<span class="st">"South"</span>: d_zero, <span class="st">"West"</span>: d_zero, <span class="st">"North"</span>: d_zero, <span class="st">"East"</span>: d_zero}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="step-6-solving-the-advection-diffusion-equation" class="level2">
+<h2 class="anchored" data-anchor-id="step-6-solving-the-advection-diffusion-equation">Step 6: Solving the Advection-Diffusion Equation</h2>
+<p>Now that we have our operators defined and boundary conditions set, we’re ready to solve the advection-diffusion equation over time.</p>
+<p>We’ll use a time-stepping approach to numerically integrate the equation forward in time. At each time step, we’ll apply the differential operator to compute the next state of the system.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> u0</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>ulist <span class="op">=</span> [u]</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, NB_TIMESTEPS<span class="op">+</span><span class="dv">1</span>):</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    ufield <span class="op">=</span> pde_solver_jit(diff_operator<span class="op">=</span>my_diff_operator,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>                             rhs_operator<span class="op">=</span>my_rhs_operator,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>                             rhs_args<span class="op">=</span>[u],</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>                             cloud<span class="op">=</span>cloud,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>                             boundary_conditions<span class="op">=</span>boundary_conditions,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>                             max_degree<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    u <span class="op">=</span> ufield.vals</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    ulist.append(u)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> i <span class="op">&lt;=</span> <span class="dv">3</span> <span class="kw">or</span> i <span class="op">%</span> PLOT_EVERY <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Step </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        ax, _ <span class="op">=</span> cloud.visualize_field(u, cmap<span class="op">=</span><span class="st">"jet"</span>, title<span class="op">=</span><span class="ss">f"Step </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">6</span>,<span class="dv">3</span>),colorbar<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The cornerstone of Updes is the <code>pde_solver</code> function. It takes the differential and right-hand side operators, the cloud, the boundary conditions, and the maximum degree of the polynomial to be added to our RBF approximation. The <code>rhs_args</code> argument is a list of known quantities that are passed to the right-hand side operator (we could have equally used <code>diff_args</code> if there was such a need). The <code>pde_solver</code> function returns a <code>Field</code> object that contains the solution at all the points in the domain. Note that we use the <code>pde_solver_jit</code> to directly leverage <code>jax.jit</code>’s compilation for faster (re)execution of this function.</p>
+</section>
+<section id="step-7-visualization" class="level2">
+<h2 class="anchored" data-anchor-id="step-7-visualization">Step 7: Visualization</h2>
+<p>After simulating the advection-diffusion equation and obtaining the results, it’s crucial to visualize the evolution of the quantity of interest over time. Visualization helps us understand the behavior of the system and interpret the simulation outcomes.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>cloud.animate_fields([ulist], </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                    cmaps<span class="op">=</span><span class="st">"jet"</span>, </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                    filename<span class="op">=</span><span class="st">"adv_dif.gif"</span>, </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                    figsize<span class="op">=</span>(<span class="dv">7</span>,<span class="dv">3</span>), </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                    titles<span class="op">=</span>[<span class="st">"Advection-Diffusion with RBFs"</span>])<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Again, the cloud class provides a method to animate the collected fields over time. The <code>animate_fields</code> method takes a list of fields’s trajectories to animate, the colormap to use, the filename to save the animation, the figure size, and the titles of the frames, and many others. The resulting simulation can be seen below:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./assets/advection_diffusion.gif" class="img-fluid figure-img"></p>
+<figcaption class="figure-caption">Advection-Diffusion with Radial Basis Functions (RBFs) and the Updes differentiable simulator.</figcaption>
+</figure>
+</div>
+<p><strong>NOTE</strong>: For a more complete version of this script, see the GitHub repository <a href="https://github.com/ddrous/Updes/blob/main/demos/Advection/01_adv_diff_periodic.py">here</a>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  let localAlternateSentinel = 'default';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } else {
+    toggleColorMode(false);
+  }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

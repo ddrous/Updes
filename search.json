@@ -210,6 +210,69 @@
     "text": "operators.integrate_field\noperators.integrate_field(field, cloud, rbf, max_degree)\nIntegrate the field (given by its coefficients) over the 2D square cloud domain, using the midpoint rule: 1. Identify the small squares in the domain (all identical) 2. Get the field value at the center of each square 3. Account for border and corner values: https://stackoverflow.com/a/62991037/8140182 4. Compute the approximate integral\nReturns: float: the integral of the field over the domain"
   },
   {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "𝕌pdes",
+    "section": "",
+    "text": "𝕌pdes is a general-purpose library for mesh-free PDE simulation and control.\nIt supports:\n\nUser-centric design: no need to re-implement a solver for each new PDE\nLightning fast mesh-free simulation via Radial Basis Functions\nRobust differentiable simulation via JAX, and portable across CPU, GPU, and TPU\nSupport for Dirichlet, Neumann, Robin, and Periodic boundary conditions\nAutomatic generation of normals from 2D GMSH meshes\n𝕌pdes in incredibly extendable, with additional features added frequently.\nMany more to come…\n\nTo get started using this library:\n\nInstall the package with: pip install updes.\nFollow the tutorials from Examples.\nGo further by reading the API.\n\nWe welcome contributions in all areas above. Please feel free to open up an issue or a pull request if anything is unclear 🙂."
+  },
+  {
+    "objectID": "examples.html",
+    "href": "examples.html",
+    "title": "Examples",
+    "section": "",
+    "text": "In this tutorial, we will simulate a Advection-Diffusion equation in 2D using Updes."
+  },
+  {
+    "objectID": "examples.html#step-1-installation",
+    "href": "examples.html#step-1-installation",
+    "title": "Examples",
+    "section": "Step 1: Installation",
+    "text": "Step 1: Installation\nBefore we begin, let’s ensure we have the necessary package installed. Run the following command to install the updes package:\n# Install the updes package\n!pip install updes"
+  },
+  {
+    "objectID": "examples.html#step-2-introduction",
+    "href": "examples.html#step-2-introduction",
+    "title": "Examples",
+    "section": "Step 2: Introduction",
+    "text": "Step 2: Introduction\nIn this step, we’ll introduce the concept of the advection-diffusion equation and set up the parameters required for the simulation.\nThe advection-diffusion equation describes the transport (advection) of a quantity \\(u(x,y,t)\\), such as heat or fluid concentration while it is diffused in the medium. Mathematically, the advection-diffusion equation defined in a domain \\(\\Omega\\) can be written as: \\[\n\\frac{\\partial u}{ \\partial t} + \\nabla \\cdot (u \\mathbf{v}) = k \\nabla^2 u\n\\] where:\n\n\\(u\\) is the quantity being transported,\n\\(t\\) is time,\n\\(\\mathbf{v}\\) is the velocity vector,\n\\(k\\) is the diffusive constant, and\n\\(\\nabla^2\\) is the Laplacian operator.\n\nLet the domain be a unit square. The PDE above is complemented by periodic boundary conditions in both directions, i.e.,\n\n\\(u(x, 0, t) = u(x, 1, t)\\) and\n\\(u(0, y, t) = u(1, y, t)\\).\n\nAdditionally, we enforce their normal derivatives to be equal to each other:\n\n\\(\\frac{\\partial u}{\\partial x}(x, 0, t) = \\frac{\\partial u}{\\partial x}(x, 1, t)\\) and\n\\(\\frac{\\partial u}{\\partial y}(0, y, t) = \\frac{\\partial u}{\\partial y}(1, y, t)\\).\n\nNow, let’s import necessary packages and set up the parameters for our simulation:\n# Import necessary packages\nimport jax\nimport jax.numpy as jnp\nfrom updes import *\n\n# Parameters\nDT = 1e-4             # Time step size\nNB_TIMESTEPS = 100    # Number of time steps\nPLOT_EVERY = 10       # Plot every nth time step\nK = 0.08              # Diffusive constant\nVEL = jnp.array([100.0, 0.0])  # Velocity vector\nNx = 25               # Number of grid points in x-direction\nNy = 25               # Number of grid points in y-direction"
+  },
+  {
+    "objectID": "examples.html#step-3-creating-a-square-cloud-and-defining-initial-condition",
+    "href": "examples.html#step-3-creating-a-square-cloud-and-defining-initial-condition",
+    "title": "Examples",
+    "section": "Step 3: Creating a Square Cloud and Defining Initial Condition",
+    "text": "Step 3: Creating a Square Cloud and Defining Initial Condition\nNow, we’ll create a square computational domain and define the initial condition for the quantity being transported. Unlike Neumann n, Dirichlet d, or Robin r boundary conditions, the periodic boundary p* needs a special treatment. We must provide a common identifier for boundaries (or more generally, facets) on which the quantity \\(u\\) doesn’t change, i.e., p1 for the South and North facets and p2 for the West and East facets.\n# Creating a square cloud\nfacet_types = {\"South\": \"p1\", \"North\": \"p1\", \"West\": \"p2\", \"East\": \"p2\"}\ncloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types)\nThe SquareCloud class can take arguments to scatter its nodes. It inherits from the Cloud class, which is a base class for all clouds in Updes, including clouds built from GMSH meshes. All Cloud instances provide methods to visualize the computational domain, its normals, and the solution. See the API for more on the Cloud class.\nThe computational domain is discretized into a grid of points surgically sorted based on the boundary type of the facet they belong to. We will used those sorted_nodes to define the initial condition which specifies the initial distribution of the quantity \\(u\\). Here, we’ll use a Gaussian signal:\n\\[\nu(x, y, 0) = \\exp\\left(-\\frac{(x - 0.35)^2 + (y - 0.5)^2}{0.1}\\right)\n\\]\n# Defining the initial condition using a Gaussian distribution\ndef gaussian(x, y, x0, y0, sigma):\n    return jnp.exp(-((x-x0)**2 + (y-y0)**2) / (2*sigma**2))\n\nxy = cloud.sorted_nodes\nu0 = gaussian(xy[:,0], xy[:,1], 0.35, 0.5, 1/10)"
+  },
+  {
+    "objectID": "examples.html#step-4-defining-differential-and-right-hand-side-operators",
+    "href": "examples.html#step-4-defining-differential-and-right-hand-side-operators",
+    "title": "Examples",
+    "section": "Step 4: Defining Differential and Right-hand Side Operators",
+    "text": "Step 4: Defining Differential and Right-hand Side Operators\nFor that, we discretize the problem along the time direction using a Backward Euler scheme. No need to discretize the problem along the spatial direction as Updes does it for you. The PDE becomes: \\[\n\\frac{u^{n+1} - u^n}{\\Delta t} + \\nabla \\cdot (u^{n+1} \\mathbf{v}) = k \\nabla^2 u^{n+1}\n\\]\nWe can now isolate to define the differential and the right-hand side operators for the advection-diffusion equation for this implicit scheme to solve for \\(u^{n+1}\\) at each time step:\n\\[\n\\frac{u^{n+1}}{\\Delta t} + \\nabla \\cdot (u^{n+1} \\mathbf{v}) - k \\nabla^2 u^{n+1} =  \\frac{u^n}{\\Delta t}\n\\]\ndef my_diff_operator(x, center=None, rbf=None, monomial=None, fields=None):\n    val = nodal_value(x, center, rbf, monomial)\n    grad = nodal_gradient(x, center, rbf, monomial)\n    lap = nodal_laplacian(x, center, rbf, monomial)\n    return (val/DT) + jnp.dot(VEL, grad) - K*lap\n\ndef my_rhs_operator(x, centers=None, rbf=None, fields=None):\n    return value(x, fields[:,0], centers, rbf) / DT\nThe signature of these two operators is paramounts, as defined in the API section for Operators\nNote that in our custom differential operator, we used the nodal_value, nodal_gradient, and nodal_laplacian functions to compute the value, gradient, and Laplacian of the quantity \\(u\\) at the nodes, respectively. The nodal indicates that these values are tied to the center of the RBF when those functions are used. However, in our RHS operator, all centers are used, and thus the RBF is applied with respect to all nodes.\nAlso, our custom operators all take extra fiels as argument, these are known quantities that are passed to the operators via the PDE solver below."
+  },
+  {
+    "objectID": "examples.html#step-5-setting-boundary-conditions",
+    "href": "examples.html#step-5-setting-boundary-conditions",
+    "title": "Examples",
+    "section": "Step 5: Setting Boundary Conditions",
+    "text": "Step 5: Setting Boundary Conditions\nUpdes needs a dictionary with the same keys as facet_types and values as the boundary conditions. Here, we will use the periodic boundary conditions for all facets. Since we are enforcing equality in periodic boundary conditions, we can use a lambda function that returns zero for all boundaries.\nd_zero = lambda x: 0.\nboundary_conditions = {\"South\": d_zero, \"West\": d_zero, \"North\": d_zero, \"East\": d_zero}"
+  },
+  {
+    "objectID": "examples.html#step-6-solving-the-advection-diffusion-equation",
+    "href": "examples.html#step-6-solving-the-advection-diffusion-equation",
+    "title": "Examples",
+    "section": "Step 6: Solving the Advection-Diffusion Equation",
+    "text": "Step 6: Solving the Advection-Diffusion Equation\nNow that we have our operators defined and boundary conditions set, we’re ready to solve the advection-diffusion equation over time.\nWe’ll use a time-stepping approach to numerically integrate the equation forward in time. At each time step, we’ll apply the differential operator to compute the next state of the system.\nu = u0\nulist = [u]\n\nfor i in range(1, NB_TIMESTEPS+1):\n    ufield = pde_solver_jit(diff_operator=my_diff_operator,\n                             rhs_operator=my_rhs_operator,\n                             rhs_args=[u],\n                             cloud=cloud,\n                             boundary_conditions=boundary_conditions,\n                             max_degree=0)\n\n    u = ufield.vals\n    ulist.append(u)\n\n    if i &lt;= 3 or i % PLOT_EVERY == 0:\n        print(f\"Step {i}\")\n        ax, _ = cloud.visualize_field(u, cmap=\"jet\", title=f\"Step {i}\", vmin=0, vmax=1, figsize=(6,3),colorbar=False)\n        plt.show()\nThe cornerstone of Updes is the pde_solver function. It takes the differential and right-hand side operators, the cloud, the boundary conditions, and the maximum degree of the polynomial to be added to our RBF approximation. The rhs_args argument is a list of known quantities that are passed to the right-hand side operator (we could have equally used diff_args if there was such a need). The pde_solver function returns a Field object that contains the solution at all the points in the domain. Note that we use the pde_solver_jit to directly leverage jax.jit’s compilation for faster (re)execution of this function."
+  },
+  {
+    "objectID": "examples.html#step-7-visualization",
+    "href": "examples.html#step-7-visualization",
+    "title": "Examples",
+    "section": "Step 7: Visualization",
+    "text": "Step 7: Visualization\nAfter simulating the advection-diffusion equation and obtaining the results, it’s crucial to visualize the evolution of the quantity of interest over time. Visualization helps us understand the behavior of the system and interpret the simulation outcomes.\ncloud.animate_fields([ulist], \n                    cmaps=\"jet\", \n                    filename=\"adv_dif.gif\", \n                    figsize=(7,3), \n                    titles=[\"Advection-Diffusion with RBFs\"]);\nAgain, the cloud class provides a method to animate the collected fields over time. The animate_fields method takes a list of fields’s trajectories to animate, the colormap to use, the filename to save the animation, the figure size, and the titles of the frames, and many others. The resulting simulation can be seen below:\n\n\n\nAdvection-Diffusion with Radial Basis Functions (RBFs) and the Updes differentiable simulator.\n\n\nNOTE: For a more complete version of this script, see the GitHub repository here."
+  },
+  {
     "objectID": "reference/operators.gradient.html",
     "href": "reference/operators.gradient.html",
     "title": "operators.gradient",
