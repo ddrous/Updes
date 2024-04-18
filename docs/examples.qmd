@@ -168,7 +168,7 @@ After simulating the advection-diffusion equation and obtaining the results, it'
 cloud.animate_fields([ulist], 
                     cmaps="jet", 
                     filename="adv_dif.gif", 
-                    figsize=(7,3), 
+                    figsize=(7,5.3),
                     titles=["Advection-Diffusion with RBFs"]);
 ```
 
