@@ -305,7 +305,7 @@ u(x, y, 0) = \exp\left(-\frac{(x - 0.35)^2 + (y - 0.5)^2}{0.1}\right)
 <div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>cloud.animate_fields([ulist], </span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                    cmaps<span class="op">=</span><span class="st">"jet"</span>, </span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                    filename<span class="op">=</span><span class="st">"adv_dif.gif"</span>, </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                    figsize<span class="op">=</span>(<span class="dv">7</span>,<span class="dv">3</span>), </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                    figsize<span class="op">=</span>(<span class="dv">7</span>,<span class="fl">5.3</span>),</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                    titles<span class="op">=</span>[<span class="st">"Advection-Diffusion with RBFs"</span>])<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Again, the cloud class provides a method to animate the collected fields over time. The <code>animate_fields</code> method takes a list of fields’s trajectories to animate, the colormap to use, the filename to save the animation, the figure size, and the titles of the frames, and many others. The resulting simulation can be seen below:</p>
 <div class="quarto-figure quarto-figure-center">

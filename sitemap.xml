@@ -2,206 +2,206 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.polyharmonic.html</loc>
-    <lastmod>2024-04-18T15:50:53.311Z</lastmod>
+    <lastmod>2024-04-18T15:52:48.315Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.cartesian_gradient.html</loc>
-    <lastmod>2024-04-18T15:50:52.685Z</lastmod>
+    <lastmod>2024-04-18T15:52:47.533Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/cloud.GmshCloud.html</loc>
-    <lastmod>2024-04-18T15:50:52.013Z</lastmod>
+    <lastmod>2024-04-18T15:52:46.843Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.pde_solver_jit.html</loc>
-    <lastmod>2024-04-18T15:50:51.341Z</lastmod>
+    <lastmod>2024-04-18T15:52:46.171Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.pde_multi_solver.html</loc>
-    <lastmod>2024-04-18T15:50:50.675Z</lastmod>
+    <lastmod>2024-04-18T15:52:45.444Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.divergence.html</loc>
-    <lastmod>2024-04-18T15:50:49.997Z</lastmod>
+    <lastmod>2024-04-18T15:52:44.695Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.core_compute_coefficients.html</loc>
-    <lastmod>2024-04-18T15:50:49.336Z</lastmod>
+    <lastmod>2024-04-18T15:52:44.032Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.make_nodal_rbf.html</loc>
-    <lastmod>2024-04-18T15:50:48.707Z</lastmod>
+    <lastmod>2024-04-18T15:52:43.388Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.boundary_conditions_func_to_arr.html</loc>
-    <lastmod>2024-04-18T15:50:48.041Z</lastmod>
+    <lastmod>2024-04-18T15:52:42.695Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.enforce_cartesian_gradient_neumann.html</loc>
-    <lastmod>2024-04-18T15:50:47.379Z</lastmod>
+    <lastmod>2024-04-18T15:52:42.032Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/index.html</loc>
-    <lastmod>2024-04-18T15:50:46.754Z</lastmod>
+    <lastmod>2024-04-18T15:52:41.359Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.nodal_value.html</loc>
-    <lastmod>2024-04-18T15:50:45.853Z</lastmod>
+    <lastmod>2024-04-18T15:52:40.350Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.laplacian.html</loc>
-    <lastmod>2024-04-18T15:50:45.200Z</lastmod>
+    <lastmod>2024-04-18T15:52:39.679Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.laplacian_vals.html</loc>
-    <lastmod>2024-04-18T15:50:44.518Z</lastmod>
+    <lastmod>2024-04-18T15:52:38.907Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.assemble_invert_A.html</loc>
-    <lastmod>2024-04-18T15:50:43.849Z</lastmod>
+    <lastmod>2024-04-18T15:52:38.130Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.multiquadric.html</loc>
-    <lastmod>2024-04-18T15:50:43.206Z</lastmod>
+    <lastmod>2024-04-18T15:52:37.435Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.gradient_vals.html</loc>
-    <lastmod>2024-04-18T15:50:42.563Z</lastmod>
+    <lastmod>2024-04-18T15:52:36.735Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.interpolate_field.html</loc>
-    <lastmod>2024-04-18T15:50:41.896Z</lastmod>
+    <lastmod>2024-04-18T15:52:36.010Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.assemble_q.html</loc>
-    <lastmod>2024-04-18T15:50:41.229Z</lastmod>
+    <lastmod>2024-04-18T15:52:35.257Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/cloud.Cloud.html</loc>
-    <lastmod>2024-04-18T15:50:40.581Z</lastmod>
+    <lastmod>2024-04-18T15:52:34.581Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.inverse_multiquadric.html</loc>
-    <lastmod>2024-04-18T15:50:39.861Z</lastmod>
+    <lastmod>2024-04-18T15:52:33.857Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.assemble_A.html</loc>
-    <lastmod>2024-04-18T15:50:39.183Z</lastmod>
+    <lastmod>2024-04-18T15:52:33.206Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.assemble_Phi.html</loc>
-    <lastmod>2024-04-18T15:50:38.522Z</lastmod>
+    <lastmod>2024-04-18T15:52:32.563Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.integrate_field.html</loc>
-    <lastmod>2024-04-18T15:50:37.868Z</lastmod>
+    <lastmod>2024-04-18T15:52:31.916Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/assets/README_PyPI.html</loc>
-    <lastmod>2024-04-18T15:50:37.185Z</lastmod>
+    <lastmod>2024-04-18T15:52:31.234Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/examples.html</loc>
-    <lastmod>2024-04-18T15:50:36.504Z</lastmod>
+    <lastmod>2024-04-18T15:52:30.525Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/index.html</loc>
-    <lastmod>2024-04-18T15:50:36.850Z</lastmod>
+    <lastmod>2024-04-18T15:52:30.871Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.gradient.html</loc>
-    <lastmod>2024-04-18T15:50:37.520Z</lastmod>
+    <lastmod>2024-04-18T15:52:31.581Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.compute_coefficients.html</loc>
-    <lastmod>2024-04-18T15:50:38.196Z</lastmod>
+    <lastmod>2024-04-18T15:52:32.233Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.compute_nb_monomials.html</loc>
-    <lastmod>2024-04-18T15:50:38.856Z</lastmod>
+    <lastmod>2024-04-18T15:52:32.875Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.nodal_div_grad.html</loc>
-    <lastmod>2024-04-18T15:50:39.535Z</lastmod>
+    <lastmod>2024-04-18T15:52:33.537Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.assemble_B.html</loc>
-    <lastmod>2024-04-18T15:50:40.200Z</lastmod>
+    <lastmod>2024-04-18T15:52:34.183Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.thin_plate.html</loc>
-    <lastmod>2024-04-18T15:50:40.901Z</lastmod>
+    <lastmod>2024-04-18T15:52:34.912Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.assemble_P.html</loc>
-    <lastmod>2024-04-18T15:50:41.568Z</lastmod>
+    <lastmod>2024-04-18T15:52:35.583Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.assemble_bd_Phi_P.html</loc>
-    <lastmod>2024-04-18T15:50:42.225Z</lastmod>
+    <lastmod>2024-04-18T15:52:36.393Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.make_all_monomials.html</loc>
-    <lastmod>2024-04-18T15:50:42.891Z</lastmod>
+    <lastmod>2024-04-18T15:52:37.072Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.apply_neumann_conditions.html</loc>
-    <lastmod>2024-04-18T15:50:43.534Z</lastmod>
+    <lastmod>2024-04-18T15:52:37.778Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/cloud.SquareCloud.html</loc>
-    <lastmod>2024-04-18T15:50:44.193Z</lastmod>
+    <lastmod>2024-04-18T15:52:38.522Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.nodal_laplacian.html</loc>
-    <lastmod>2024-04-18T15:50:44.848Z</lastmod>
+    <lastmod>2024-04-18T15:52:39.306Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.assemble_op_Phi_P.html</loc>
-    <lastmod>2024-04-18T15:50:45.525Z</lastmod>
+    <lastmod>2024-04-18T15:52:40.025Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.duplicate_robin_coeffs.html</loc>
-    <lastmod>2024-04-18T15:50:46.179Z</lastmod>
+    <lastmod>2024-04-18T15:52:40.721Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.gaussian.html</loc>
-    <lastmod>2024-04-18T15:50:47.068Z</lastmod>
+    <lastmod>2024-04-18T15:52:41.678Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.value.html</loc>
-    <lastmod>2024-04-18T15:50:47.714Z</lastmod>
+    <lastmod>2024-04-18T15:52:42.384Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.pde_solver.html</loc>
-    <lastmod>2024-04-18T15:50:48.379Z</lastmod>
+    <lastmod>2024-04-18T15:52:43.035Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.distance.html</loc>
-    <lastmod>2024-04-18T15:50:49.022Z</lastmod>
+    <lastmod>2024-04-18T15:52:43.717Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.plot.html</loc>
-    <lastmod>2024-04-18T15:50:49.670Z</lastmod>
+    <lastmod>2024-04-18T15:52:44.358Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.RK4.html</loc>
-    <lastmod>2024-04-18T15:50:50.335Z</lastmod>
+    <lastmod>2024-04-18T15:52:45.035Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/utils.make_monomial.html</loc>
-    <lastmod>2024-04-18T15:50:50.999Z</lastmod>
+    <lastmod>2024-04-18T15:52:45.804Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/assembly.get_field_coefficients.html</loc>
-    <lastmod>2024-04-18T15:50:51.657Z</lastmod>
+    <lastmod>2024-04-18T15:52:46.494Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.nodal_gradient.html</loc>
-    <lastmod>2024-04-18T15:50:52.340Z</lastmod>
+    <lastmod>2024-04-18T15:52:47.180Z</lastmod>
   </url>
   <url>
     <loc>https://ddrous.github.io/Updes/reference/operators.zerofy_periodic_cond.html</loc>
-    <lastmod>2024-04-18T15:50:52.997Z</lastmod>
+    <lastmod>2024-04-18T15:52:47.864Z</lastmod>
   </url>
 </urlset>
