@@ -1,14 +1,8 @@
 # 𝕌pdes
 
-𝕌pdes is a general-purpose library for mesh-free PDE simulation and control. There is no faster way to explore the realm of PDEs !
-
-<table>
-  <tr>
-    <th><img src="docs/assets/laplace.png" width="180"></th>
-    <th><img src="docs/assets/advection_diffusion.gif" width="350"></th>
-    <th><img src="docs/assets/burgers_u.gif" width="188"></th>
-  </tr>
-</table>
+𝕌pdes is a general-purpose library for mesh-free PDE simulation and control.
+- GitHub project: https://github.com/ddrous/Updes
+- Documentation: https://ddrous.github.io/Updes/
 
 
 ## Features
@@ -62,23 +56,7 @@ sol = updes.pde_solver_jit(diff_operator=my_diff_operator,
 cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution")
 ```
 
-𝕌pdes can handle much complicated cases with little to no modifications to the code above. Check out further notebooks and scripts in the documentation and the folder [`demos`](./demos)!
-
-
-
-
-## To-Dos
-- Logo, contributors guide, and developer documentation
-- Better introductory examples and user documentation for outreach:
-    - Integration with Neural Networks and Equinox
-    - Non-linear and multi-dimensional PDEs
-    - Adjoint schemes for fluid flows
-- Better point generation with accurate geometry and normals: 
-    - USD format
-    - Gmsh tutorial
-- Add support for 3D radial basis functions
-
-We welcome contributions from the community. Please feel free to open an issue or a pull request.
+𝕌pdes can handle much complicated cases with little to no modifications to the code above. Check out further notebooks and scripts in the [documentation](https://ddrous.github.io/Updes/) and the folder [`demos`](./demos)!
 
 
 ## Dependencies
