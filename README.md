@@ -5,7 +5,7 @@
 <table>
   <tr>
     <th><img src="docs/assets/laplace.png" width="180"></th>
-    <th><img src="docs/assets/advection_diffusion.gif" width="350"></th>
+    <th><img src="docs/assets/adv_diff_periodic.gif" width="350"></th>
     <th><img src="docs/assets/burgers_u.gif" width="188"></th>
   </tr>
 </table>
