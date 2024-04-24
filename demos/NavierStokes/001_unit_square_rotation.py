@@ -38,8 +38,8 @@ NU = 0.01
 
 ## Diffusive constant
 
-Nx = 15
-Ny = 15
+Nx = 20
+Ny = 20
 SUPPORT_SIZE = "max"
 
 facet_types_vel={"South":"d", "North":"d", "West":"d", "East":"d"}
@@ -214,7 +214,7 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 
 normlist = [jnp.sqrt(sol[0]**2 + sol[1]**2) for sol in sol_list]
 filename = DATAFOLDER + "ns_norm.gif"
-cloud_vel.animate_fields([normlist], cmaps="coolwarm", filename=filename, levels=80, duration=10, figsize=(7.5,6), titles=["Navier Stokes with RBFs - norm"]);
+cloud_vel.animate_fields([normlist[::10]], cmaps="coolwarm", filename=filename, levels=200, duration=10, figsize=(7.5,6), titles=["Navier-Stokes with RBFs"]);
 
 
 # %%
