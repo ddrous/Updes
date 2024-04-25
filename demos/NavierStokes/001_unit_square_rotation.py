@@ -29,7 +29,7 @@ RBF = partial(polyharmonic, a=3)
 # RBF = gaussian
 MAX_DEGREE = 1
 
-DT = 1e-3
+DT = 4e-3
 NB_TIMESTEPS = 200
 PLOT_EVERY = 20
 
@@ -38,8 +38,8 @@ NU = 0.01
 
 ## Diffusive constant
 
-Nx = 20
-Ny = 20
+Nx = 40
+Ny = 40
 SUPPORT_SIZE = "max"
 
 facet_types_vel={"South":"d", "North":"d", "West":"d", "East":"d"}
@@ -213,8 +213,9 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 # cloud_vel.animate_fields([ulist], cmaps="coolwarm", filename=filename, levels=200, duration=10, figsize=(7.5,6), titles=["Burgers with RBFs - u"]);
 
 normlist = [jnp.sqrt(sol[0]**2 + sol[1]**2) for sol in sol_list]
+# normlist = [sol[0] for sol in sol_list]
 filename = DATAFOLDER + "ns_norm.gif"
-cloud_vel.animate_fields([normlist[::10]], cmaps="coolwarm", filename=filename, levels=200, duration=10, figsize=(7.5,6), titles=["Navier-Stokes with RBFs"]);
+cloud_vel.animate_fields([normlist[::10]], cmaps="coolwarm", filename=filename, levels=200, duration=10, figsize=(6,6), titles=["Navier-Stokes with RBFs"], colorbar=False);
 
 
 # %%

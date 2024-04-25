@@ -269,7 +269,7 @@ class Cloud(object):
         return ax, img
 
 
-    def animate_fields(self, fields, filename=None, titles="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, figsize=(6,5), cmaps="jet", cbarsplit=50, duration=5, **kwargs):
+    def animate_fields(self, fields, filename=None, titles="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, figsize=(6,5), cmaps="jet", cbarsplit=50, duration=5, colorbar=True, **kwargs):
         import matplotlib as mpl
         mpl.use('Agg')
         import matplotlib.pyplot as plt
@@ -307,15 +307,16 @@ class Cloud(object):
                 minmax = minmax[0], minmax[0]+1e-3
 
             minmaxs.append(minmax)
-            boundaries = jnp.linspace(minmax[0], minmax[1], cbarsplit)
 
             imgs.append(ax[i].tricontourf(x, y, signals[i][0], levels=levels, vmin=minmax[0], vmax=minmax[1], cmap=cmaps[i], **kwargs))
 
-            m = plt.cm.ScalarMappable(cmap=cmaps[i])
-            m.set_array(signals[i])
-            m.set_clim(minmax[0], minmax[1])
-            # m.set_norm(plt.Normalize(vmin=minmax[0], vmax=minmax[1]))
-            plt.colorbar(m, boundaries=boundaries, shrink=1.0, aspect=10, ax=ax[i])
+            if colorbar == True:
+                boundaries = jnp.linspace(minmax[0], minmax[1], cbarsplit)
+                m = plt.cm.ScalarMappable(cmap=cmaps[i])
+                m.set_array(signals[i])
+                m.set_clim(minmax[0], minmax[1])
+                # m.set_norm(plt.Normalize(vmin=minmax[0], vmax=minmax[1]))
+                plt.colorbar(m, boundaries=boundaries, shrink=1.0, aspect=10, ax=ax[i])
 
             try:
                 title = titles[i]
