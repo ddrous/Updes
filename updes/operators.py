@@ -92,11 +92,18 @@ def nodal_div_grad(x, center=None, rbf=None, monomial=None, args=None):
         center (Float[Array, "dim"]): The centroid of the RBF if used. (Currently mandadatory, despite the signature.)
         rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.)
         monomial (callable): The monomial to use. (Currently mandadatory, despite the signature.)
+        args (list): The values to pre-multiply the gradients before taking the divergence
 
     Returns:
         float: The value of the laplacian rbf or polynomial at x
     """
-    matrix = jnp.stack((args, args), axis=-1)
+
+    ## Trick to duplicate the args into a matricx
+    if isinstance(args, jnp.ndarray):       ## a 2D array
+        matrix = jnp.stack((args, args), axis=-1)   
+    else:                                   ## a tuple
+        matrix = jnp.array((args, args))
+
     if center != None:
         return jnp.nan_to_num(jnp.trace(matrix * core_laplacian_rbf(rbf)(x, center)), posinf=0., neginf=0.)
     elif monomial != None:
