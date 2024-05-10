@@ -22,11 +22,13 @@ key = None
 DATAFOLDER = "./data/"
 make_dir(DATAFOLDER)
 
-RBF = partial(polyharmonic, a=1)
-MAX_DEGREE = 1
+RBF1 = partial(polyharmonic, a=2)
 
-Nx = 30
-Ny = 30
+RBF2 = partial(thin_plate, a=3)
+MAX_DEGREE = 2
+
+Nx = 20
+Ny = 20
 SUPPORT_SIZE = "max"
 
 # %%
@@ -49,7 +51,7 @@ cloud_perm = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types_perm, noise_key=k
 
 def perm_func(x, y):
     tmp = jnp.where(y**2>=x, 0.1, 1.20)
-    tmp = jnp.where(0.25+y**1>=x, tmp, 0.1)
+    tmp = jnp.where(0.55+y**1>=x, tmp, 0.1)
     return 10*jnp.abs(tmp)
     # tmp = jnp.where(x<=0.75, tmp, 0.2)
     # return jnp.where(y**2<=x, tmp, 0.90)
@@ -61,7 +63,7 @@ perm_field = pde_solver_jit(diff_operator=perm_diff_operator,
                     rhs_args=[permeability],
                     cloud=cloud_perm,
                     boundary_conditions=bc_perm, 
-                    rbf=RBF,
+                    rbf=RBF1,
                     max_degree=MAX_DEGREE,)
 
 
@@ -102,7 +104,7 @@ ufield = pde_solver_jit(diff_operator=my_diff_operator,
                     rhs_args=[perm_field.vals],
                     cloud=cloud,
                     boundary_conditions = boundary_conditions, 
-                    rbf=RBF,
+                    rbf=RBF2,
                     max_degree=MAX_DEGREE,)
 
 walltime = time.time() - start
@@ -112,7 +114,7 @@ seconds = walltime % 60
 print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 
 fig, ax2 = plt.subplots(1, 1, figsize=(3.65, 3))
-cloud.visualize_field(ufield.vals, cmap="jet", title=f"Solution field", ax=ax2, levels=200);
+cloud.visualize_field(ufield.vals, cmap="nipy_spectral", title=f"Solution field", ax=ax2, levels=500);
 # plt.show()
 
 plt.draw()
