@@ -1,0 +1,5 @@
+# utils.gaussian { #updes.utils.gaussian }
+
+`utils.gaussian(x, center, eps=1.0)`
+
+Gaussian RBF

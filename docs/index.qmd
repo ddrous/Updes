@@ -1,0 +1,45 @@
+---
+title: "𝕌pdes"
+subtitle: 𝕌niversal Partial Differential Equations Simulator
+image: ./assets/banner.png
+# page-layout: full
+about:
+  template: marquee
+  # image-width: 100em
+  links:
+    - icon: google
+      text: Google Scholar
+      href: https://scholar.google.com/citations?user=80GLOSUAAAAJ&hl=en
+    - icon: github
+      text: Github
+      href: https://github.com/ddrous
+    - icon: twitter
+      text: Twitter
+      href: https://twitter.com/rdesnzoyem
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/roussel-desmond-nzoyem/
+# css: styles.css
+# margin-footer: subscribe.html
+---
+
+
+𝕌pdes is a general-purpose library for mesh-free PDE simulation and control.
+
+It supports:
+
+- User-centric design: no need to re-implement a solver for each new PDE
+- Lightning fast mesh-free simulation via Radial Basis Functions
+- Robust differentiable simulation via JAX, and portable across CPU, GPU, and TPU
+- Support for Dirichlet, Neumann, Robin, and Periodic boundary conditions
+- Automatic generation of normals from 2D GMSH meshes
+- 𝕌pdes in incredibly extendable, with additional features added frequently.
+- Many more to come...
+
+To get started using this library:
+
+- Install the package with: `pip install updes`.
+- Follow the tutorials from [Examples](./examples.qmd). 
+- Go further by reading the [API](reference/index.qmd).
+
+We welcome contributions in all areas above. Please feel free to open up an issue or a pull request if anything is unclear 🙂.

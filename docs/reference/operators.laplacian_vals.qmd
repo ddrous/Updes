@@ -1,0 +1,13 @@
+# operators.laplacian_vals { #updes.operators.laplacian_vals }
+
+`operators.laplacian_vals(x, field, cloud, rbf, max_degree)`
+
+Computes the laplacian of the field (given by its values) at position x
+
+Args:
+    x (Float[Array, "dim"]): The position at which to compute the laplacian value
+    centers (Float[Array, "nb_centers, dim"]): The centroids of the RBF to use
+    rbf (callable): The rbf to use. (Currently mandadatory, despite the signature.)
+
+Returns:
+    float: The laplacian of field at x

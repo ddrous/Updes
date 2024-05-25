@@ -1,0 +1,34 @@
+[project]
+name = "updes"
+description = "Universal Partial Differential Equations Simulator"
+version = "1.0.1.post"
+readme = "docs/assets/README_PyPI.md"
+authors = [
+    { name = "Roussel Desmond Nzoyem", email = "desmond.ngueguin@gmail.com" }
+]
+keywords = [
+    "differentiable-programming",
+    "radial-basis-function",
+    "meshfree",
+    "optimisation",
+    "differentiable-physics",
+    "PDEs",
+]
+
+dependencies = [
+    "jax >= 0.3.4",
+    "gmsh",
+    "pytest",
+    "matplotlib>=3.4.0",
+    "scikit-learn",
+    "seaborn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pyvista[trame]",
+    "quartodoc",
+]
+
+[tool.setuptools]
+py-modules = ["updes"]

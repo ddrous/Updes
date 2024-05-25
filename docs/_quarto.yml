@@ -1,0 +1,110 @@
+project:
+  type: website
+
+format:
+  html:
+    theme: 
+      light: yeti
+      dark: superhero
+    highlight-style: zenburn
+    toc: true
+
+
+website: 
+  title: 𝕌pdes
+  description: A Python package for solving PDEs using radial basis functions
+  reader-mode: true
+  # sidebar:
+    # collapse-level: 2
+  navbar:
+    # logo: "assets/images/logo.png"
+    href: index.qmd
+    left:
+      - text: "Examples"
+        href: "examples.qmd"
+      - text: "API"
+        href: "reference/index.qmd"
+    right:
+      - icon: github
+        href: https://github.com/ddrous/Updes
+
+# tell quarto to read the generated sidebar
+metadata-files:
+  - _sidebar.yml
+
+
+quartodoc:
+  # the name used to import the package you want to create reference docs for
+  style: pkgdown
+  package: updes
+
+  # write sidebar data to this file
+  sidebar: _sidebar.yml
+  dynamic: true
+
+  sections:
+    - title: Utility Functions
+      desc: Functions to help build other functions in the package.
+      contents:
+        # the functions being documented in the package.
+        - utils.distance
+        - utils.multiquadric
+        - utils.gaussian
+        - utils.inverse_multiquadric
+        - utils.polyharmonic
+        - utils.thin_plate
+        - utils.make_nodal_rbf
+        - utils.make_monomial
+        - utils.make_all_monomials
+        - utils.compute_nb_monomials
+        - utils.plot
+        - utils.RK4
+
+    - title: Cloud Module
+      desc: Functions related to building the cloud of points
+      contents:
+        - cloud.Cloud
+        - cloud.SquareCloud
+        - cloud.GmshCloud
+
+    - title: Assembly Module
+      desc: Functions related to assembling the matrices needed for the PDE solve
+      contents:
+        - assembly.assemble_Phi
+        - assembly.assemble_P
+        - assembly.assemble_A
+        - assembly.assemble_invert_A
+        - assembly.assemble_op_Phi_P
+        - assembly.assemble_bd_Phi_P
+        - assembly.assemble_B
+        - assembly.assemble_q
+        - assembly.core_compute_coefficients
+        - assembly.compute_coefficients
+        - assembly.get_field_coefficients
+
+    - title: Operators Module
+      desc: Functions related to the operators used in the PDE solve
+      contents:
+        - operators.nodal_value
+        - operators.nodal_gradient
+        - operators.nodal_laplacian
+        - operators.nodal_div_grad
+        - operators.value
+        - operators.gradient
+        - operators.gradient_vals
+        - operators.cartesian_gradient
+        - operators.divergence
+        - operators.laplacian
+        - operators.laplacian_vals
+        - operators.integrate_field
+        - operators.interpolate_field
+        - operators.pde_solver
+        - operators.pde_solver_jit
+        - operators.pde_multi_solver
+        - operators.enforce_cartesian_gradient_neumann
+        - operators.duplicate_robin_coeffs
+        - operators.apply_neumann_conditions
+        - operators.zerofy_periodic_cond
+        - operators.boundary_conditions_func_to_arr
+  
+

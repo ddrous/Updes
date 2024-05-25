@@ -1,0 +1,16 @@
+# assembly.assemble_q { #updes.assembly.assemble_q }
+
+`assembly.assemble_q(operator, boundary_conditions, cloud, rbf, nb_monomials, rhs_args)`
+
+Assemble the right hand side q using the given operator (See equation * from Shahane et al.)
+
+Args:
+    operator (callable): the rhs operator to apply
+    boundary_conditions (dict): the boundary conditions to use
+    cloud (Cloud): the cloud of points to use
+    rbf (callable): the radial basis function to use
+    nb_monomials (int): the number of monomials to use
+    rhs_args (list): the fields to use in the application of the operator. Can be either the field values themselves or their coefficients
+
+Returns:
+    Float[Array, "nb_nodes"]: The vector q

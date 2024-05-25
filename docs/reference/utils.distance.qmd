@@ -1,0 +1,5 @@
+# utils.distance { #updes.utils.distance }
+
+`utils.distance(node1, node2)`
+
+Euclidean distance between two points.

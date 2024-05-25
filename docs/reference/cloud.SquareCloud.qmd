@@ -1,0 +1,38 @@
+# cloud.SquareCloud { #updes.cloud.SquareCloud }
+
+`cloud.SquareCloud(self, Nx=7, Ny=5, noise_key=None, **kwargs)`
+
+A class to store a cloud of (scattered or regular) points on a unit square
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [define_global_indices](#updes.cloud.SquareCloud.define_global_indices) | Defines the 2d coordinates to 1d indices map and vice-versa |
+| [define_node_coordinates](#updes.cloud.SquareCloud.define_node_coordinates) | Calculates the coordinates of the nodes in the square domain. Optionally adds noise to the coordinates |
+| [define_node_types](#updes.cloud.SquareCloud.define_node_types) | Defines the boundary dype for each node in the square domain |
+| [define_outward_normals](#updes.cloud.SquareCloud.define_outward_normals) | Makes the outward normal vectors to nodes on the boundaries |
+
+### define_global_indices { #updes.cloud.SquareCloud.define_global_indices }
+
+`cloud.SquareCloud.define_global_indices()`
+
+Defines the 2d coordinates to 1d indices map and vice-versa
+
+### define_node_coordinates { #updes.cloud.SquareCloud.define_node_coordinates }
+
+`cloud.SquareCloud.define_node_coordinates(noise_key)`
+
+Calculates the coordinates of the nodes in the square domain. Optionally adds noise to the coordinates
+
+### define_node_types { #updes.cloud.SquareCloud.define_node_types }
+
+`cloud.SquareCloud.define_node_types()`
+
+Defines the boundary dype for each node in the square domain
+
+### define_outward_normals { #updes.cloud.SquareCloud.define_outward_normals }
+
+`cloud.SquareCloud.define_outward_normals()`
+
+Makes the outward normal vectors to nodes on the boundaries

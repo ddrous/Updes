@@ -1,0 +1,23 @@
+# operators.pde_multi_solver { #updes.operators.pde_multi_solver }
+
+`operators.pde_multi_solver(diff_operators, rhs_operators, cloud, boundary_conditions, rbf, max_degree, nb_iters=10, tol=1e-06, diff_args=None, rhs_args=None)`
+
+Solves a system of (non-linear) PDEs using an iterative approach for radial basis functions (see pde_solver for details on scalar PDEs)
+
+Args:
+    diff_operators (list[callable]): The (nodal) differential operators (the left-hand side of the PDEs)
+    rhs_operator (list[callable]): The (global) right-hand-side operator
+    cloud (Cloud): The same cloud on which to solve the PDEs
+    boundary_conditionss (list[dict]): The boundary conditions to enforce, one for each PDE
+    rbf (callable): The radial basis function to use
+    max_degree (int): The maximum degree of the polynomial to use in the RBF
+    nb_iters (int, optional): The maximum number of iterations to use in the solver. Defaults to 10.
+    tol (float, optional): The tolerance to check for convergence. Defaults to 1e-6. (Currently not used, because of JIT-issues)
+    diff_args (list[list], optional): The arguments to pass to each differential operator. Defaults to list of Nones.
+    rhs_args (list[list], optional): The arguments to pass to each right-hand-side operator. Defaults to list of None.
+
+Raises:
+    AssertionError: The number of differential operators must match the number of right-hand side operators
+
+Returns:
+    list[SteadySol]: A list of named named tuples containing the solutions for each PDE

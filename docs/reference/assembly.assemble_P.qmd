@@ -1,0 +1,12 @@
+# assembly.assemble_P { #updes.assembly.assemble_P }
+
+`assembly.assemble_P(cloud, nb_monomials)`
+
+Assemble the polynomial matrix P (see equation 6 from Shahane et al.)
+
+Args:
+    cloud (Cloud): The cloud of points to use, along with all required information
+    nb_monomials (int): The number of monomials to use, with increasing degree
+
+Returns:
+    Float[Array, "nb_nodes, nb_monomials"]: The matrix P

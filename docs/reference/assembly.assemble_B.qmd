@@ -1,0 +1,16 @@
+# assembly.assemble_B { #updes.assembly.assemble_B }
+
+`assembly.assemble_B(operator, cloud, rbf, nb_monomials, diff_args, robin_coeffs)`
+
+Assemble matrix B using opPhi, bdPhi, opP, bdP, and A, see equation (*) from Shahane et al.
+
+Args:
+    operator (callable): the differential operator to apply
+    cloud (Cloud): the cloud of points to use
+    rbf (callable): the radial basis function to use
+    nb_monomials (int): the number of monomials to use
+    diff_args (list): the fields to use in the aplication of the operator. Can be either the field values themselves or their coefficients
+    robin_coeffs (dict): the coefficients for the Robin boundary conditions if needed
+
+Returns:
+    Float[Array, "dim1 nb_nodes"]: The matrix B to use in the PDE solver

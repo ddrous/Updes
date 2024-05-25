@@ -1,0 +1,14 @@
+# assembly.assemble_bd_Phi_P { #updes.assembly.assemble_bd_Phi_P }
+
+`assembly.assemble_bd_Phi_P(cloud, rbf, nb_monomials, robin_coeffs=None)`
+
+Assembles bd(Phi) and bd(P), the collocation and polynomial matrices after boundary conditions are applied to boundary nodes
+
+Args:
+    cloud (Cloud): the cloud of points to use
+    rbf (callable): the radial basis function to use
+    nb_monomials (int): the number of monomials to use
+    robin_coeffs (dict): the coefficients for the Robin boundary conditions if needed
+
+Returns:
+    tuple(Float[Array, "nb_boundary_nodes nb_nodes"], Float[Array, "nb_boundary_nodes nb_monomials"]): The boundary operator matrices

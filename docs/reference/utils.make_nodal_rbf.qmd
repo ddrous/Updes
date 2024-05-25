@@ -1,0 +1,13 @@
+# utils.make_nodal_rbf { #updes.utils.make_nodal_rbf }
+
+`utils.make_nodal_rbf(x, node, rbf)`
+
+A function that returns the value of the RBF at a given point x, with respect to a given node. The RBF is tuned to the given node.
+
+Args:
+    x (Float[Array, "dim"]): The point at which the RBF is to be evaluated.
+    node (Float[Array, "dim"]): The centroid with respect to which the RBF is evaluated.
+    rbf (Callable): The RBF function to be used, with signature rbf(r) where r is the Euclidean distance between the two points
+
+Returns:
+    float: The scalar value of the RBF at the given point x, with respect to the given node.

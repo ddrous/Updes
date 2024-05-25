@@ -1,0 +1,5 @@
+# utils.make_all_monomials { #updes.utils.make_all_monomials }
+
+`utils.make_all_monomials(nb_monomials)`
+
+A function that returns up to a certain number of monomials

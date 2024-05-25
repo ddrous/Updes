@@ -1,0 +1,12 @@
+# assembly.assemble_Phi { #updes.assembly.assemble_Phi }
+
+`assembly.assemble_Phi(cloud, rbf)`
+
+Assemble the collocation matrix Phi (see equation 5) from Shahane et al.
+
+Args:
+    cloud (Cloud): The points to use, along with all required information
+    rbf (callable, optional): The radial basis function to use
+
+Returns:
+    Float[Array, "nb_nodes, nb_nodes"]: The collocation matrix Phi

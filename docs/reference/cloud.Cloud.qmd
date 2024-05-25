@@ -1,0 +1,62 @@
+# cloud.Cloud { #updes.cloud.Cloud }
+
+`cloud.Cloud(self, facet_types, support_size='max')`
+
+A class to store the meshfree cloud of points and related properties
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [average_spacing](#updes.cloud.Cloud.average_spacing) | Computes the average distance between nodes in the cloud |
+| [define_local_supports](#updes.cloud.Cloud.define_local_supports) | Finds the 'support_size' nearest neighbords of each node. This function is aware of the renumbering of nodes and uses the renumbering map to renumber the local supports accordingly. |
+| [print_global_indices](#updes.cloud.Cloud.print_global_indices) | Print the global ids of the cloud of points. |
+| [renumber_nodes](#updes.cloud.Cloud.renumber_nodes) | Places the internal nodes at the top of the list, then the dirichlet, then neumann, then robin, then periodic nodes. |
+| [sort_dict_by_keys](#updes.cloud.Cloud.sort_dict_by_keys) | Sorts a dictionnay whose values are jax arrays; and returns an array easily indexable |
+
+### average_spacing { #updes.cloud.Cloud.average_spacing }
+
+`cloud.Cloud.average_spacing()`
+
+Computes the average distance between nodes in the cloud
+
+Returns:
+    float: the mean distance between nodes
+
+### define_local_supports { #updes.cloud.Cloud.define_local_supports }
+
+`cloud.Cloud.define_local_supports()`
+
+Finds the 'support_size' nearest neighbords of each node. This function is aware of the renumbering of nodes and uses the renumbering map to renumber the local supports accordingly.
+
+Raises:
+    AssertionError: When the support size not between 1 (included) and N-1 (included)
+
+Returns:
+    None: creates aditional attribute 'local_supports' in the class
+
+### print_global_indices { #updes.cloud.Cloud.print_global_indices }
+
+`cloud.Cloud.print_global_indices()`
+
+Print the global ids of the cloud of points.
+
+:return: A 2d array of the global indices
+
+### renumber_nodes { #updes.cloud.Cloud.renumber_nodes }
+
+`cloud.Cloud.renumber_nodes()`
+
+Places the internal nodes at the top of the list, then the dirichlet, then neumann, then robin, then periodic nodes.
+
+Raises:
+    ValueError: When an unknown node type is found
+
+Returns:
+    None: creates additional attributes like: 'facet_nodes', 'renumbering_map' in the class. Also renumnbers the local supports, the outward normals, and the global indices
+
+### sort_dict_by_keys { #updes.cloud.Cloud.sort_dict_by_keys }
+
+`cloud.Cloud.sort_dict_by_keys(dictionnary)`
+
+Sorts a dictionnay whose values are jax arrays; and returns an array easily indexable
