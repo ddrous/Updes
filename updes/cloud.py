@@ -99,9 +99,13 @@ class Cloud(object):
         assert self.support_size > 0, "Support size must be strictly greater than 0"
         assert self.support_size <= self.N, "Support size must be strictly less than or equal the number of nodes"
 
+        # ## If support size == coords.shape[0], then we are using all the nodes
+        # if self.support_size > coords.shape[0]:
+        #     self.local_supports = {renumb_map[i]:list(range(self.N)) for i in range(self.N)}
+        # else:
         ## Use BallTree for fast nearest neighbors search
         # ball_tree = KDTree(coords, leaf_size=40, metric='euclidean')
-        ball_tree = BallTree(coords, leaf_size=40, metric='euclidean')
+        ball_tree = BallTree(coords, leaf_size=1, metric='euclidean')
         for i in range(self.N):
             _, neighbours = ball_tree.query(self.nodes[i][jnp.newaxis], k=self.support_size)
             neighbours = neighbours[0][1:]  ## Result is a 2d list, without the first el (the node itself)
