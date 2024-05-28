@@ -30,12 +30,9 @@ pip install updes
 ```
 
 The example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:
-$$ \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} = 0 \qquad \qquad \qquad \text{in } [0,1]\times [0,1] \\
-\quad \,\,\,  u(x,1) = \sin(\pi x) \qquad \quad \text{on } [0,1]\times \{1\} \\
- \frac{\partial u}{\partial y}(x,0) = 0 \qquad \qquad \quad \text{on } [0,1]\times \{0\} \\
-\qquad u(\cdot,y) = 0 \qquad \qquad \quad \text{on } \{0,1\}\times [0,1]$$
-
-
+<center>
+<img src="docs/assets/LaplacePDE.png" width="250">
+</center>
 
 ```python
 import updes
