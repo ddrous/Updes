@@ -30,9 +30,9 @@ pip install updes
 ```
 
 The example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:
-<center>
+<p align="center">
 <img src="docs/assets/LaplacePDE.png" width="250">
-</center>
+</p>
 
 ```python
 import updes
