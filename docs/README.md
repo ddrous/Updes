@@ -19,7 +19,7 @@ General steps for creating a new release: https://carpentries-incubator.github.i
 
 
 - pip install build
-- python3 -m build
+- python3 -m build  (make sure the `dist` folder is empty)
 - pip install twine
 - twine check dist/*
 - Add PyPI token to ~/.pypirc
