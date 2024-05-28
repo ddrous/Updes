@@ -30,6 +30,10 @@ pip install updes
 ```
 
 The example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:
+<p align="center">
+<img src="docs/assets/LaplacePDE.png" width="250">
+</p>
+
 ```python
 import updes
 import jax.numpy as jnp
@@ -70,6 +74,7 @@ cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution
 
 ## To-Dos
 1. Logo, contributors guide, and developer documentation
+2. Improved ill-conditioned linear systems for RBF-FD (i.e. `support_size != "max"`)
 2. More introductory examples in the documentation :
     - Integration with neural networks and [Equinox](https://github.com/patrick-kidger/equinox)
     - Non-linear and multi-dimensional PDEs
@@ -83,7 +88,7 @@ We welcome contributions from the community. Please feel free to open an issue o
 
 
 ## Dependencies
-- **Core**: [JAX](https://github.com/google/jax) - [GMSH](https://pypi.org/project/gmsh/) - [Matplotlib](https://github.com/matplotlib/matplotlib) - [Seaborn](https://github.com/mwaskom/seaborn) - [Scikit-Learn](https://github.com/scikit-learn/scikit-learn)
+- **Core**: [JAX](https://github.com/google/jax) - [GMSH](https://pypi.org/project/gmsh/) - [Lineax](https://github.com/patrick-kidger/lineax) - [Matplotlib](https://github.com/matplotlib/matplotlib) - [Seaborn](https://github.com/mwaskom/seaborn) - [Scikit-Learn](https://github.com/scikit-learn/scikit-learn)
 - **Optional**: [PyVista](https://github.com/pyvista/pyvista) - [FFMPEG](https://github.com/kkroening/ffmpeg-python) - [QuartoDoc](https://github.com/machow/quartodoc/)
 
 See the `pyproject.toml` file the specific versions of the dependencies.

@@ -17,6 +17,7 @@ keywords = [
 
 dependencies = [
     "jax >= 0.3.4",
+    "lineax",
     "gmsh",
     "pytest",
     "matplotlib>=3.4.0",

@@ -1,4 +1,4 @@
-name: Updec CI/CD
+name: Updes CI/CD
 
 on: [push]
 

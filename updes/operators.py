@@ -2,6 +2,7 @@ from logging import warning
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
+import lineax as lx
 
 from functools import cache
 
@@ -601,8 +602,17 @@ def pde_solver( diff_operator:callable,
     B1 = assemble_B(diff_operator, cloud, rbf, nb_monomials, diff_args, robin_coeffs)
     rhs = assemble_q(rhs_operator, boundary_conditions, cloud, rbf, nb_monomials, rhs_args)
 
-    ## Solve the linear system
-    sol_vals = jnp.linalg.solve(B1, rhs)
+    ## Solve the linear system using JAX's direct solver
+    # sol_vals = jnp.linalg.solve(B1, rhs)
+
+    ## Solve the linear system using Scipy's iterative solver
+    # sol_vals = jax.scipy.sparse.linalg.gmres(B1, rhs, tol=1e-5)[0]
+
+    ## Solve the linear system using Lineax
+    operator = lx.MatrixLinearOperator(B1)
+    sol_vals = lx.linear_solve(operator, rhs, solver=lx.QR()).value
+    # sol_vals = lx.linear_solve(operator, rhs, solver=lx.GMRES(rtol=1e-3, atol=1e-3)).value
+
     sol_coeffs = core_compute_coefficients(sol_vals, cloud, rbf, nb_monomials)
 
     return SteadySol(sol_vals, sol_coeffs, B1)
