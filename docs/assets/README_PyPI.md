@@ -60,7 +60,7 @@ cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution
 
 
 ## Dependencies
-- **Core**: JAX - GMSH - Matplotlib - Seaborn - Scikit-Learn
+- **Core**: JAX - GMSH - Lineax - Matplotlib - Seaborn - Scikit-Learn
 - **Optional**: PyVista - FFMPEG - QuartoDoc
 
 See the `pyproject.toml` file the specific versions of the dependencies.

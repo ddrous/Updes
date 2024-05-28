@@ -30,19 +30,20 @@ RBF = partial(polyharmonic, a=1)
 # RBF = partial(thin_plate, a=3)
 MAX_DEGREE = 1
 
-Nx = Ny = 15
-SUPPORT_SIZE = "max"
-# SUPPORT_SIZE = 50*1
+Nx = Ny = 50
+# SUPPORT_SIZE = "max"
+SUPPORT_SIZE = 2
 facet_types={"South":"d", "West":"d", "North":"d", "East":"d"}
 
 start = time.time()
 
 ## benchmarking with cprofile
-res = cProfile.run("cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, support_size=SUPPORT_SIZE)")
+# res = cProfile.run("cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, support_size=SUPPORT_SIZE)")
+cloud = SquareCloud(Nx=Nx, Ny=Ny, facet_types=facet_types, support_size=SUPPORT_SIZE)
 
 ## Print results sorted by cumulative time
-p = pstats.Stats(res)
-p.sort_stats('cumulative').print_stats(10)
+# p = pstats.Stats(res)
+# p.sort_stats('cumulative').print_stats(10)
 
 
 ## Only print the top 10 high-level function

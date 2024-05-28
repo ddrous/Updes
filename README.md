@@ -30,6 +30,13 @@ pip install updes
 ```
 
 The example below illustrates how to solve the Laplace equation with Dirichlet and Neumann boundary conditions:
+$$ \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} = 0 \qquad \qquad \qquad \text{in } [0,1]\times [0,1] \\
+\quad \,\,\,  u(x,1) = \sin(\pi x) \qquad \quad \text{on } [0,1]\times \{1\} \\
+ \frac{\partial u}{\partial y}(x,0) = 0 \qquad \qquad \quad \text{on } [0,1]\times \{0\} \\
+\qquad u(\cdot,y) = 0 \qquad \qquad \quad \text{on } \{0,1\}\times [0,1]$$
+
+
+
 ```python
 import updes
 import jax.numpy as jnp
@@ -70,6 +77,7 @@ cloud.visualize_field(sol.vals, cmap="jet", projection="3d", title="RBF solution
 
 ## To-Dos
 1. Logo, contributors guide, and developer documentation
+2. Improved ill-conditioned linear systems for RBF-FD (i.e. `support_size != "max"`)
 2. More introductory examples in the documentation :
     - Integration with neural networks and [Equinox](https://github.com/patrick-kidger/equinox)
     - Non-linear and multi-dimensional PDEs
@@ -83,7 +91,7 @@ We welcome contributions from the community. Please feel free to open an issue o
 
 
 ## Dependencies
-- **Core**: [JAX](https://github.com/google/jax) - [GMSH](https://pypi.org/project/gmsh/) - [Matplotlib](https://github.com/matplotlib/matplotlib) - [Seaborn](https://github.com/mwaskom/seaborn) - [Scikit-Learn](https://github.com/scikit-learn/scikit-learn)
+- **Core**: [JAX](https://github.com/google/jax) - [GMSH](https://pypi.org/project/gmsh/) - [Lineax](https://github.com/patrick-kidger/lineax) - [Matplotlib](https://github.com/matplotlib/matplotlib) - [Seaborn](https://github.com/mwaskom/seaborn) - [Scikit-Learn](https://github.com/scikit-learn/scikit-learn)
 - **Optional**: [PyVista](https://github.com/pyvista/pyvista) - [FFMPEG](https://github.com/kkroening/ffmpeg-python) - [QuartoDoc](https://github.com/machow/quartodoc/)
 
 See the `pyproject.toml` file the specific versions of the dependencies.
