@@ -1,7 +1,7 @@
 [project]
 name = "updes"
 description = "Universal Partial Differential Equations Simulator"
-version = "1.0.2"
+version = "1.0.2.post1"
 readme = "docs/assets/README_PyPI.md"
 authors = [
     { name = "Roussel Desmond Nzoyem", email = "desmond.ngueguin@gmail.com" }
@@ -31,5 +31,9 @@ dev = [
     "quartodoc",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ddrous/Updes"
+Documentation = "https://ddrous.github.io/Updes/"
+
 [tool.setuptools]
-py-modules = ["updes"]
+packages = ["updes"]
