@@ -273,7 +273,7 @@ class Cloud(object):
         return ax, img
 
 
-    def animate_fields(self, fields, filename=None, titles="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, figsize=(6,5), cmaps="jet", cbarsplit=50, duration=5, colorbar=True, **kwargs):
+    def animate_fields(self, fields, filename=None, titles="Field", xlabel=r'$x$', ylabel=r'$y$', levels=50, figsize=(6,5), cmaps="jet", cbarsplit=50, duration=5, colorbar=True, vmin=None, vmax=None, **kwargs):
         import matplotlib as mpl
         mpl.use('Agg')
         import matplotlib.pyplot as plt
@@ -304,7 +304,10 @@ class Cloud(object):
         boundaries = []
         minmaxs = []
         for i in range(nb_signals):
-            minmax = jnp.min(signals[i]), jnp.max(signals[i])
+            curr_min = jnp.min(signals[i]) if vmin is None else vmin
+            curr_max = jnp.max(signals[i]) if vmax is None else vmax
+
+            minmax = curr_min, curr_max
 
             ## To avoid crashing
             if minmax[1] <= minmax[0]:

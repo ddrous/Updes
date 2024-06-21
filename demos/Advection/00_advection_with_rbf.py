@@ -113,7 +113,7 @@ print(f"Walltime: {minutes} minutes {seconds:.2f} seconds")
 
 # ax = plt.gca()
 filename = DATAFOLDER + "advection_diffusion_rbf.gif"
-cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), titles=["Advection-Diffusion with RBFs"])
+cloud.animate_fields([ulist], cmaps="jet", filename=filename, figsize=(7,3), titles=["Advection-Diffusion with RBFs"], vmin=0, vmax=1)
 
 
 
