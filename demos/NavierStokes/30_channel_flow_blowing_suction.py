@@ -105,9 +105,6 @@ def simulate_forward_navier_stokes(cloud_vel,
                                     RBF=RBF, MAX_DEGREE=MAX_DEGREE): 
     """ Simuulates a forward Navier Stokes problem using an iterative approach """
 
-
-
-
     ## Initial states, all defined on cloud_vel
     u = jnp.zeros((cloud_vel.N,))
     v = jnp.zeros((cloud_vel.N,))
