@@ -1,6 +1,6 @@
 # 𝕌pdes
 
-𝕌pdes is a general-purpose library for mesh-free PDE simulation and control. There is no faster way to explore the realm of PDEs !
+𝕌pdes is a general-purpose library for PDE simulation and control. There is no faster way to explore the realm of PDEs !
 
 <table>
   <tr>
